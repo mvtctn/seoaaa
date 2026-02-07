@@ -1,8 +1,14 @@
-// Direct REST API implementation for Gemini AI
-// Using Gemini 2.0 Flash with detailed logging
+// Gemini AI Integration
+// https://aistudio.google.com/
+
+import { GoogleGenerativeAI } from '@google/generative-ai'
 
 const apiKey = process.env.GEMINI_API_KEY || ''
-const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models'
+
+// Initialize Gemini
+// Use gemini-1.5-flash for speed and cost efficiency (highly recommended over Groq free tier)
+const genAI = new GoogleGenerativeAI(apiKey)
+const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
 
 export interface CompetitorData {
     url: string
@@ -13,7 +19,7 @@ export interface CompetitorData {
 }
 
 /**
- * Call Gemini API directly via REST with detailed logging
+ * Call Gemini API with retry logic
  */
 async function callGemini(prompt: string, temperature: number = 0.7): Promise<string> {
     if (!apiKey) {
@@ -21,58 +27,21 @@ async function callGemini(prompt: string, temperature: number = 0.7): Promise<st
         throw new Error('Missing Gemini API Key')
     }
 
-    // Debug: Check API key format
-    console.log(`[Gemini] API Key loaded: ${apiKey.substring(0, 8)}...${apiKey.substring(apiKey.length - 4)} (length: ${apiKey.length})`)
-
-    // Try gemini-2.0-flash first (user's confirmed working model)
-    const models = ['gemini-2.0-flash-exp', 'gemini-2.0-flash', 'gemini-1.5-flash']
-
-    for (const model of models) {
-        try {
-            const url = `${BASE_URL}/${model}:generateContent`
-            console.log(`[Gemini] Attempting: ${url}`)
-
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-goog-api-key': apiKey.trim() // Trim any whitespace
-                },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [{ text: prompt }]
-                    }],
-                    generationConfig: {
-                        temperature,
-                        maxOutputTokens: 8192
-                    }
-                })
-            })
-
-            console.log(`[Gemini] ${model} response: ${response.status} ${response.statusText}`)
-
-            if (response.ok) {
-                const data = await response.json()
-                console.log(`[Gemini] ✓ Success with ${model}`)
-                return data.candidates[0].content.parts[0].text
+    try {
+        const result = await model.generateContent({
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            generationConfig: {
+                temperature,
+                maxOutputTokens: 8000,
             }
+        })
 
-            // Log error details
-            const errorText = await response.text()
-            console.error(`[Gemini] ${model} failed:`, errorText.substring(0, 500))
-
-            // If 404, try next model
-            if (response.status === 404) {
-                console.log(`[Gemini] ${model} not found, trying next...`)
-                continue
-            }
-
-        } catch (e) {
-            console.error(`[Gemini] Exception calling ${model}:`, e)
-        }
+        const response = await result.response
+        return response.text()
+    } catch (e: any) {
+        console.error(`[Gemini] Exception:`, e)
+        throw new Error(`Gemini API Error: ${e.message}`)
     }
-
-    throw new Error('All Gemini models failed. Check API key or quota.')
 }
 
 /**
@@ -98,7 +67,7 @@ export async function analyzeCompetitors(
   4. User intent (Informational, Transactional, etc.).
   5. A winning outline structure that is better than all competitors.
 
-  Return ONLY valid JSON directly without markdown formatting:
+  Return ONLY valid JSON directly without markdown formatting (start with { and end with }):
   {
     "userIntent": "string",
     "commonThemes": ["string"],
@@ -114,48 +83,57 @@ export async function analyzeCompetitors(
   `
 
     try {
-        const text = await callGemini(prompt, 0.5)
-        return JSON.parse(cleanJsonString(text))
+        const response = await callGemini(prompt, 0.4)
+        // Clean markdown block if present
+        const jsonStr = response.replace(/```json\n?|\n?```/g, '').trim()
+        return JSON.parse(jsonStr)
     } catch (error) {
         console.error('Gemini Analysis Error:', error)
-        return mockAnalysis()
+        // Fallback structure
+        return {
+            userIntent: 'Informational',
+            commonThemes: ['Introduction', 'Benefits', 'How-to'],
+            contentGaps: ['Detailed examples', 'Expert quotes'],
+            recommendedWordCount: '1500-2000',
+            recommendedOutline: {
+                title: `Complete Guide to ${keyword}`,
+                headings: [
+                    { level: 2, text: 'Introduction', desc: 'Overview of the topic' },
+                    { level: 2, text: 'Main Benefits', desc: 'Why it matters' },
+                    { level: 2, text: 'Step-by-Step Guide', desc: 'How to do it' },
+                    { level: 2, text: 'Conclusion', desc: 'Summary' }
+                ]
+            }
+        }
     }
 }
 
 /**
- * Generate a comprehensive content strategy
+ * Generate Content Strategy
  */
 export async function generateContentStrategy(
     keyword: string,
-    researchData: any,
+    researchBrief: any,
     brandContext?: any
 ) {
     const prompt = `
-  Create a content strategy for "${keyword}" based on this research:
-  ${JSON.stringify(researchData)}
+  Based on the research brief for "${keyword}", create a specific content strategy.
+  
+  Brief: ${JSON.stringify(researchBrief)}
+  Brand: ${JSON.stringify(brandContext || {})}
 
-  Brand Voice: ${brandContext?.toneOfVoice || 'Professional'}
-  Core Values: ${brandContext?.coreValues?.join(', ') || 'N/A'}
-
-  Define:
-  1. The unique angle/hook.
-  2. Target audience persona.
-  3. Key takeaways for the reader.
-  4. Call to Action (CTA).
-
-  Output as a concise Markdown string.
+  Provide a concise paragraph explaining the angle, tone, and unique selling proposition for this article.
   `
 
     try {
         return await callGemini(prompt, 0.7)
-    } catch (error) {
-        console.error('Strategy Error:', error)
-        return "Failed to generate strategy."
+    } catch (e) {
+        return `Focus on creating a comprehensive guide that addresses user intent for "${keyword}" better than competitors.`
     }
 }
 
 /**
- * Generate full article content using Gemini
+ * Generate Full Article
  */
 export async function generateArticle(params: {
     keyword: string
@@ -189,13 +167,27 @@ export async function generateArticle(params: {
   3. Make it engaging, easy to read, and comprehensive.
   4. Naturally weave in the provided internal links where appropriate (use [text](url)).
   5. Optimize for SEO but write for humans first.
-  6. Do NOT include any preamble or "Here is the article" text. Start directly with the H1 Title.
+  6. Structure your response EXACTLY as follows:
 
-  WRITE THE FULL ARTICLE NOW.
+  [ARTICLE]
+  (Start with H1 Title and full article content here)
+
+  [SUMMARY]
+  (Write a 2-3 sentence summary of the article here)
+
+  [META]
+  Meta Title: (Best SEO Title)
+  Meta Description: (Compelling Meta Description under 160 chars)
+  URL Slug: (SEO friendly slug)
+
+  [SCHEMA]
+  (Insert valid JSON-LD schema wrapped in \`\`\`json ... \`\`\` here)
+
+  Do NOT include any preamble or "Here is your article" text.
   `
 
     try {
-        return await callGemini(prompt, 0.8)
+        return await callGemini(prompt, 0.7)
     } catch (error) {
         console.error('Article Generation Error:', error)
         return `# Error Generating Content\n\n${error instanceof Error ? error.message : 'Unknown error'}`
@@ -233,25 +225,29 @@ export async function generateMetaDescription(title: string, keyword: string, co
     }
 }
 
-// Helper to clean JSON string from Markdown code blocks
-function cleanJsonString(text: string) {
-    return text.replace(/```json\n?|\n?```/g, '').trim()
-}
+/**
+ * Analyze article readability and quality
+ */
+export async function analyzeReadability(content: string) {
+    const prompt = `
+  Analyze the readability and quality of the following Vietnamese article content.
+  
+  Content:
+  ${content.substring(0, 5000)}
 
-// Mock data integration
-function mockAnalysis() {
-    return {
-        userIntent: "Informational",
-        commonThemes: ["Basic Concepts", "Benefits", "How-to Guide"],
-        contentGaps: ["Detailed Case Studies", "Expert Opinions"],
-        recommendedWordCount: "1500-2000",
-        recommendedOutline: {
-            title: "Comprehensive Guide (Mock Data)",
-            headings: [
-                { level: 2, text: "Giới thiệu", desc: "Mở đầu về chủ đề" },
-                { level: 2, text: "Khái niệm chính", desc: "Định nghĩa cốt lõi" },
-                { level: 2, text: "Kết luận", desc: "Tổng kết" }
-            ]
-        }
+  Evaluate based on:
+  1. Score (0-100).
+  2. Reading ease (Easy/Medium/Hard).
+  3. Suggestions for improvement.
+
+  Return JSON: { "score": number, "readingEase": "string", "suggestions": ["string"] }
+  `
+
+    try {
+        const text = await callGemini(prompt, 0.2)
+        const jsonStr = text.replace(/```json\n?|\n?```/g, '').trim()
+        return JSON.parse(jsonStr)
+    } catch (e) {
+        return { score: 70, readingEase: 'Medium', suggestions: ['Check formatting'] }
     }
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-// Changed from deepseek to groq
-import { generateArticle, generateMetaTitle, generateMetaDescription } from '@/lib/ai/groq'
+// Changed from deepseek/groq to gemini
+import { generateArticle, generateMetaTitle, generateMetaDescription } from '@/lib/ai/gemini'
 import { generateSlug, calculateReadingTime } from '@/lib/seo/utils'
 import { createArticle, getAllBrands } from '@/lib/db/database'
 
@@ -27,9 +27,8 @@ export async function POST(req: NextRequest) {
             internalLinks: brand.internal_links ? JSON.parse(brand.internal_links as string) : []
         } : undefined
 
-        // 2. Generate Article Content (Now using Gemini)
-        // 2. Generate Article Content (Now using Gemini/Groq)
-        console.log(`Generating article for: ${keyword} using AI...`)
+        // 2. Generate Article Content (Now using Gemini 1.5 Flash)
+        console.log(`Generating article for: ${keyword} using Gemini AI...`)
         const rawContent = await generateArticle({
             keyword,
             researchBrief,
@@ -105,7 +104,8 @@ export async function POST(req: NextRequest) {
         const metaDesc = sections.meta.description || await generateMetaDescription(title, keyword, content)
 
         // 5. Save Artifact
-        const articleId = await createArticle({
+        // 5. Save Artifact
+        const dbResult = await createArticle({
             keyword_id: keywordId || 0,
             title,
             slug,
@@ -116,9 +116,12 @@ export async function POST(req: NextRequest) {
             research_id: researchId || undefined
         })
 
+        const articleId = dbResult.lastInsertRowid
+
         return NextResponse.json({
             success: true,
             data: {
+                id: articleId,
                 articleId,
                 title,
                 slug,

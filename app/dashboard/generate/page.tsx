@@ -98,7 +98,10 @@ export default function GeneratePage() {
                 body: JSON.stringify({ keyword })
             })
 
-            if (!resRes.ok) throw new Error('Research failed')
+            if (!resRes.ok) {
+                const errData = await resRes.json().catch(() => ({}))
+                throw new Error(errData.error || errData.details || `Research failed (${resRes.status})`)
+            }
             const resData = await resRes.json()
 
             // Step 2: Generate Article

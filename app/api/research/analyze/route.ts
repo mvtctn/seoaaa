@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fetchSERPResults, scrapeURL } from '@/lib/scraper/web-scraper'
-import { analyzeCompetitors, generateContentStrategy, CompetitorData } from '@/lib/ai/groq'
+import { analyzeCompetitors, generateContentStrategy, CompetitorData } from '@/lib/ai/gemini'
 import { createResearch, getAllBrands, createKeyword } from '@/lib/db/database'
 
 export const maxDuration = 300 // 5 minutes timeout for Vercel/Next.js
@@ -81,8 +81,8 @@ export async function POST(req: NextRequest) {
             })
         }
 
-        // 4. Analyze with Gemini/Groq
-        console.log('Analyzing content with AI...')
+        // 4. Analyze with Gemini
+        console.log('Analyzing content with Gemini AI...')
         const researchBrief = await analyzeCompetitors(keyword, validCompetitors, brandContext)
         console.log('✓ Analysis complete')
 
