@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fetchSERPResults, scrapeURL } from '@/lib/scraper/web-scraper'
 import { analyzeCompetitors, generateContentStrategy, CompetitorData } from '@/lib/ai/groq'
-import { createResearch, getBrandById, getAllBrands, createKeyword } from '@/lib/db/database'
+import { createResearch, getAllBrands, createKeyword } from '@/lib/db/database'
 
 export const maxDuration = 300 // 5 minutes timeout for Vercel/Next.js
 
@@ -14,9 +14,12 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Keyword is required' }, { status: 400 })
         }
 
+        console.log(`\n🚀 Starting Research for: "${keyword}"`)
+
         // 1. Get Brand Context
         const brands = await getAllBrands()
         const brand = brands.length > 0 ? brands[0] : null
+        console.log(`Checking Brand: ${brand ? brand.name : 'None'}`)
 
         const brandContext = brand ? {
             name: brand.name,
@@ -25,24 +28,25 @@ export async function POST(req: NextRequest) {
         } : undefined
 
         // 2. Fetch SERP Results
-        console.log(`Fetching SERP for: ${keyword}`)
-        // Mock data if no API key
-        const serpResults = await fetchSERPResults(keyword, 5) // Top 5 is enough for analysis
+        console.log('Fetching SERP (Limit 3)...')
+        // Limit to 3 results to avoid timeouts and quota limits
+        const serpResults = await fetchSERPResults(keyword, 3)
+        console.log(`✓ Got ${serpResults.length} SERP results`)
 
         // 3. Scrape Top Competitors
-        console.log(`Scraping ${serpResults.length} competitors...`)
+        console.log(`Scraping competitors...`)
 
         // Process in parallel with concurrency limit
         const scrapePromises = serpResults.map(async (result) => {
             try {
-                // MOCK HANDLING: If URL is example.com (from mock SERP), return mock content
+                // Mock handling for example.com
                 if (result.url.includes('example.com')) {
                     return {
                         url: result.url,
                         title: result.title,
-                        content: `This is a mock content for "${keyword}". In a real scenario, this would be the scraped content from a competitor's website. It discusses SEO strategies, content marketing strategies, and comprehensive guides.`,
+                        content: `Mock content for "${keyword}". SEO strategies, content marketing, guidelines.`,
                         wordCount: 1500,
-                        headings: ['Introduction', 'Main Concepts', 'Strategies', 'Conclusion']
+                        headings: ['Intro', 'Strategy', 'Conclusion']
                     }
                 }
 
@@ -65,9 +69,9 @@ export async function POST(req: NextRequest) {
         const results = await Promise.all(scrapePromises)
         const validCompetitors = results.filter((c): c is CompetitorData => c !== null)
 
-        // If absolutely no competitors found, enforce fallback to prevent crash
+        // Fallback if no competitors found
         if (validCompetitors.length === 0) {
-            console.warn('No competitors found. Using fallback mock data.')
+            console.warn('⚠️ No competitors found. Using fallback mock data.')
             validCompetitors.push({
                 url: 'https://fallback-mock.com',
                 title: `Guide to ${keyword}`,
@@ -77,21 +81,49 @@ export async function POST(req: NextRequest) {
             })
         }
 
-        // 4. Analyze with Gemini
-        console.log('Analyzing content...')
+        // 4. Analyze with Gemini/Groq
+        console.log('Analyzing content with AI...')
         const researchBrief = await analyzeCompetitors(keyword, validCompetitors, brandContext)
+        console.log('✓ Analysis complete')
 
         // 5. Generate Strategy
         console.log('Generating strategy...')
         const strategy = await generateContentStrategy(keyword, researchBrief, brandContext)
+        console.log('✓ Strategy generated')
 
         // 6. Save to Database
-        // Create Keyword first
-        const keywordResult = await createKeyword({
-            keyword: keyword,
-            status: 'researching'
-        })
-        const keywordId = Number(keywordResult.lastInsertRowid)
+        console.log('Saving to database...')
+
+        // Dynamically import Supabase client to avoid top-level await issues if any
+        const { supabase } = require('@/lib/db/supabase-client')
+
+        // Check if keyword exists first
+        const { data: existingKeyword } = await supabase
+            .from('keywords')
+            .select('id')
+            .eq('keyword', keyword)
+            .maybeSingle()
+
+        let keywordId: number
+
+        if (existingKeyword) {
+            console.log(`✓ Keyword exists (ID: ${existingKeyword.id}), updating status...`)
+            keywordId = existingKeyword.id
+            // Update status
+            const { error: updateError } = await supabase
+                .from('keywords')
+                .update({ status: 'researching', updated_at: new Date().toISOString() })
+                .eq('id', keywordId)
+
+            if (updateError) console.error('Failed to update keyword status', updateError)
+        } else {
+            console.log(`✓ Creating new keyword...`)
+            const keywordResult = await createKeyword({
+                keyword: keyword,
+                status: 'researching'
+            })
+            keywordId = Number(keywordResult.lastInsertRowid)
+        }
 
         // Save Research
         const researchResult = await createResearch({
@@ -105,6 +137,8 @@ export async function POST(req: NextRequest) {
 
         const researchId = Number(researchResult.lastInsertRowid)
 
+        console.log(`✓ Research saved (ID: ${researchId})`)
+
         return NextResponse.json({
             success: true,
             data: {
@@ -116,10 +150,16 @@ export async function POST(req: NextRequest) {
             }
         })
 
-    } catch (error) {
-        console.error('Research API Error:', error)
+    } catch (error: any) {
+        console.error('❌ Research API Error:', error)
+
+        // Return detailed error message
         return NextResponse.json(
-            { error: error instanceof Error ? error.message : 'Internal Server Error' },
+            {
+                success: false,
+                error: error.message || 'An unexpected error occurred',
+                details: error.stack
+            },
             { status: 500 }
         )
     }

@@ -1,15 +1,17 @@
 import { createClient } from '@supabase/supabase-js'
 import fs from 'fs'
 import path from 'path'
-import dotenv from 'dotenv'
 
-dotenv.config()
-
+// tsx automatically loads .env.local and .env
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY // Need Service Role for bulk insert/overrides
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+console.log('Supabase URL:', supabaseUrl ? '✓ Found' : '✗ Missing')
+console.log('Service Role Key:', supabaseKey ? '✓ Found' : '✗ Missing')
 
 if (!supabaseUrl || !supabaseKey) {
-    console.error('Missing Supabase credentials in .env')
+    console.error('\n❌ Missing Supabase credentials!')
+    console.error('Make sure NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set in .env.local\n')
     process.exit(1)
 }
 

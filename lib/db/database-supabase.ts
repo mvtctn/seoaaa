@@ -67,7 +67,10 @@ export const createKeyword = async (data: {
         status: data.status || 'pending'
     }]).select().single()
 
-    if (error) throw error
+    if (error) {
+        console.error('Supabase Error (createKeyword):', error)
+        throw error
+    }
     return { lastInsertRowid: record.id, changes: 1 }
 }
 
@@ -106,7 +109,10 @@ export const createResearch = async (data: {
         gemini_brief: data.gemini_brief ? JSON.parse(data.gemini_brief) : null
     }]).select().single()
 
-    if (error) throw error
+    if (error) {
+        console.error('Supabase Error (createResearch):', error)
+        throw error
+    }
     return { lastInsertRowid: record.id, changes: 1 }
 }
 
@@ -147,7 +153,10 @@ export const createArticle = async (data: {
         status: data.status || 'draft'
     }]).select().single()
 
-    if (error) throw error
+    if (error) {
+        console.error('Supabase Error (createArticle):', error)
+        throw error
+    }
     return { lastInsertRowid: record.id, changes: 1 }
 }
 
