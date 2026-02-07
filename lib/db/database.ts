@@ -1,7 +1,8 @@
 import path from 'path'
 import fs from 'fs'
 
-const DB_PATH = process.env.DATABASE_PATH || path.join(process.cwd(), 'data', 'db.json')
+const DEFAULT_LOCAL_PATH = path.join(process.cwd(), 'data', 'database.json')
+const DB_PATH = process.env.DATABASE_PATH || DEFAULT_LOCAL_PATH
 
 // Interfaces for our JSON DB structure
 interface DBStructure {
@@ -12,21 +13,30 @@ interface DBStructure {
   batch_jobs: any[]
 }
 
-// Ensure data directory exists and init DB
+// Ensure data directory exists
 const dataDir = path.dirname(DB_PATH)
 if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true })
 }
 
+// Optimization for Cloud Persistence (Railway/Docker):
+// If DB_PATH is set (likely a persistent volume) but the file doesn't exist,
+// try to seed it with the data from the repository's data folder.
 if (!fs.existsSync(DB_PATH)) {
-  const initialData: DBStructure = {
-    brands: [],
-    keywords: [],
-    research: [],
-    articles: [],
-    batch_jobs: []
+  if (DB_PATH !== DEFAULT_LOCAL_PATH && fs.existsSync(DEFAULT_LOCAL_PATH)) {
+    console.log(`Seeding persistent database at ${DB_PATH} from ${DEFAULT_LOCAL_PATH}`)
+    fs.copyFileSync(DEFAULT_LOCAL_PATH, DB_PATH)
+  } else {
+    console.log(`Initializing empty database at ${DB_PATH}`)
+    const initialData: DBStructure = {
+      brands: [],
+      keywords: [],
+      research: [],
+      articles: [],
+      batch_jobs: []
+    }
+    fs.writeFileSync(DB_PATH, JSON.stringify(initialData, null, 2))
   }
-  fs.writeFileSync(DB_PATH, JSON.stringify(initialData, null, 2))
 }
 
 // Helper to read DB
