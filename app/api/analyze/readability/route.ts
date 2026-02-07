@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { analyzeReadability } from '@/lib/ai/groq'
+import { AIOrchestrator } from '@/lib/ai/orchestrator'
 
 export async function POST(req: NextRequest) {
     try {
@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Content is required' }, { status: 400 })
         }
 
-        const report = await analyzeReadability(content)
+        const report = await AIOrchestrator.analyzeReadability(content)
 
         return NextResponse.json({
             success: true,

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { generateArticle, generateMetaTitle, generateMetaDescription } from '@/lib/ai/groq'
+import { AIOrchestrator } from '@/lib/ai/orchestrator'
 import { generateSlug } from '@/lib/seo/utils'
 import { createArticle, getDefaultBrand } from '@/lib/db/database'
 
@@ -21,7 +21,8 @@ export async function POST(req: NextRequest) {
         const brand = await getDefaultBrand()
         console.log(`[API] Using brand: ${brand ? brand.name : 'NONE (Using Generic)'}`)
 
-        const brandContext = brand ? {
+        const brandContextForAI = brand ? {
+            id: brand.id,
             name: brand.name,
             coreValues: Array.isArray(brand.core_values) ? brand.core_values : (typeof brand.core_values === 'string' ? JSON.parse(brand.core_values) : []),
             toneOfVoice: typeof brand.tone_of_voice === 'object' ? brand.tone_of_voice?.description : (typeof brand.tone_of_voice === 'string' ? JSON.parse(brand.tone_of_voice).description : 'Professional'),
@@ -29,14 +30,15 @@ export async function POST(req: NextRequest) {
             internalLinks: Array.isArray(brand.internal_links) ? brand.internal_links : (typeof brand.internal_links === 'string' ? JSON.parse(brand.internal_links) : [])
         } : undefined
 
-        // 2. Generate Article Content (Using Groq / Llama 3.3)
-        console.log(`[API] ✍️ Generating article for: "${keyword}" using Groq AI...`)
-        const rawContent = await generateArticle({
+        // 2. Generate Article Content (Using Orchestrator)
+        console.log(`[API] ✍️ Generating article for: "${keyword}" using AI Orchestrator...`)
+        const generationResult = await AIOrchestrator.generateArticle({
             keyword,
             researchBrief,
             contentStrategy,
-            brandContext
+            brandContext: brandContextForAI
         })
+        const rawContent = generationResult.content
         console.log('[API] ✓ Raw content generated')
 
         // --- PARSE AI OUTPUT ---
@@ -58,6 +60,17 @@ export async function POST(req: NextRequest) {
         // Parse Summary
         const summaryMatch = rawContent.match(/\[SUMMARY\]\s*([\s\S]*?)(?=\[META\]|\[SCHEMA\]|$)/i)
         if (summaryMatch) sections.summary = summaryMatch[1].trim()
+
+        // Fallback if parsing failed to extract meaningful article content
+        if (!sections.article.trim()) {
+            console.warn('[API] Parsing failed to find [ARTICLE] block, using raw content as fallback')
+            // Remove meta blocks if possible to clean up
+            sections.article = rawContent
+                .replace(/\[SUMMARY\][\s\S]*/i, '')
+                .replace(/\[META\][\s\S]*/i, '')
+                .replace(/\[SCHEMA\][\s\S]*/i, '')
+                .trim()
+        }
 
         // Parse Meta
         const metaMatch = rawContent.match(/\[META\]\s*([\s\S]*?)(?=\[SCHEMA\]|$)/i)
@@ -95,10 +108,13 @@ export async function POST(req: NextRequest) {
             slug = generateSlug(title)
         }
 
-        // 4. Finalize Metadata
+        // 4. Finalize Metadata (Using Orchestrator)
         console.log('[API] Finalizing metadata...')
-        const metaTitle = sections.meta.title || await generateMetaTitle(title, keyword)
-        const metaDesc = sections.meta.description || await generateMetaDescription(title, keyword, content)
+        const metaTitleResult = sections.meta.title ? { content: sections.meta.title } : await AIOrchestrator.generateMetaTitle(title, keyword, brandContextForAI)
+        const metaDescResult = sections.meta.description ? { content: sections.meta.description } : await AIOrchestrator.generateMetaDescription(title, keyword, content, brandContextForAI)
+
+        const metaTitle = metaTitleResult.content
+        const metaDesc = metaDescResult.content
 
         // 5. Save Artifact
         console.log('[API] Saving article to DB...')

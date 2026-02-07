@@ -354,3 +354,73 @@ export const createArticleFromRewrite = async (data: {
     if (error) throw error
     return { lastInsertRowid: record.id, changes: 1 }
 }
+
+// --- AI Orchestrator ---
+
+export const createAIUsageLog = async (data: {
+    brand_id?: number
+    article_id?: number
+    model_name: string
+    provider: string
+    task_type: string
+    input_tokens: number
+    output_tokens: number
+    cost: number
+    status: string
+    error_message?: string
+    duration_ms?: number
+}): Promise<RunResult> => {
+    try {
+        const { data: record, error } = await supabase.from('ai_usage_logs').insert([data]).select().single()
+        if (error) {
+            console.warn('[Supabase] Failed to insert usage log:', error.message)
+            return { lastInsertRowid: 0, changes: 0 } // Fail silently
+        }
+        return { lastInsertRowid: record.id, changes: 1 }
+    } catch (e) {
+        console.warn('[Supabase] Exception inserting usage log:', e)
+        return { lastInsertRowid: 0, changes: 0 }
+    }
+}
+
+export const getAIUsageLogs = async (limit: number = 100) => {
+    try {
+        const { data, error } = await supabase.from('ai_usage_logs').select('*').order('created_at', { ascending: false }).limit(limit)
+        if (error) {
+            console.warn('[Supabase] Failed to fetch usage logs:', error.message)
+            return []
+        }
+        return data || []
+    } catch (e) {
+        console.warn('[Supabase] Exception fetching usage logs:', e)
+        return []
+    }
+}
+
+export const getAISetting = async (key: string) => {
+    try {
+        const { data, error } = await supabase.from('ai_settings').select('value').eq('key', key).maybeSingle()
+        if (error) {
+            console.warn(`[Supabase] Failed to fetch setting ${key}:`, error.message)
+            return null
+        }
+        return data?.value || null
+    } catch (e) {
+        console.warn(`[Supabase] Exception fetching setting ${key}:`, e)
+        return null
+    }
+}
+
+export const updateAISetting = async (key: string, value: any) => {
+    try {
+        const { error } = await supabase.from('ai_settings').upsert({ key, value, updated_at: new Date().toISOString() })
+        if (error) {
+            console.warn(`[Supabase] Failed to update setting ${key}:`, error.message)
+            return { lastInsertRowid: 0, changes: 0 }
+        }
+        return { lastInsertRowid: 0, changes: 1 }
+    } catch (e) {
+        console.warn(`[Supabase] Exception updating setting ${key}:`, e)
+        return { lastInsertRowid: 0, changes: 0 }
+    }
+}

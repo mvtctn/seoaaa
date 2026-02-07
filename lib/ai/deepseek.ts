@@ -15,17 +15,14 @@ export interface CompetitorData {
 /**
  * Call DeepSeek API (OpenAI-compatible format)
  */
-async function callDeepSeek(prompt: string, temperature: number = 0.7): Promise<string> {
+async function callDeepSeek(prompt: string, temperature: number = 0.7): Promise<{ content: string, usage: { input_tokens: number, output_tokens: number } }> {
     if (!apiKey) {
         console.error('[DeepSeek] ERROR: No API key found in process.env.DEEPSEEK_API_KEY')
         throw new Error('Missing DeepSeek API Key')
     }
 
-    console.log(`[DeepSeek] API Key loaded: ${apiKey.substring(0, 8)}...${apiKey.substring(apiKey.length - 4)} (length: ${apiKey.length})`)
-
     try {
         const url = `${BASE_URL}/chat/completions`
-        console.log(`[DeepSeek] Calling: ${url}`)
 
         const response = await fetch(url, {
             method: 'POST',
@@ -34,7 +31,7 @@ async function callDeepSeek(prompt: string, temperature: number = 0.7): Promise<
                 'Authorization': `Bearer ${apiKey.trim()}`
             },
             body: JSON.stringify({
-                model: 'deepseek-chat', // Main model
+                model: 'deepseek-chat',
                 messages: [{
                     role: 'user',
                     content: prompt
@@ -44,15 +41,17 @@ async function callDeepSeek(prompt: string, temperature: number = 0.7): Promise<
             })
         })
 
-        console.log(`[DeepSeek] Response status: ${response.status} ${response.statusText}`)
-
         if (response.ok) {
             const data = await response.json()
-            console.log(`[DeepSeek] ✓ Success`)
-            return data.choices[0].message.content
+            return {
+                content: data.choices[0].message.content,
+                usage: {
+                    input_tokens: data.usage?.prompt_tokens || 0,
+                    output_tokens: data.usage?.completion_tokens || 0
+                }
+            }
         }
 
-        // Error handling
         const errorText = await response.text()
         console.error(`[DeepSeek] API Error:`, errorText.substring(0, 500))
         throw new Error(`DeepSeek API Error: ${response.status} - ${errorText}`)
@@ -102,11 +101,17 @@ export async function analyzeCompetitors(
   `
 
     try {
-        const text = await callDeepSeek(prompt, 0.5)
-        return JSON.parse(cleanJsonString(text))
+        const result = await callDeepSeek(prompt, 0.5)
+        return {
+            ...JSON.parse(cleanJsonString(result.content)),
+            usage: result.usage
+        }
     } catch (error) {
         console.error('DeepSeek Analysis Error:', error)
-        return mockAnalysis()
+        return {
+            ...mockAnalysis(),
+            usage: { input_tokens: 0, output_tokens: 0 }
+        }
     }
 }
 
@@ -135,7 +140,8 @@ export async function generateContentStrategy(
   `
 
     try {
-        return await callDeepSeek(prompt, 0.7)
+        const result = await callDeepSeek(prompt, 0.7)
+        return result.content
     } catch (error) {
         console.error('Strategy Error:', error)
         return "Failed to generate strategy."
@@ -183,10 +189,17 @@ export async function generateArticle(params: {
   `
 
     try {
-        return await callDeepSeek(prompt, 0.8)
+        const result = await callDeepSeek(prompt, 0.8)
+        return {
+            content: result.content,
+            usage: result.usage
+        }
     } catch (error) {
         console.error('Article Generation Error:', error)
-        return `# Error Generating Content\n\n${error instanceof Error ? error.message : 'Unknown error'}`
+        return {
+            content: `# Error Generating Content\n\n${error instanceof Error ? error.message : 'Unknown error'}`,
+            usage: { input_tokens: 0, output_tokens: 0 }
+        }
     }
 }
 
@@ -198,8 +211,8 @@ export async function generateMetaTitle(title: string, keyword: string) {
   Keep under 60 characters. Return only the best one.`
 
     try {
-        const text = await callDeepSeek(prompt, 0.5)
-        return text.trim().replace(/^"|"$/g, '')
+        const result = await callDeepSeek(prompt, 0.5)
+        return result.content.trim().replace(/^"|"$/g, '')
     } catch (e) {
         return title
     }
@@ -214,8 +227,8 @@ export async function generateMetaDescription(title: string, keyword: string, co
   Keep under 160 characters. Return only the description.`
 
     try {
-        const text = await callDeepSeek(prompt, 0.5)
-        return text.trim().replace(/^"|"$/g, '')
+        const result = await callDeepSeek(prompt, 0.5)
+        return result.content.trim().replace(/^"|"$/g, '')
     } catch (e) {
         return `Comprehensive guide about ${keyword}.`
     }

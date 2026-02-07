@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fetchSERPResults, scrapeURL } from '@/lib/scraper/web-scraper'
-import { analyzeCompetitors, generateContentStrategy, CompetitorData } from '@/lib/ai/groq'
+import { AIOrchestrator } from '@/lib/ai/orchestrator'
 import { createResearch, getDefaultBrand, createKeyword } from '@/lib/db/database'
 import { supabase } from '@/lib/db/supabase-client'
 
@@ -24,7 +24,8 @@ export async function POST(req: NextRequest) {
         const brand = await getDefaultBrand()
         console.log(`[API] Brand: ${brand ? brand.name : 'No default brand found'}`)
 
-        const brandContext = brand ? {
+        const brandContextForAI = brand ? {
+            id: brand.id,
             name: brand.name,
             coreValues: Array.isArray(brand.core_values) ? brand.core_values : (typeof brand.core_values === 'string' ? JSON.parse(brand.core_values) : []),
             toneOfVoice: typeof brand.tone_of_voice === 'object' ? brand.tone_of_voice?.description : (typeof brand.tone_of_voice === 'string' ? JSON.parse(brand.tone_of_voice).description : 'Professional')
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
         })
 
         const results = await Promise.all(scrapePromises)
-        const validCompetitors = results.filter((c): c is CompetitorData => c !== null)
+        const validCompetitors = results.filter((c): c is any => c !== null)
 
         if (validCompetitors.length === 0) {
             console.warn('[API] ⚠️ No competitors scraped. Using fallback data.')
@@ -71,14 +72,16 @@ export async function POST(req: NextRequest) {
             })
         }
 
-        // 4. Analyze with Groq
-        console.log('[API] Step 4: Analyzing with Groq AI...')
-        const researchBrief = await analyzeCompetitors(keyword, validCompetitors, brandContext)
+        // 4. Analyze with AI Orchestrator
+        console.log('[API] Step 4: Analyzing with AI Orchestrator...')
+        const analysisResult = await AIOrchestrator.analyzeCompetitors(keyword, validCompetitors, brandContextForAI)
+        const researchBrief = analysisResult // Keeping the name for compatibility
         console.log('[API] ✓ Research Brief generated')
 
         // 5. Generate Strategy
         console.log('[API] Step 5: Generating content strategy...')
-        const strategy = await generateContentStrategy(keyword, researchBrief, brandContext)
+        const strategyResult = await AIOrchestrator.generateContentStrategy(keyword, researchBrief, brandContextForAI)
+        const strategy = strategyResult.content
         console.log('[API] ✓ Strategy generated')
 
         // 6. Save to Database

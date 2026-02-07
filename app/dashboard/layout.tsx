@@ -15,6 +15,7 @@ const PAGE_TITLES: { [key: string]: string } = {
     '/dashboard/brand': 'Cài Đặt Thương Hiệu',
     '/dashboard/profile': 'Cài Đặt Cá Nhân',
     '/dashboard/admin/users': 'Quản Lý Thành Viên',
+    '/dashboard/admin/ai': 'AI Orchestrator',
     '/dashboard/settings': 'Cài Đặt Hệ Thống',
 }
 
@@ -146,6 +147,13 @@ export default function DashboardLayout({
                                     <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
                                 </svg>
                                 <span>Quản Lý Thành Viên</span>
+                            </Link>
+                            <Link href="/dashboard/admin/ai" className={styles.navLink}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+                                    <path d="M2 12h5m10 0h5M12 2v5m0 10v5M4.93 4.93l3.54 3.54m7.08 7.08l3.54 3.54M19.07 4.93l-3.54 3.54M8.46 15.54l-3.54 3.54" />
+                                </svg>
+                                <span>AI Orchestrator</span>
                             </Link>
                             <Link href="/dashboard/settings" className={styles.navLink}>
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

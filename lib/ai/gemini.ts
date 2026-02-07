@@ -21,7 +21,7 @@ export interface CompetitorData {
 /**
  * Call Gemini API with retry logic
  */
-async function callGemini(prompt: string, temperature: number = 0.7): Promise<string> {
+async function callGemini(prompt: string, temperature: number = 0.7): Promise<{ content: string, usage: { input_tokens: number, output_tokens: number } }> {
     if (!apiKey) {
         console.error('[Gemini] ERROR: No API key found in process.env.GEMINI_API_KEY')
         throw new Error('Missing Gemini API Key')
@@ -37,7 +37,13 @@ async function callGemini(prompt: string, temperature: number = 0.7): Promise<st
         })
 
         const response = await result.response
-        return response.text()
+        return {
+            content: response.text(),
+            usage: {
+                input_tokens: response.usageMetadata?.promptTokenCount || 0,
+                output_tokens: response.usageMetadata?.candidatesTokenCount || 0
+            }
+        }
     } catch (e: any) {
         console.error(`[Gemini] Exception:`, e)
         throw new Error(`Gemini API Error: ${e.message}`)
@@ -87,10 +93,13 @@ export async function analyzeCompetitors(
   `
 
     try {
-        const response = await callGemini(prompt, 0.4)
+        const result = await callGemini(prompt, 0.4)
         // Clean markdown block if present
-        const jsonStr = response.replace(/```json\n?|\n?```/g, '').trim()
-        return JSON.parse(jsonStr)
+        const jsonStr = result.content.replace(/```json\n?|\n?```/g, '').trim()
+        return {
+            ...JSON.parse(jsonStr),
+            usage: result.usage
+        }
     } catch (error) {
         console.error('Gemini Analysis Error:', error)
         // Fallback structure
@@ -109,7 +118,8 @@ export async function analyzeCompetitors(
                     { level: 2, text: 'Step-by-Step Guide', desc: 'How to do it' },
                     { level: 2, text: 'Conclusion', desc: 'Summary' }
                 ]
-            }
+            },
+            usage: { input_tokens: 0, output_tokens: 0 }
         }
     }
 }
@@ -132,7 +142,8 @@ export async function generateContentStrategy(
   `
 
     try {
-        return await callGemini(prompt, 0.7)
+        const result = await callGemini(prompt, 0.7)
+        return result.content
     } catch (e) {
         return `Focus on creating a comprehensive guide that addresses user intent for "${keyword}" better than competitors.`
     }
@@ -195,10 +206,17 @@ export async function generateArticle(params: {
   `
 
     try {
-        return await callGemini(prompt, 0.7)
+        const result = await callGemini(prompt, 0.7)
+        return {
+            content: result.content,
+            usage: result.usage
+        }
     } catch (error) {
         console.error('Article Generation Error:', error)
-        return `# Error Generating Content\n\n${error instanceof Error ? error.message : 'Unknown error'}`
+        return {
+            content: `# Error Generating Content\n\n${error instanceof Error ? error.message : 'Unknown error'}`,
+            usage: { input_tokens: 0, output_tokens: 0 }
+        }
     }
 }
 
@@ -210,8 +228,8 @@ export async function generateMetaTitle(title: string, keyword: string) {
   Keep under 60 characters. Return only the best one.`
 
     try {
-        const text = await callGemini(prompt, 0.5)
-        return text.trim().replace(/^"|"$/g, '')
+        const result = await callGemini(prompt, 0.5)
+        return result.content.trim().replace(/^"|"$/g, '')
     } catch (e) {
         return title
     }
@@ -226,8 +244,8 @@ export async function generateMetaDescription(title: string, keyword: string, co
   Keep under 160 characters. Return only the description.`
 
     try {
-        const text = await callGemini(prompt, 0.5)
-        return text.trim().replace(/^"|"$/g, '')
+        const result = await callGemini(prompt, 0.5)
+        return result.content.trim().replace(/^"|"$/g, '')
     } catch (e) {
         return `Comprehensive guide about ${keyword}.`
     }
@@ -252,10 +270,18 @@ export async function analyzeReadability(content: string) {
   `
 
     try {
-        const text = await callGemini(prompt, 0.2)
-        const jsonStr = text.replace(/```json\n?|\n?```/g, '').trim()
-        return JSON.parse(jsonStr)
+        const result = await callGemini(prompt, 0.2)
+        const jsonStr = result.content.replace(/```json\n?|\n?```/g, '').trim()
+        return {
+            ...JSON.parse(jsonStr),
+            usage: result.usage
+        }
     } catch (e) {
-        return { score: 70, readingEase: 'Medium', suggestions: ['Check formatting'] }
+        return {
+            score: 70,
+            readingEase: 'Medium',
+            suggestions: ['Check formatting'],
+            usage: { input_tokens: 0, output_tokens: 0 }
+        }
     }
 }

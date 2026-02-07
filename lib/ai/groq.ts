@@ -15,19 +15,14 @@ export interface CompetitorData {
 /**
  * Call Groq API (OpenAI-compatible)
  */
-async function callGroq(prompt: string, temperature: number = 0.7): Promise<string> {
+async function callGroq(prompt: string, temperature: number = 0.7): Promise<{ content: string, usage: { input_tokens: number, output_tokens: number } }> {
     if (!apiKey) {
         console.error('[Groq] ERROR: No API key found in process.env.GROQ_API_KEY')
         throw new Error('Missing Groq API Key')
     }
 
-    // console.log(`[Groq] API Key loaded: ${apiKey.substring(0, 8)}...`)
-
     try {
         const url = `${BASE_URL}/chat/completions`
-        // console.log(`[Groq] Calling: ${url}`)
-
-        // Using llama-3.3-70b-versatile (Latest) as of 2026
         const model = 'llama-3.3-70b-versatile'
 
         const response = await fetch(url, {
@@ -49,8 +44,13 @@ async function callGroq(prompt: string, temperature: number = 0.7): Promise<stri
 
         if (response.ok) {
             const data = await response.json()
-            // console.log(`[Groq] ✓ Success`)
-            return data.choices[0].message.content
+            return {
+                content: data.choices[0].message.content,
+                usage: {
+                    input_tokens: data.usage?.prompt_tokens || 0,
+                    output_tokens: data.usage?.completion_tokens || 0
+                }
+            }
         }
 
         // Error handling
@@ -108,11 +108,17 @@ export async function analyzeCompetitors(
   `
 
     try {
-        const text = await callGroq(prompt, 0.5)
-        return JSON.parse(cleanJsonString(text))
+        const result = await callGroq(prompt, 0.5)
+        return {
+            ...JSON.parse(cleanJsonString(result.content)),
+            usage: result.usage
+        }
     } catch (error) {
         console.error('Groq Analysis Error:', error)
-        return mockAnalysis()
+        return {
+            ...mockAnalysis(),
+            usage: { input_tokens: 0, output_tokens: 0 }
+        }
     }
 }
 
@@ -142,7 +148,8 @@ export async function generateContentStrategy(
   `
 
     try {
-        return await callGroq(prompt, 0.7)
+        const result = await callGroq(prompt, 0.7)
+        return result.content
     } catch (error) {
         console.error('Strategy Error:', error)
         return "Failed to generate strategy."
@@ -207,10 +214,17 @@ export async function generateArticle(params: {
   `
 
     try {
-        return await callGroq(prompt, 0.7)
+        const result = await callGroq(prompt, 0.7)
+        return {
+            content: result.content,
+            usage: result.usage
+        }
     } catch (error) {
         console.error('Article Generation Error:', error)
-        return `# Error Generating Content\n\n${error instanceof Error ? error.message : 'Unknown error'}`
+        return {
+            content: `# Error Generating Content\n\n${error instanceof Error ? error.message : 'Unknown error'}`,
+            usage: { input_tokens: 0, output_tokens: 0 }
+        }
     }
 }
 
@@ -222,8 +236,8 @@ export async function generateMetaTitle(title: string, keyword: string) {
   Keep under 60 characters. Return only the best one.`
 
     try {
-        const text = await callGroq(prompt, 0.5)
-        return text.trim().replace(/^"|"$/g, '')
+        const result = await callGroq(prompt, 0.5)
+        return result.content.trim().replace(/^"|"$/g, '')
     } catch (e) {
         return title
     }
@@ -238,8 +252,8 @@ export async function generateMetaDescription(title: string, keyword: string, co
   Keep under 160 characters. Return only the description.`
 
     try {
-        const text = await callGroq(prompt, 0.5)
-        return text.trim().replace(/^"|"$/g, '')
+        const result = await callGroq(prompt, 0.5)
+        return result.content.trim().replace(/^"|"$/g, '')
     } catch (e) {
         return `Comprehensive guide about ${keyword}.`
     }
@@ -271,15 +285,19 @@ export async function analyzeReadability(content: string) {
   `
 
     try {
-        const text = await callGroq(prompt, 0.3)
-        return JSON.parse(cleanJsonString(text))
+        const result = await callGroq(prompt, 0.3)
+        return {
+            ...JSON.parse(cleanJsonString(result.content)),
+            usage: result.usage
+        }
     } catch (error) {
         console.error('Readability Error:', error)
         return {
             score: 70,
             tone: "N/A",
             level: "N/A",
-            suggestions: ["Không thể phân tích độ dễ đọc vào lúc này."]
+            suggestions: ["Không thể phân tích độ dễ đọc vào lúc này."],
+            usage: { input_tokens: 0, output_tokens: 0 }
         }
     }
 }

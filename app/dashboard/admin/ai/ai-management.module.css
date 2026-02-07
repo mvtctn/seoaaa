@@ -1,0 +1,137 @@
+.container {
+    padding: 1rem 0;
+}
+
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.statCard {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.statValue {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+}
+
+.statLabel {
+    font-size: 0.875rem;
+    color: var(--color-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.section {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.sectionTitle {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.priorityList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.priorityItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    background: var(--color-background);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: grab;
+}
+
+.priorityItem:active {
+    cursor: grabbing;
+}
+
+.modelInfo {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.modelBadge {
+    padding: 0.25rem 0.625rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.provider_groq {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+}
+
+.provider_gemini {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+}
+
+.provider_deepseek {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.logTableWrap {
+    overflow-x: auto;
+}
+
+.logTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.logTable th {
+    text-align: left;
+    padding: 1rem;
+    border-bottom: 2px solid var(--color-border);
+    color: var(--color-text-secondary);
+}
+
+.logTable td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.status_success {
+    color: var(--color-success);
+}
+
+.status_failed {
+    color: var(--color-error);
+}
+
+.taskBadge {
+    font-size: 0.75rem;
+    padding: 0.125rem 0.5rem;
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--color-primary);
+    border-radius: 4px;
+}

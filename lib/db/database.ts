@@ -21,9 +21,10 @@ interface DBStructure {
   articles: any[]
   batch_jobs: any[]
   settings: {
-    default_brand_id?: number
     [key: string]: any
   }
+  ai_usage_logs?: any[]
+  ai_settings?: { [key: string]: any }
 }
 
 // Ensure data directory exists for JSON mode
@@ -40,6 +41,8 @@ if (!USE_SUPABASE) {
       research: [],
       articles: [],
       batch_jobs: [],
+      ai_usage_logs: [],
+      ai_settings: {},
       settings: {}
     }
     fs.writeFileSync(DB_PATH, JSON.stringify(initialData, null, 2))
@@ -50,9 +53,12 @@ if (!USE_SUPABASE) {
 const readDB = (): DBStructure => {
   try {
     const data = fs.readFileSync(DB_PATH, 'utf-8')
-    return JSON.parse(data)
+    const db = JSON.parse(data)
+    if (!db.ai_usage_logs) db.ai_usage_logs = []
+    if (!db.ai_settings) db.ai_settings = {}
+    return db
   } catch (error) {
-    return { brands: [], keywords: [], research: [], articles: [], batch_jobs: [], settings: {} }
+    return { brands: [], keywords: [], research: [], articles: [], batch_jobs: [], ai_usage_logs: [], ai_settings: {}, settings: {} }
   }
 }
 
@@ -474,6 +480,56 @@ export const updateSetting = async (key: string, value: any) => {
   const db = readDB()
   if (!db.settings) db.settings = {}
   db.settings[key] = value
+  writeDB(db)
+  return { lastInsertRowid: 0, changes: 1 }
+}
+
+// --- AI Orchestrator ---
+
+export const createAIUsageLog = async (data: {
+  brand_id?: number
+  article_id?: number
+  model_name: string
+  provider: string
+  task_type: string
+  input_tokens: number
+  output_tokens: number
+  cost: number
+  status: string
+  error_message?: string
+  duration_ms?: number
+}): Promise<RunResult> => {
+  if (USE_SUPABASE) return supabaseFunctions.createAIUsageLog(data)
+
+  const db = readDB()
+  const id = (db.ai_usage_logs?.length || 0) > 0 ? Math.max(...db.ai_usage_logs!.map(l => l.id)) + 1 : 1
+  const newLog = {
+    id,
+    ...data,
+    created_at: new Date().toISOString()
+  }
+  db.ai_usage_logs?.push(newLog)
+  writeDB(db)
+  return { lastInsertRowid: id, changes: 1 }
+}
+
+export const getAIUsageLogs = async (limit: number = 100) => {
+  if (USE_SUPABASE) return supabaseFunctions.getAIUsageLogs(limit)
+  const db = readDB()
+  return (db.ai_usage_logs || []).slice(-limit).reverse()
+}
+
+export const getAISetting = async (key: string) => {
+  if (USE_SUPABASE) return supabaseFunctions.getAISetting(key)
+  const db = readDB()
+  return db.ai_settings?.[key] || null
+}
+
+export const updateAISetting = async (key: string, value: any) => {
+  if (USE_SUPABASE) return supabaseFunctions.updateAISetting(key, value)
+  const db = readDB()
+  if (!db.ai_settings) db.ai_settings = {}
+  db.ai_settings[key] = value
   writeDB(db)
   return { lastInsertRowid: 0, changes: 1 }
 }
