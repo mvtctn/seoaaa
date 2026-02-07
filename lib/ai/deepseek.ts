@@ -1,8 +1,8 @@
-// Direct REST API implementation for Gemini AI
-// Using Gemini 2.0 Flash with detailed logging
+// DeepSeek AI Integration (OpenAI-compatible API)
+// https://platform.deepseek.com/
 
-const apiKey = process.env.GEMINI_API_KEY || ''
-const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models'
+const apiKey = process.env.DEEPSEEK_API_KEY || ''
+const BASE_URL = 'https://api.deepseek.com/v1'
 
 export interface CompetitorData {
     url: string
@@ -13,66 +13,54 @@ export interface CompetitorData {
 }
 
 /**
- * Call Gemini API directly via REST with detailed logging
+ * Call DeepSeek API (OpenAI-compatible format)
  */
-async function callGemini(prompt: string, temperature: number = 0.7): Promise<string> {
+async function callDeepSeek(prompt: string, temperature: number = 0.7): Promise<string> {
     if (!apiKey) {
-        console.error('[Gemini] ERROR: No API key found in process.env.GEMINI_API_KEY')
-        throw new Error('Missing Gemini API Key')
+        console.error('[DeepSeek] ERROR: No API key found in process.env.DEEPSEEK_API_KEY')
+        throw new Error('Missing DeepSeek API Key')
     }
 
-    // Debug: Check API key format
-    console.log(`[Gemini] API Key loaded: ${apiKey.substring(0, 8)}...${apiKey.substring(apiKey.length - 4)} (length: ${apiKey.length})`)
+    console.log(`[DeepSeek] API Key loaded: ${apiKey.substring(0, 8)}...${apiKey.substring(apiKey.length - 4)} (length: ${apiKey.length})`)
 
-    // Try gemini-2.0-flash first (user's confirmed working model)
-    const models = ['gemini-2.0-flash-exp', 'gemini-2.0-flash', 'gemini-1.5-flash']
+    try {
+        const url = `${BASE_URL}/chat/completions`
+        console.log(`[DeepSeek] Calling: ${url}`)
 
-    for (const model of models) {
-        try {
-            const url = `${BASE_URL}/${model}:generateContent`
-            console.log(`[Gemini] Attempting: ${url}`)
-
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-goog-api-key': apiKey.trim() // Trim any whitespace
-                },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [{ text: prompt }]
-                    }],
-                    generationConfig: {
-                        temperature,
-                        maxOutputTokens: 8192
-                    }
-                })
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey.trim()}`
+            },
+            body: JSON.stringify({
+                model: 'deepseek-chat', // Main model
+                messages: [{
+                    role: 'user',
+                    content: prompt
+                }],
+                temperature,
+                max_tokens: 8000
             })
+        })
 
-            console.log(`[Gemini] ${model} response: ${response.status} ${response.statusText}`)
+        console.log(`[DeepSeek] Response status: ${response.status} ${response.statusText}`)
 
-            if (response.ok) {
-                const data = await response.json()
-                console.log(`[Gemini] ✓ Success with ${model}`)
-                return data.candidates[0].content.parts[0].text
-            }
-
-            // Log error details
-            const errorText = await response.text()
-            console.error(`[Gemini] ${model} failed:`, errorText.substring(0, 500))
-
-            // If 404, try next model
-            if (response.status === 404) {
-                console.log(`[Gemini] ${model} not found, trying next...`)
-                continue
-            }
-
-        } catch (e) {
-            console.error(`[Gemini] Exception calling ${model}:`, e)
+        if (response.ok) {
+            const data = await response.json()
+            console.log(`[DeepSeek] ✓ Success`)
+            return data.choices[0].message.content
         }
-    }
 
-    throw new Error('All Gemini models failed. Check API key or quota.')
+        // Error handling
+        const errorText = await response.text()
+        console.error(`[DeepSeek] API Error:`, errorText.substring(0, 500))
+        throw new Error(`DeepSeek API Error: ${response.status} - ${errorText}`)
+
+    } catch (e) {
+        console.error(`[DeepSeek] Exception:`, e)
+        throw e
+    }
 }
 
 /**
@@ -114,10 +102,10 @@ export async function analyzeCompetitors(
   `
 
     try {
-        const text = await callGemini(prompt, 0.5)
+        const text = await callDeepSeek(prompt, 0.5)
         return JSON.parse(cleanJsonString(text))
     } catch (error) {
-        console.error('Gemini Analysis Error:', error)
+        console.error('DeepSeek Analysis Error:', error)
         return mockAnalysis()
     }
 }
@@ -147,7 +135,7 @@ export async function generateContentStrategy(
   `
 
     try {
-        return await callGemini(prompt, 0.7)
+        return await callDeepSeek(prompt, 0.7)
     } catch (error) {
         console.error('Strategy Error:', error)
         return "Failed to generate strategy."
@@ -155,7 +143,7 @@ export async function generateContentStrategy(
 }
 
 /**
- * Generate full article content using Gemini
+ * Generate full article content using DeepSeek
  */
 export async function generateArticle(params: {
     keyword: string
@@ -195,7 +183,7 @@ export async function generateArticle(params: {
   `
 
     try {
-        return await callGemini(prompt, 0.8)
+        return await callDeepSeek(prompt, 0.8)
     } catch (error) {
         console.error('Article Generation Error:', error)
         return `# Error Generating Content\n\n${error instanceof Error ? error.message : 'Unknown error'}`
@@ -210,7 +198,7 @@ export async function generateMetaTitle(title: string, keyword: string) {
   Keep under 60 characters. Return only the best one.`
 
     try {
-        const text = await callGemini(prompt, 0.5)
+        const text = await callDeepSeek(prompt, 0.5)
         return text.trim().replace(/^"|"$/g, '')
     } catch (e) {
         return title
@@ -226,7 +214,7 @@ export async function generateMetaDescription(title: string, keyword: string, co
   Keep under 160 characters. Return only the description.`
 
     try {
-        const text = await callGemini(prompt, 0.5)
+        const text = await callDeepSeek(prompt, 0.5)
         return text.trim().replace(/^"|"$/g, '')
     } catch (e) {
         return `Comprehensive guide about ${keyword}.`

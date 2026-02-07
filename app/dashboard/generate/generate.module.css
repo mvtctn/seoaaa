@@ -1,0 +1,394 @@
+/* ============================================================
+   CLEAN & PROFESSIONAL DASHBOARD STYLE
+   Focus: Readability, Information Density, Subtle Elegance
+   ============================================================ */
+
+/* Full Width & Responsive */
+.container {
+    width: 100%;
+    margin: 0 auto;
+    padding: 1.5rem 2rem;
+    animation: fadeIn 0.3s ease-out;
+    max-width: 100%;
+    /* Ensure it takes full available width */
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Header Section */
+.header {
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.headerInfo h2 {
+    font-size: 1.375rem;
+    font-weight: 600;
+    margin: 0;
+    color: white;
+}
+
+.headerInfo p {
+    color: var(--color-text-tertiary);
+    font-size: 0.8125rem;
+    margin: 0.25rem 0 0 0;
+}
+
+/* Stepper - Compact */
+.stepper {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+    padding: 1rem 1.5rem;
+    background: rgba(26, 35, 50, 0.4);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+}
+
+.step {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    opacity: 0.6;
+    transition: all 0.2s;
+}
+
+.stepIcon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--color-background);
+    border: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+}
+
+.stepLabel {
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+}
+
+.step.active {
+    opacity: 1;
+}
+
+.step.active .stepIcon {
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+    color: white;
+}
+
+.step.active .stepLabel {
+    color: white;
+}
+
+.stepDivider {
+    width: 30px;
+    height: 1px;
+    background: var(--color-border);
+}
+
+/* Input Form - Centered & Clean */
+.inputStep {
+    max-width: 500px;
+    margin: 4rem auto;
+    text-align: center;
+}
+
+.keywordInput {
+    width: 100%;
+    font-size: 1rem;
+    padding: 0.875rem 1.25rem;
+    border-radius: var(--radius-md);
+    background: #0f172a;
+    border: 1px solid var(--color-border);
+    color: white;
+    margin-bottom: 1.5rem;
+}
+
+/* RESULT LAYOUT */
+.resultLayout {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    /* Sidebar fixed width */
+    gap: 2rem;
+    align-items: start;
+}
+
+.mainContent {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    min-width: 0;
+    /* Prevent flex item from overflowing */
+}
+
+/* Content Card - Sharp & Professional */
+.contentCard {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.cardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1.25rem;
+    background: rgba(15, 23, 41, 0.5);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.cardTitle {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.cardTitle svg {
+    width: 14px;
+    height: 14px;
+    opacity: 0.7;
+}
+
+.copyButton {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.copyButton:hover {
+    color: white;
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.cardBody {
+    padding: 1.5rem;
+}
+
+/* Article Styling - Clean Content View */
+.articlePreview {
+    color: #334155;
+    /* Dark gray for white background */
+    line-height: 1.6;
+    font-size: 0.9375rem;
+    background: white;
+    padding: 2.5rem;
+    border-radius: 4px;
+}
+
+.articlePreview h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 1.25rem;
+    border: none;
+    -webkit-text-fill-color: initial;
+    background: none;
+}
+
+.articlePreview h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-top: 2rem;
+    margin-bottom: 0.75rem;
+    border: none;
+}
+
+.articlePreview p {
+    margin-bottom: 1rem;
+    color: #334155;
+}
+
+/* Technical Details */
+.schemaCode {
+    background: #0f172a;
+    padding: 1rem;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: #94a3b8;
+    line-height: 1.5;
+    overflow-x: auto;
+}
+
+/* Grid for smaller data */
+.metaGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+/* Sidebar Styling - Compact */
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    position: sticky;
+    top: 1.25rem;
+}
+
+.sidebarCard {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.25rem;
+}
+
+.sidebarTitle {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: var(--color-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 1rem;
+}
+
+.metaField {
+    margin-bottom: 1rem;
+}
+
+.metaLabel {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+    margin-bottom: 0.25rem;
+}
+
+.metaValue {
+    font-size: 0.8125rem;
+    color: white;
+    line-height: 1.4;
+}
+
+.imageBox {
+    width: 100%;
+    aspect-ratio: 16/10;
+    border-radius: 4px;
+    background-color: #0f172a;
+    background-size: cover;
+    background-position: center;
+    border: 1px solid var(--color-border);
+}
+
+.actionStack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.actionStack .btn {
+    font-size: 0.8125rem;
+    padding: 0.5rem;
+}
+
+/* Responsive */
+@media (max-width: 1280px) {
+    .resultLayout {
+        grid-template-columns: 1fr 300px;
+        gap: 1.5rem;
+    }
+}
+
+@media (max-width: 1024px) {
+    .resultLayout {
+        grid-template-columns: 1fr;
+    }
+
+    .sidebar {
+        position: relative;
+        top: 0;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .container {
+        padding: 1rem;
+    }
+
+    .sidebar {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ================================
+   TABS SYSTEM
+   ================================ */
+
+.tabsContainer {
+    display: flex;
+    gap: 0.5rem;
+    margin: 1.5rem 0 2rem 0;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 0;
+}
+
+.tabButton {
+    background: transparent;
+    border: none;
+    padding: 0.875rem 1.5rem;
+    color: var(--color-text-tertiary);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    position: relative;
+    top: 1px;
+}
+
+.tabButton:hover {
+    color: white;
+}
+
+.tabButton.active {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+}
+
+.fullWidth {
+    max-width: 1600px;
+}
+
+.animate-fadeIn {
+    animation: fadeIn 0.4s ease-out forwards;
+}

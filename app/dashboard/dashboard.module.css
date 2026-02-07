@@ -7,7 +7,7 @@
 
 /* Sidebar */
 .sidebar {
-    width: 280px;
+    width: 260px;
     background: var(--color-surface);
     border-right: 1px solid var(--color-border);
     display: flex;
@@ -19,12 +19,12 @@
 }
 
 .sidebarHeader {
-    padding: 1.5rem;
+    padding: 1.25rem 1.5rem;
     border-bottom: 1px solid var(--color-border);
 }
 
 .logo {
-    font-size: 1.5rem;
+    font-size: 1.375rem;
     font-weight: 700;
     background: var(--gradient-primary);
     -webkit-background-clip: text;
@@ -41,14 +41,14 @@
 
 .nav {
     flex: 1;
-    padding: 1rem 0;
+    padding: 0.75rem 0;
 }
 
 .navLink {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.875rem 1.5rem;
+    padding: 0.75rem 1.5rem;
     color: var(--color-text-secondary);
     font-size: 0.9375rem;
     font-weight: 500;
@@ -95,8 +95,8 @@
 }
 
 .userAvatar {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     background: var(--gradient-primary);
     color: white;
@@ -104,7 +104,7 @@
     align-items: center;
     justify-content: center;
     font-weight: 600;
-    font-size: 1.125rem;
+    font-size: 1rem;
 }
 
 .userDetails {
@@ -140,7 +140,8 @@
 .header {
     background: var(--color-surface);
     border-bottom: 1px solid var(--color-border);
-    padding: 1.5rem 2rem;
+    padding: 0.75rem 1.5rem;
+    /* Reduced padding */
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -154,8 +155,10 @@
 }
 
 .pageTitle {
-    font-size: 1.75rem;
-    font-weight: 700;
+    font-size: 1.125rem;
+    /* Reduced from 1.5rem */
+    font-weight: 600;
+    /* Reduced from 700 */
     color: var(--color-text-primary);
     margin: 0;
 }
@@ -168,8 +171,68 @@
 
 .content {
     flex: 1;
-    padding: 2rem;
+    padding: 1.5rem;
+    /* Reduced from 2rem */
     overflow-y: auto;
+}
+
+/* Menu Burger (Mobile Only) */
+.menuBurger {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--color-text-primary);
+    cursor: pointer;
+    padding: 0.5rem;
+    margin-right: 0.75rem;
+    border-radius: var(--radius-md);
+    transition: background-color var(--transition-fast);
+}
+
+.menuBurger:hover {
+    background-color: rgba(99, 102, 241, 0.1);
+}
+
+.menuBurger:active {
+    transform: scale(0.95);
+}
+
+/* Close Sidebar Button (Mobile Only) */
+.closeSidebar {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+}
+
+.closeSidebar:hover {
+    background-color: rgba(99, 102, 241, 0.1);
+    color: var(--color-text-primary);
+}
+
+/* Mobile Overlay */
+.overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: calc(var(--z-modal) - 1);
+    backdrop-filter: blur(2px);
+    animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 /* Responsive Design */
@@ -189,26 +252,71 @@
 }
 
 @media (max-width: 768px) {
+    .menuBurger {
+        display: flex;
+    }
+
+    .closeSidebar {
+        display: flex;
+        position: absolute;
+        right: 1rem;
+        top: 1.25rem;
+    }
+
+    .overlay {
+        display: block;
+    }
+
+    .sidebarHeader {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: relative;
+    }
+
     .sidebar {
         position: fixed;
         left: -280px;
+        top: 0;
+        bottom: 0;
+        width: 280px;
         z-index: var(--z-modal);
-        transition: left var(--transition-base);
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
     }
 
-    .sidebar.open {
+    .sidebarOpen {
         left: 0;
     }
 
+    .headerLeft {
+        display: flex;
+        align-items: center;
+    }
+
     .content {
-        padding: 1.5rem;
+        padding: 1rem;
     }
 
     .header {
-        padding: 1rem 1.5rem;
+        padding: 0.75rem 1rem;
     }
 
     .pageTitle {
-        font-size: 1.5rem;
+        font-size: 1.125rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .content {
+        padding: 0.75rem;
+    }
+
+    .pageTitle {
+        font-size: 1rem;
+    }
+
+    .headerRight button {
+        padding: 0.5rem;
     }
 }

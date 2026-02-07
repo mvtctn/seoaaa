@@ -1,0 +1,89 @@
+.keywordsInput {
+    width: 100%;
+    min-height: 200px;
+    padding: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-background);
+    color: var(--color-text-primary);
+    font-family: monospace;
+    line-height: 1.5;
+    resize: vertical;
+}
+
+.keywordsInput:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.1);
+}
+
+.progressContainer {
+    margin-top: 2rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    overflow: hidden;
+}
+
+.progressHeader {
+    padding: 1rem;
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--color-background-soft);
+}
+
+.progressList {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.progressItem {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.progressItem:last-child {
+    border-bottom: none;
+}
+
+.statusIcon {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--color-surface);
+    font-size: 12px;
+}
+
+.statusPending {
+    color: var(--color-text-tertiary);
+    background: var(--color-surface-hover);
+}
+
+.statusProcessing {
+    color: var(--color-primary);
+    animation: spin 2s linear infinite;
+}
+
+.statusSuccess {
+    color: #22c55e;
+    background: rgba(34, 197, 94, 0.1);
+}
+
+.statusError {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

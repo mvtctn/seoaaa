@@ -1,8 +1,8 @@
-// Direct REST API implementation for Gemini AI
-// Using Gemini 2.0 Flash with detailed logging
+// Groq AI Integration
+// https://console.groq.com/
 
-const apiKey = process.env.GEMINI_API_KEY || ''
-const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models'
+const apiKey = process.env.GROQ_API_KEY || ''
+const BASE_URL = 'https://api.groq.com/openai/v1'
 
 export interface CompetitorData {
     url: string
@@ -13,66 +13,55 @@ export interface CompetitorData {
 }
 
 /**
- * Call Gemini API directly via REST with detailed logging
+ * Call Groq API (OpenAI-compatible)
  */
-async function callGemini(prompt: string, temperature: number = 0.7): Promise<string> {
+async function callGroq(prompt: string, temperature: number = 0.7): Promise<string> {
     if (!apiKey) {
-        console.error('[Gemini] ERROR: No API key found in process.env.GEMINI_API_KEY')
-        throw new Error('Missing Gemini API Key')
+        console.error('[Groq] ERROR: No API key found in process.env.GROQ_API_KEY')
+        throw new Error('Missing Groq API Key')
     }
 
-    // Debug: Check API key format
-    console.log(`[Gemini] API Key loaded: ${apiKey.substring(0, 8)}...${apiKey.substring(apiKey.length - 4)} (length: ${apiKey.length})`)
+    // console.log(`[Groq] API Key loaded: ${apiKey.substring(0, 8)}...`)
 
-    // Try gemini-2.0-flash first (user's confirmed working model)
-    const models = ['gemini-2.0-flash-exp', 'gemini-2.0-flash', 'gemini-1.5-flash']
+    try {
+        const url = `${BASE_URL}/chat/completions`
+        // console.log(`[Groq] Calling: ${url}`)
 
-    for (const model of models) {
-        try {
-            const url = `${BASE_URL}/${model}:generateContent`
-            console.log(`[Gemini] Attempting: ${url}`)
+        // Using llama-3.3-70b-versatile (Latest) as of 2026
+        const model = 'llama-3.3-70b-versatile'
 
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-goog-api-key': apiKey.trim() // Trim any whitespace
-                },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [{ text: prompt }]
-                    }],
-                    generationConfig: {
-                        temperature,
-                        maxOutputTokens: 8192
-                    }
-                })
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey.trim()}`
+            },
+            body: JSON.stringify({
+                model: model,
+                messages: [{
+                    role: 'user',
+                    content: prompt
+                }],
+                temperature,
+                max_tokens: 8000
             })
+        })
 
-            console.log(`[Gemini] ${model} response: ${response.status} ${response.statusText}`)
-
-            if (response.ok) {
-                const data = await response.json()
-                console.log(`[Gemini] ✓ Success with ${model}`)
-                return data.candidates[0].content.parts[0].text
-            }
-
-            // Log error details
-            const errorText = await response.text()
-            console.error(`[Gemini] ${model} failed:`, errorText.substring(0, 500))
-
-            // If 404, try next model
-            if (response.status === 404) {
-                console.log(`[Gemini] ${model} not found, trying next...`)
-                continue
-            }
-
-        } catch (e) {
-            console.error(`[Gemini] Exception calling ${model}:`, e)
+        if (response.ok) {
+            const data = await response.json()
+            // console.log(`[Groq] ✓ Success`)
+            return data.choices[0].message.content
         }
-    }
 
-    throw new Error('All Gemini models failed. Check API key or quota.')
+        // Error handling
+        const errorText = await response.text()
+        console.error(`[Groq] API Error:`, errorText.substring(0, 500))
+        throw new Error(`Groq API Error: ${response.status} - ${errorText}`)
+
+    } catch (e) {
+        console.error(`[Groq] Exception:`, e)
+        throw e
+    }
 }
 
 /**
@@ -114,10 +103,10 @@ export async function analyzeCompetitors(
   `
 
     try {
-        const text = await callGemini(prompt, 0.5)
+        const text = await callGroq(prompt, 0.5)
         return JSON.parse(cleanJsonString(text))
     } catch (error) {
-        console.error('Gemini Analysis Error:', error)
+        console.error('Groq Analysis Error:', error)
         return mockAnalysis()
     }
 }
@@ -147,7 +136,7 @@ export async function generateContentStrategy(
   `
 
     try {
-        return await callGemini(prompt, 0.7)
+        return await callGroq(prompt, 0.7)
     } catch (error) {
         console.error('Strategy Error:', error)
         return "Failed to generate strategy."
@@ -155,7 +144,7 @@ export async function generateContentStrategy(
 }
 
 /**
- * Generate full article content using Gemini
+ * Generate full article content using Groq
  */
 export async function generateArticle(params: {
     keyword: string
@@ -189,13 +178,27 @@ export async function generateArticle(params: {
   3. Make it engaging, easy to read, and comprehensive.
   4. Naturally weave in the provided internal links where appropriate (use [text](url)).
   5. Optimize for SEO but write for humans first.
-  6. Do NOT include any preamble or "Here is the article" text. Start directly with the H1 Title.
+  6. Structure your response EXACTLY as follows:
 
-  WRITE THE FULL ARTICLE NOW.
+  [ARTICLE]
+  (Start with H1 Title and full article content here)
+
+  [SUMMARY]
+  (Write a 2-3 sentence summary of the article here)
+
+  [META]
+  Meta Title: (Best SEO Title)
+  Meta Description: (Compelling Meta Description under 160 chars)
+  URL Slug: (SEO friendly slug)
+
+  [SCHEMA]
+  (Insert valid JSON-LD schema wrapped in \`\`\`json ... \`\`\` here)
+
+  Do NOT include any preamble or "Here is your article" text.
   `
 
     try {
-        return await callGemini(prompt, 0.8)
+        return await callGroq(prompt, 0.7)
     } catch (error) {
         console.error('Article Generation Error:', error)
         return `# Error Generating Content\n\n${error instanceof Error ? error.message : 'Unknown error'}`
@@ -210,7 +213,7 @@ export async function generateMetaTitle(title: string, keyword: string) {
   Keep under 60 characters. Return only the best one.`
 
     try {
-        const text = await callGemini(prompt, 0.5)
+        const text = await callGroq(prompt, 0.5)
         return text.trim().replace(/^"|"$/g, '')
     } catch (e) {
         return title
@@ -226,10 +229,49 @@ export async function generateMetaDescription(title: string, keyword: string, co
   Keep under 160 characters. Return only the description.`
 
     try {
-        const text = await callGemini(prompt, 0.5)
+        const text = await callGroq(prompt, 0.5)
         return text.trim().replace(/^"|"$/g, '')
     } catch (e) {
         return `Comprehensive guide about ${keyword}.`
+    }
+}
+
+/**
+ * Analyze article readability and quality
+ */
+export async function analyzeReadability(content: string) {
+    const prompt = `
+  Analyze the readability and quality of the following Vietnamese article content.
+  
+  Content:
+  ${content.substring(0, 5000)}
+
+  Evaluate based on:
+  1. Score (0-100).
+  2. Tone of voice (Friendly, Formal, etc.).
+  3. Reading level (Basic, Intermediate, Advanced).
+  4. 3 specific suggestions for improvement.
+
+  Return ONLY valid JSON directly without markdown formatting:
+  {
+    "score": number,
+    "tone": "string",
+    "level": "string",
+    "suggestions": ["string"]
+  }
+  `
+
+    try {
+        const text = await callGroq(prompt, 0.3)
+        return JSON.parse(cleanJsonString(text))
+    } catch (error) {
+        console.error('Readability Error:', error)
+        return {
+            score: 70,
+            tone: "N/A",
+            level: "N/A",
+            suggestions: ["Không thể phân tích độ dễ đọc vào lúc này."]
+        }
     }
 }
 

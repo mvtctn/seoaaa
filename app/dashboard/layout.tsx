@@ -1,19 +1,70 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import styles from './dashboard.module.css'
+
+const PAGE_TITLES: { [key: string]: string } = {
+    '/dashboard': 'Dashboard',
+    '/dashboard/generate': 'Tạo Nội Dung',
+    '/dashboard/batch': 'Xử Lý Hàng Loạt',
+    '/dashboard/articles': 'Thư Viện Nội Dung',
+    '/dashboard/rewrite': 'Viết Lại Nội Dung',
+    '/dashboard/brand': 'Cài Đặt Thương Hiệu',
+}
 
 export default function DashboardLayout({
     children,
 }: {
     children: React.ReactNode
 }) {
+    const pathname = usePathname()
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+    const [pageTitle, setPageTitle] = useState('Dashboard')
+
+    useEffect(() => {
+        // Find matching title
+        let title = 'Dashboard'
+        for (const [path, name] of Object.entries(PAGE_TITLES)) {
+            if (pathname === path || pathname?.startsWith(path + '/')) {
+                title = name
+                break
+            }
+        }
+        setPageTitle(title)
+
+        // Close sidebar on route change (mobile)
+        setIsSidebarOpen(false)
+    }, [pathname])
+
+    const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen)
+
     return (
         <div className={styles.dashboardContainer}>
+            {/* Mobile Overlay */}
+            {isSidebarOpen && (
+                <div
+                    className={styles.overlay}
+                    onClick={() => setIsSidebarOpen(false)}
+                />
+            )}
+
             {/* Sidebar */}
-            <aside className={styles.sidebar}>
+            <aside className={`${styles.sidebar} ${isSidebarOpen ? styles.sidebarOpen : ''}`}>
                 <div className={styles.sidebarHeader}>
                     <Link href="/">
                         <h2 className={styles.logo}>SEO Engine</h2>
                     </Link>
+                    <button
+                        className={styles.closeSidebar}
+                        onClick={() => setIsSidebarOpen(false)}
+                        aria-label="Close menu"
+                    >
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M18 6L6 18M6 6l12 12" />
+                        </svg>
+                    </button>
                 </div>
 
                 <nav className={styles.nav}>
@@ -42,7 +93,7 @@ export default function DashboardLayout({
                         <span>Xử Lý Hàng Loạt</span>
                     </Link>
 
-                    <Link href="/dashboard/content" className={styles.navLink}>
+                    <Link href="/dashboard/articles" className={styles.navLink}>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                             <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
@@ -82,7 +133,16 @@ export default function DashboardLayout({
             <main className={styles.mainContent}>
                 <header className={styles.header}>
                     <div className={styles.headerLeft}>
-                        <h1 className={styles.pageTitle}>Dashboard</h1>
+                        <button
+                            className={styles.menuBurger}
+                            onClick={toggleSidebar}
+                            aria-label="Toggle menu"
+                        >
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M3 12h18M3 6h18M3 18h18" />
+                            </svg>
+                        </button>
+                        <h1 className={styles.pageTitle}>{pageTitle}</h1>
                     </div>
 
                     <div className={styles.headerRight}>
