@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -10,15 +11,19 @@ interface InternalLink {
 }
 
 interface BrandSettings {
+    id?: number
     name: string
     core_values: string[]
     tone_of_voice: {
         id: string
         name: string
         description: string
+        icon?: string
     }
     article_template: string
     internal_links: InternalLink[]
+    is_default: boolean
+    created_at?: string
 }
 
 const TONE_OPTIONS = [
@@ -30,16 +35,7 @@ const TONE_OPTIONS = [
     { id: 'storyteller', name: 'Kể Chuyện', icon: '📖', description: 'Dẫn dắt cảm xúc, tường thuật' },
 ]
 
-export default function BrandSetupPage() {
-    const [loading, setLoading] = useState(false)
-    const [saving, setSaving] = useState(false)
-    const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
-
-    const [settings, setSettings] = useState<BrandSettings>({
-        name: '',
-        core_values: [],
-        tone_of_voice: TONE_OPTIONS[0],
-        article_template: `# {{title}}
+const DEFAULT_TEMPLATE = `# {{title}}
 
 ## Giới Thiệu
 {{intro}}
@@ -47,301 +43,366 @@ export default function BrandSetupPage() {
 ## {{main_content}}
 
 ## Kết Luận
-{{conclusion}}`,
-        internal_links: []
-    })
+{{conclusion}}`
 
-    // New value states
-    const [newValue, setNewValue] = useState('')
+export default function BrandManagementPage() {
+    const [loading, setLoading] = useState(true)
+    const [saving, setSaving] = useState(false)
+    const [brands, setBrands] = useState<BrandSettings[]>([])
+    const [showModal, setShowModal] = useState(false)
+    const [selectedBrand, setSelectedBrand] = useState<BrandSettings | null>(null)
+    const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+
+    // Form Temporary State
+    const [newTag, setNewTag] = useState('')
     const [newLink, setNewLink] = useState({ text: '', url: '', keywords: '' })
 
     useEffect(() => {
-        fetchBrandSettings()
+        fetchBrands()
     }, [])
 
-    const fetchBrandSettings = async () => {
+    const fetchBrands = async () => {
         try {
             setLoading(true)
             const res = await fetch('/api/brand')
             const data = await res.json()
-
-            if (data.brand) {
-                setSettings({
-                    name: data.brand.name || '',
-                    core_values: data.brand.core_values || [],
-                    tone_of_voice: data.brand.tone_of_voice || TONE_OPTIONS[0],
-                    article_template: data.brand.article_template || '',
-                    internal_links: data.brand.internal_links || []
-                })
+            if (data.brands) {
+                setBrands(data.brands)
             }
         } catch (error) {
-            console.error('Failed to load settings', error)
-            setMessage({ type: 'error', text: 'Không thể tải cài đặt thương hiệu.' })
+            console.error('Failed to load brands', error)
         } finally {
             setLoading(false)
         }
     }
 
+    const openCreateModal = () => {
+        setSelectedBrand({
+            name: '',
+            core_values: [],
+            tone_of_voice: TONE_OPTIONS[0],
+            article_template: DEFAULT_TEMPLATE,
+            internal_links: [],
+            is_default: false
+        })
+        setShowModal(true)
+    }
+
+    const openEditModal = (brand: BrandSettings) => {
+        setSelectedBrand({ ...brand })
+        setShowModal(true)
+    }
+
     const handleSave = async () => {
+        if (!selectedBrand) return
+        if (!selectedBrand.name.trim()) {
+            alert('Vui lòng nhập tên thương hiệu')
+            return
+        }
+
         try {
             setSaving(true)
-            setMessage(null)
-
             const res = await fetch('/api/brand', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(settings)
+                body: JSON.stringify(selectedBrand)
             })
 
+            const data = await res.json()
+
             if (res.ok) {
-                setMessage({ type: 'success', text: 'Đã lưu cài đặt thương hiệu thành công!' })
-                // Clear message after 3 seconds
+                setMessage({ type: 'success', text: selectedBrand.id ? 'Đã cập nhật thương hiệu' : 'Đã tạo thương hiệu mới' })
+                await fetchBrands()
+                setShowModal(false)
                 setTimeout(() => setMessage(null), 3000)
             } else {
-                throw new Error('Failed to save')
+                throw new Error(data.error || 'Failed to save')
             }
-        } catch (error) {
-            setMessage({ type: 'error', text: 'Có lỗi xảy ra khi lưu cài đặt.' })
+        } catch (error: any) {
+            alert('Lỗi: ' + error.message)
         } finally {
             setSaving(false)
         }
     }
 
-    const addCoreValue = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && newValue.trim()) {
-            e.preventDefault()
-            if (!settings.core_values.includes(newValue.trim())) {
-                setSettings(prev => ({
-                    ...prev,
-                    core_values: [...prev.core_values, newValue.trim()]
-                }))
+    const handleDelete = async (id: number) => {
+        if (!confirm('Bạn có chắc muốn xóa thương hiệu này?')) return
+        try {
+            const res = await fetch(`/api/brand?id=${id}`, { method: 'DELETE' })
+            if (res.ok) {
+                await fetchBrands()
+                setShowModal(false)
             }
-            setNewValue('')
+        } catch (error) {
+            alert('Lỗi khi xóa')
         }
     }
 
-    const removeCoreValue = (value: string) => {
-        setSettings(prev => ({
-            ...prev,
-            core_values: prev.core_values.filter(v => v !== value)
-        }))
+    const handleSetDefault = async (id: number) => {
+        try {
+            const res = await fetch(`/api/brand?id=${id}&action=set_default`, { method: 'PATCH' })
+            if (res.ok) {
+                await fetchBrands()
+            }
+        } catch (error) {
+            console.error('Set default failed', error)
+        }
     }
 
-    const addInternalLink = () => {
-        if (newLink.text && newLink.url) {
-            const keywords = newLink.keywords
-                ? newLink.keywords.split(',').map(k => k.trim())
-                : [newLink.text]
+    const updateSelected = (data: Partial<BrandSettings>) => {
+        if (selectedBrand) {
+            setSelectedBrand({ ...selectedBrand, ...data })
+        }
+    }
 
-            setSettings(prev => ({
-                ...prev,
-                internal_links: [...prev.internal_links, {
-                    text: newLink.text,
-                    url: newLink.url,
-                    keywords
-                }]
-            }))
+    // Tag and Link Helpers
+    const addTag = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && newTag.trim() && selectedBrand) {
+            e.preventDefault()
+            if (!selectedBrand.core_values.includes(newTag.trim())) {
+                updateSelected({ core_values: [...selectedBrand.core_values, newTag.trim()] })
+            }
+            setNewTag('')
+        }
+    }
+
+    const removeTag = (tag: string) => {
+        if (selectedBrand) {
+            updateSelected({ core_values: selectedBrand.core_values.filter(t => t !== tag) })
+        }
+    }
+
+    const addLink = () => {
+        if (newLink.text && newLink.url && selectedBrand) {
+            const kw = newLink.keywords ? newLink.keywords.split(',').map(s => s.trim()) : [newLink.text]
+            updateSelected({
+                internal_links: [...selectedBrand.internal_links, { text: newLink.text, url: newLink.url, keywords: kw }]
+            })
             setNewLink({ text: '', url: '', keywords: '' })
         }
     }
 
-    const removeInternalLink = (index: number) => {
-        setSettings(prev => ({
-            ...prev,
-            internal_links: prev.internal_links.filter((_, i) => i !== index)
-        }))
+    const removeLink = (idx: number) => {
+        if (selectedBrand) {
+            updateSelected({ internal_links: selectedBrand.internal_links.filter((_, i) => i !== idx) })
+        }
     }
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center h-64">
-                <div className="spinner spinner-lg"></div>
-            </div>
-        )
+    if (loading && brands.length === 0) {
+        return <div className="flex items-center justify-center p-20"><div className="spinner spinner-lg"></div></div>
     }
 
     return (
         <div className={styles.container}>
-            <header className={styles.header}>
-                <h2>Cài Đặt Thương Hiệu</h2>
-                <p className="text-secondary">Định nghĩa giọng điệu và phong cách để AI viết nội dung đúng ý bạn.</p>
-            </header>
+            <div className={styles.brandHeader}>
+                <div>
+                    <h2>Quản Lý Thương Hiệu</h2>
+                    <p className="text-secondary text-sm">Quản lý các profile thương hiệu và cấu hình SEO cho AI.</p>
+                </div>
+                <button className="btn btn-primary" onClick={openCreateModal}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '0.5rem' }}>
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Tạo Thương Hiệu
+                </button>
+            </div>
 
             {message && (
-                <div className={`${styles.message} ${message.type === 'success' ? styles.success : styles.error}`}>
-                    {message.type === 'success' ? '✅' : '❌'} {message.text}
+                <div className={`${styles.message} ${message.type === 'success' ? styles.success : styles.error}`} style={{ marginBottom: '1.5rem' }}>
+                    {message.text}
                 </div>
             )}
 
-            {/* Basic Info */}
-            <section className={styles.section}>
-                <div className={styles.sectionTitle}>
-                    <div className={styles.sectionIcon}>🏢</div>
-                    Thông Tin Cơ Bản
-                </div>
-
-                <div className="form-group">
-                    <label className="form-label form-label-required">Tên Thương Hiệu</label>
-                    <input
-                        type="text"
-                        className="form-input"
-                        value={settings.name}
-                        onChange={(e) => setSettings({ ...settings, name: e.target.value })}
-                        placeholder="VD: SeoAAA, VinFast, ..."
-                    />
-                </div>
-
-                <div className="form-group">
-                    <label className="form-label">Giá Trị Cốt Lõi (Nhấn Enter để thêm)</label>
-                    <div className={styles.tagInput}>
-                        {settings.core_values.map(val => (
-                            <div key={val} className={styles.tag}>
-                                {val}
-                                <span className={styles.removeTag} onClick={() => removeCoreValue(val)}>×</span>
-                            </div>
-                        ))}
-                        <input
-                            type="text"
-                            className={styles.inputGhost}
-                            value={newValue}
-                            onChange={(e) => setNewValue(e.target.value)}
-                            onKeyDown={addCoreValue}
-                            placeholder="VD: Sáng tạo, Tin cậy..."
-                        />
-                    </div>
-                    <p className="form-hint">Những giá trị này sẽ giúp AI hiểu hơn về văn hóa doanh nghiệp của bạn.</p>
-                </div>
-            </section>
-
-            {/* Tone of Voice */}
-            <section className={styles.section}>
-                <div className={styles.sectionTitle}>
-                    <div className={styles.sectionIcon}>🗣️</div>
-                    Giọng Điệu & Phong Cách
-                </div>
-
-                <div className={styles.toneGrid}>
-                    {TONE_OPTIONS.map(tone => (
-                        <div
-                            key={tone.id}
-                            className={`${styles.toneCard} ${settings.tone_of_voice.id === tone.id ? styles.active : ''}`}
-                            onClick={() => setSettings({ ...settings, tone_of_voice: tone })}
-                        >
-                            <div className={styles.toneIcon}>{tone.icon}</div>
-                            <div className={styles.toneName}>{tone.name}</div>
-                        </div>
-                    ))}
-                </div>
-                <p className="form-hint mt-3">Mô tả: {settings.tone_of_voice.description}</p>
-            </section>
-
-            {/* Internal Links */}
-            <section className={styles.section}>
-                <div className={styles.sectionTitle}>
-                    <div className={styles.sectionIcon}>🔗</div>
-                    Chiến Lược Internal Linking
-                </div>
-
-                <p className="text-sm text-secondary mb-4">
-                    Thêm các bài viết quan trọng. AI sẽ tự động chèn liên kết khi gặp từ khóa phù hợp.
-                </p>
-
-                <div className="form-group">
-                    <div className={styles.linkRow}>
-                        <input
-                            className="form-input"
-                            placeholder="Anchor Text (VD: Dịch vụ SEO)"
-                            value={newLink.text}
-                            onChange={e => setNewLink({ ...newLink, text: e.target.value })}
-                        />
-                        <input
-                            className="form-input"
-                            placeholder="URL (VD: /dich-vu-seo)"
-                            value={newLink.url}
-                            onChange={e => setNewLink({ ...newLink, url: e.target.value })}
-                        />
-                        <button className="btn btn-secondary" onClick={addInternalLink}>Thêm</button>
-                    </div>
-
-                    <input
-                        className="form-input mb-3"
-                        placeholder="Từ khóa kích hoạt (phân cách bằng dấu phẩy). Để trống sẽ dùng Anchor Text."
-                        value={newLink.keywords}
-                        onChange={e => setNewLink({ ...newLink, keywords: e.target.value })}
-                    />
-
-                    <div className="flex flex-col gap-2 mt-4">
-                        {settings.internal_links.map((link, idx) => (
-                            <div key={idx} className="flex items-center justify-between p-3 border border-[var(--color-border)] rounded-lg bg-[var(--color-background)]">
-                                <div>
-                                    <div className="font-medium text-primary">{link.text}</div>
-                                    <div className="text-xs text-secondary">{link.url}</div>
-                                    <div className="text-xs text-tertiary mt-1">Keywords: {link.keywords.join(', ')}</div>
-                                </div>
-                                <button
-                                    className="btn btn-icon btn-ghost text-danger"
-                                    onClick={() => removeInternalLink(idx)}
-                                >
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                                    </svg>
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* Article Template */}
-            <section className={styles.section}>
-                <div className={styles.sectionTitle}>
-                    <div className={styles.sectionIcon}>📝</div>
-                    Mẫu Bài Viết (Markdown)
-                </div>
-
-                <div className="form-group">
-                    <textarea
-                        className="form-textarea font-mono text-sm h-64"
-                        value={settings.article_template}
-                        onChange={(e) => setSettings({ ...settings, article_template: e.target.value })}
-                        placeholder="# {{title}}..."
-                    ></textarea>
-                    <div className="flex gap-2 mt-2 text-xs text-secondary">
-                        <span>Variables:</span>
-                        <code className="bg-[var(--color-surface-hover)] px-1 rounded">{`{{title}}`}</code>
-                        <code className="bg-[var(--color-surface-hover)] px-1 rounded">{`{{intro}}`}</code>
-                        <code className="bg-[var(--color-surface-hover)] px-1 rounded">{`{{main_content}}`}</code>
-                        <code className="bg-[var(--color-surface-hover)] px-1 rounded">{`{{conclusion}}`}</code>
-                    </div>
-                </div>
-            </section>
-
-            {/* Sticky Actions */}
-            <div className={styles.actions}>
-                <button className="btn btn-ghost" onClick={fetchBrandSettings}>Hủy Bỏ</button>
-                <button
-                    className="btn btn-primary"
-                    onClick={handleSave}
-                    disabled={saving}
-                >
-                    {saving ? (
-                        <>
-                            <div className="spinner spinner-sm border-white"></div>
-                            Đang Lưu...
-                        </>
-                    ) : (
-                        <>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                                <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                                <polyline points="7 3 7 8 15 8"></polyline>
-                            </svg>
-                            Lưu Cài Đặt
-                        </>
-                    )}
-                </button>
+            {/* Brands Table */}
+            <div className={styles.tableContainer}>
+                <table className={styles.brandTable}>
+                    <thead>
+                        <tr>
+                            <th>Thương Hiệu</th>
+                            <th>Giọng Điệu</th>
+                            <th>Dữ Liệu</th>
+                            <th>Trạng Thái</th>
+                            <th style={{ textAlign: 'right' }}>Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {brands.length === 0 ? (
+                            <tr>
+                                <td colSpan={5} className="text-center py-20 opacity-50">
+                                    Chưa có thương hiệu nào. Hãy tạo mới ngay!
+                                </td>
+                            </tr>
+                        ) : (
+                            brands.map(brand => (
+                                <tr key={brand.id}>
+                                    <td>
+                                        <div className={styles.brandCell}>
+                                            <span className={styles.brandName}>{brand.name}</span>
+                                            <span className="text-[10px] text-tertiary">ID: {brand.id}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div className={styles.toneBadge}>
+                                            <span>{brand.tone_of_voice.icon || '🗣️'}</span>
+                                            <span>{brand.tone_of_voice.name}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div className="text-xs text-secondary">
+                                            {brand.core_values.length} Giá trị • {brand.internal_links.length} Internal Links
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div className="flex items-center gap-3">
+                                            <button
+                                                className={`${styles.starBtn} ${brand.is_default ? styles.starActive : ''}`}
+                                                onClick={() => !brand.is_default && handleSetDefault(brand.id!)}
+                                                title={brand.is_default ? "Đang là mặc định cho AI" : "Đặt làm mặc định cho AI"}
+                                            >
+                                                {brand.is_default ? '★' : '☆'}
+                                            </button>
+                                            {brand.is_default && (
+                                                <div className={styles.activeAiBadge}>
+                                                    <span>AI SELECTED</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td style={{ textAlign: 'right' }}>
+                                        <div className="flex justify-end gap-2">
+                                            <button className="btn btn-sm btn-ghost" onClick={() => openEditModal(brand)}>Chi Tiết</button>
+                                            <button className="btn btn-sm btn-ghost text-danger" onClick={() => handleDelete(brand.id!)}>Xóa</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
             </div>
+
+            {/* Edit/Create Modal */}
+            {showModal && selectedBrand && (
+                <div className={styles.modalOverlay} onClick={() => setShowModal(false)}>
+                    <div className={styles.modal} onClick={e => e.stopPropagation()}>
+                        <div className={styles.modalHeader}>
+                            <h3 className={styles.modalTitle}>
+                                {selectedBrand.id ? 'Chỉnh Sửa Thương Hiệu' : 'Tạo Thương Hiệu Mới'}
+                            </h3>
+                            <button className={styles.closeBtn} onClick={() => setShowModal(false)}>&times;</button>
+                        </div>
+
+                        <div className={styles.modalBody}>
+                            {/* Basic Info */}
+                            <div className={styles.brandFormSection}>
+                                <div className={styles.sectionTitle}>🏢 Thông Tin Cơ Bản</div>
+                                <div className="form-group mb-4">
+                                    <label className="form-label form-label-required">Tên Thương Hiệu</label>
+                                    <input
+                                        type="text"
+                                        className="form-input"
+                                        value={selectedBrand.name}
+                                        onChange={e => updateSelected({ name: e.target.value })}
+                                        placeholder="Ví dụ: SeoAAA, VinFast, Samsung..."
+                                    />
+                                </div>
+                                <label className={styles.defaultCheckbox}>
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedBrand.is_default}
+                                        onChange={e => updateSelected({ is_default: e.target.checked })}
+                                    />
+                                    <span>Sử dụng làm thương hiệu mặc định cho toàn hệ thống AI</span>
+                                </label>
+                            </div>
+
+                            {/* Core Values */}
+                            <div className={styles.brandFormSection}>
+                                <div className={styles.sectionTitle}>💎 Bản Sắc & Giá Trị</div>
+                                <p className="text-xs text-tertiary mb-3">Thêm các từ khóa về giá trị cốt lõi (Nhấn Enter để thêm).</p>
+                                <div className={styles.tagInput}>
+                                    {selectedBrand.core_values.map(val => (
+                                        <div key={val} className={styles.tag}>
+                                            {val}
+                                            <span className={styles.removeTag} onClick={() => removeTag(val)}>×</span>
+                                        </div>
+                                    ))}
+                                    <input
+                                        type="text"
+                                        className={styles.inputGhost}
+                                        value={newTag}
+                                        onChange={e => setNewTag(e.target.value)}
+                                        onKeyDown={addTag}
+                                        placeholder="Thêm giá trị..."
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Tone grid */}
+                            <div className={styles.brandFormSection}>
+                                <div className={styles.sectionTitle}>🗣️ Phông Văn & Giọng Điệu</div>
+                                <div className={styles.toneGrid}>
+                                    {TONE_OPTIONS.map(tone => (
+                                        <div
+                                            key={tone.id}
+                                            className={`${styles.toneCard} ${selectedBrand.tone_of_voice.id === tone.id ? styles.active : ''}`}
+                                            onClick={() => updateSelected({ tone_of_voice: tone })}
+                                        >
+                                            <div className={styles.toneIcon}>{tone.icon}</div>
+                                            <div className={styles.toneName}>{tone.name}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <p className="text-[10px] text-tertiary mt-3 italic">Mô tả: {selectedBrand.tone_of_voice.description}</p>
+                            </div>
+
+                            {/* Internal Links */}
+                            <div className={styles.brandFormSection}>
+                                <div className={styles.sectionTitle}>🔗 Internal Links (Tự động chèn)</div>
+                                <div className="grid grid-cols-2 gap-3 mb-4">
+                                    <input className="form-input text-sm" placeholder="Anchor Text" value={newLink.text} onChange={e => setNewLink({ ...newLink, text: e.target.value })} />
+                                    <input className="form-input text-sm" placeholder="URL (/dich-vu-seo)" value={newLink.url} onChange={e => setNewLink({ ...newLink, url: e.target.value })} />
+                                </div>
+                                <div className="flex gap-2">
+                                    <input className="form-input text-sm flex-1" placeholder="Từ khóa kích hoạt (cách nhau bằng dấu phẩy)" value={newLink.keywords} onChange={e => setNewLink({ ...newLink, keywords: e.target.value })} />
+                                    <button className="btn btn-secondary btn-sm" onClick={addLink}>Thêm Link</button>
+                                </div>
+
+                                <div className="mt-4 flex flex-col gap-2">
+                                    {selectedBrand.internal_links.map((link, idx) => (
+                                        <div key={idx} className="flex items-center justify-between p-3 border border-[var(--color-border)] rounded-lg bg-[rgba(255,255,255,0.02)]">
+                                            <div>
+                                                <div className="text-sm font-semibold text-primary">{link.text}</div>
+                                                <div className="text-[10px] text-tertiary">{link.url} • {link.keywords.join(', ')}</div>
+                                            </div>
+                                            <button className="text-danger" onClick={() => removeLink(idx)}>&times;</button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Template */}
+                            <div className={styles.brandFormSection}>
+                                <div className={styles.sectionTitle}>📝 Cấu Trúc Markdown Mẫu</div>
+                                <textarea
+                                    className="form-textarea font-mono text-xs h-60"
+                                    style={{ background: 'var(--color-background)' }}
+                                    value={selectedBrand.article_template}
+                                    onChange={e => updateSelected({ article_template: e.target.value })}
+                                />
+                            </div>
+                        </div>
+
+                        <div className={styles.modalFooter}>
+                            <button className="btn btn-ghost" onClick={() => setShowModal(false)}>Hủy</button>
+                            <button className="btn btn-primary px-10" onClick={handleSave} disabled={saving}>
+                                {saving ? 'Đang lưu...' : 'Lưu Thay Đổi'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

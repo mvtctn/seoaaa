@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 // Changed from deepseek/groq to gemini
 import { generateArticle, generateMetaTitle, generateMetaDescription } from '@/lib/ai/gemini'
 import { generateSlug, calculateReadingTime } from '@/lib/seo/utils'
-import { createArticle, getAllBrands } from '@/lib/db/database'
+import { createArticle, getDefaultBrand } from '@/lib/db/database'
 
 export const maxDuration = 300 // 5 minutes timeout
 
@@ -16,13 +16,12 @@ export async function POST(req: NextRequest) {
         }
 
         // 1. Get Brand Context
-        const brands = await getAllBrands()
-        const brand = brands.length > 0 ? brands[0] : null
+        const brand = await getDefaultBrand()
 
         const brandContext = brand ? {
             name: brand.name,
             coreValues: brand.core_values ? JSON.parse(brand.core_values as string) : [],
-            toneOfVoice: brand.tone_of_voice ? JSON.parse(brand.tone_of_voice as string) : { description: 'Professional' },
+            toneOfVoice: brand.tone_of_voice ? JSON.parse(brand.tone_of_voice as string).description : 'Professional',
             articleTemplate: brand.article_template || undefined,
             internalLinks: brand.internal_links ? JSON.parse(brand.internal_links as string) : []
         } : undefined

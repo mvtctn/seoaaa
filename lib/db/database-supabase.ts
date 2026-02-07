@@ -17,22 +17,36 @@ export const getAllBrands = async () => {
     return data || []
 }
 
+export const getDefaultBrand = async () => {
+    const { data } = await supabase.from('brands').select('*').eq('is_default', true).maybeSingle()
+    return data
+}
+
 export const createBrand = async (data: {
     name: string
     core_values?: string
     tone_of_voice?: string
     article_template?: string
     internal_links?: string
+    is_default?: boolean
 }): Promise<RunResult> => {
+    if (data.is_default) {
+        await supabase.from('brands').update({ is_default: false }).neq('id', 0)
+    }
+
     const { data: record, error } = await supabase.from('brands').insert([{
         name: data.name,
         core_values: data.core_values ? JSON.parse(data.core_values) : [],
         tone_of_voice: data.tone_of_voice ? JSON.parse(data.tone_of_voice) : {},
         article_template: data.article_template,
-        internal_links: data.internal_links ? JSON.parse(data.internal_links) : []
+        internal_links: data.internal_links ? JSON.parse(data.internal_links) : [],
+        is_default: data.is_default || false
     }]).select().single()
 
-    if (error) throw error
+    if (error) {
+        console.error('[Supabase Brand] Create Error:', error)
+        throw error
+    }
     return { lastInsertRowid: record.id, changes: 1 }
 }
 
@@ -42,14 +56,42 @@ export const updateBrand = async (id: number, data: Partial<{
     tone_of_voice: string
     article_template: string
     internal_links: string
+    is_default: boolean
 }>): Promise<RunResult> => {
-    const updateData: any = { ...data }
-    if (data.core_values) updateData.core_values = JSON.parse(data.core_values)
-    if (data.tone_of_voice) updateData.tone_of_voice = JSON.parse(data.tone_of_voice)
-    if (data.internal_links) updateData.internal_links = JSON.parse(data.internal_links)
-    updateData.updated_at = new Date().toISOString()
+    try {
+        if (data.is_default) {
+            await supabase.from('brands').update({ is_default: false }).neq('id', id)
+        }
 
-    const { error } = await supabase.from('brands').update(updateData).eq('id', id)
+        const updateData: any = { ...data }
+        if (data.core_values) updateData.core_values = JSON.parse(data.core_values)
+        if (data.tone_of_voice) updateData.tone_of_voice = JSON.parse(data.tone_of_voice)
+        if (data.internal_links) updateData.internal_links = JSON.parse(data.internal_links)
+        updateData.updated_at = new Date().toISOString()
+
+        const { error } = await supabase.from('brands').update(updateData).eq('id', id)
+        if (error) {
+            console.error('[Supabase Brand] Update Error:', error)
+            throw error
+        }
+        return { lastInsertRowid: id, changes: 1 }
+    } catch (err: any) {
+        console.error('[Supabase Brand] Logic Error:', err)
+        throw err
+    }
+}
+
+export const setDefaultBrand = async (id: number): Promise<RunResult> => {
+    // Unset all first
+    await supabase.from('brands').update({ is_default: false }).neq('id', id)
+    // Set current as default
+    const { error } = await supabase.from('brands').update({ is_default: true, updated_at: new Date().toISOString() }).eq('id', id)
+    if (error) throw error
+    return { lastInsertRowid: id, changes: 1 }
+}
+
+export const deleteBrand = async (id: number): Promise<RunResult> => {
+    const { error } = await supabase.from('brands').delete().eq('id', id)
     if (error) throw error
     return { lastInsertRowid: id, changes: 1 }
 }
@@ -242,6 +284,29 @@ export const updateBatchJob = async (id: number, data: Partial<{
     const { error } = await supabase.from('batch_jobs').update(updateData).eq('id', id)
     if (error) throw error
     return { lastInsertRowid: id, changes: 1 }
+}
+
+// --- Settings ---
+
+export const getSetting = async (key: string) => {
+    const { data, error } = await supabase.from('app_settings').select('value').eq('key', key).maybeSingle()
+    if (error) {
+        console.warn(`[Supabase Settings] Could not fetch ${key}:`, error.message)
+        return null
+    }
+    return data?.value || null
+}
+
+export const updateSetting = async (key: string, value: any) => {
+    const { error } = await supabase.from('app_settings').upsert({ key, value, updated_at: new Date().toISOString() })
+    if (error) {
+        if (error.code === 'PGRST204' || error.message?.includes('relation "app_settings" does not exist')) {
+            throw new Error('Lỗi: Bảng "app_settings" chưa tồn tại trong Supabase. Vui lòng chạy lệnh SQL khởi tạo bảng trong SQL Editor.')
+        }
+        console.error(`[Supabase Settings] Error updating ${key}:`, error)
+        throw error
+    }
+    return { lastInsertRowid: 0, changes: 1 }
 }
 
 export const createArticleFromRewrite = async (data: {

@@ -20,6 +20,10 @@ interface DBStructure {
   research: any[]
   articles: any[]
   batch_jobs: any[]
+  settings: {
+    default_brand_id?: number
+    [key: string]: any
+  }
 }
 
 // Ensure data directory exists for JSON mode
@@ -35,7 +39,8 @@ if (!USE_SUPABASE) {
       keywords: [],
       research: [],
       articles: [],
-      batch_jobs: []
+      batch_jobs: [],
+      settings: {}
     }
     fs.writeFileSync(DB_PATH, JSON.stringify(initialData, null, 2))
   }
@@ -47,7 +52,7 @@ const readDB = (): DBStructure => {
     const data = fs.readFileSync(DB_PATH, 'utf-8')
     return JSON.parse(data)
   } catch (error) {
-    return { brands: [], keywords: [], research: [], articles: [], batch_jobs: [] }
+    return { brands: [], keywords: [], research: [], articles: [], batch_jobs: [], settings: {} }
   }
 }
 
@@ -76,12 +81,19 @@ export const getAllBrands = async () => {
   return db.brands
 }
 
+export const getDefaultBrand = async () => {
+  if (USE_SUPABASE) return supabaseFunctions.getDefaultBrand()
+  const db = readDB()
+  return db.brands.find(b => b.is_default === true) || db.brands[0] || null
+}
+
 export const createBrand = async (data: {
   name: string
   core_values?: string
   tone_of_voice?: string
   article_template?: string
   internal_links?: string
+  is_default?: boolean
 }): Promise<RunResult> => {
   if (USE_SUPABASE) return supabaseFunctions.createBrand(data)
 
@@ -94,9 +106,15 @@ export const createBrand = async (data: {
     tone_of_voice: data.tone_of_voice || null,
     article_template: data.article_template || null,
     internal_links: data.internal_links || null,
+    is_default: data.is_default || false,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   }
+
+  if (data.is_default) {
+    db.brands.forEach(b => b.is_default = false)
+  }
+
   db.brands.push(newBrand)
   writeDB(db)
   return { lastInsertRowid: id, changes: 1 }
@@ -108,6 +126,7 @@ export const updateBrand = async (id: number, data: Partial<{
   tone_of_voice: string
   article_template: string
   internal_links: string
+  is_default: boolean
 }>): Promise<RunResult> => {
   if (USE_SUPABASE) return supabaseFunctions.updateBrand(id, data)
 
@@ -115,7 +134,34 @@ export const updateBrand = async (id: number, data: Partial<{
   const index = db.brands.findIndex(b => b.id === Number(id))
   if (index === -1) return { lastInsertRowid: id, changes: 0 }
 
+  if (data.is_default) {
+    db.brands.forEach(b => b.is_default = false)
+  }
+
   db.brands[index] = { ...db.brands[index], ...data, updated_at: new Date().toISOString() }
+  writeDB(db)
+  return { lastInsertRowid: id, changes: 1 }
+}
+
+export const setDefaultBrand = async (id: number): Promise<RunResult> => {
+  if (USE_SUPABASE) return supabaseFunctions.setDefaultBrand(id)
+
+  const db = readDB()
+  db.brands.forEach(b => {
+    b.is_default = b.id === Number(id)
+  })
+  writeDB(db)
+  return { lastInsertRowid: id, changes: 1 }
+}
+
+export const deleteBrand = async (id: number): Promise<RunResult> => {
+  if (USE_SUPABASE) return supabaseFunctions.deleteBrand(id)
+
+  const db = readDB()
+  const index = db.brands.findIndex(b => b.id === Number(id))
+  if (index === -1) return { lastInsertRowid: id, changes: 0 }
+
+  db.brands.splice(index, 1)
   writeDB(db)
   return { lastInsertRowid: id, changes: 1 }
 }
@@ -394,4 +440,21 @@ export const createArticleFromRewrite = async (data: {
   db.articles.push(newArticle)
   writeDB(db)
   return { lastInsertRowid: id, changes: 1 }
+}
+
+// --- Settings ---
+
+export const getSetting = async (key: string) => {
+  if (USE_SUPABASE) return supabaseFunctions.getSetting(key)
+  const db = readDB()
+  return db.settings?.[key] || null
+}
+
+export const updateSetting = async (key: string, value: any) => {
+  if (USE_SUPABASE) return supabaseFunctions.updateSetting(key, value)
+  const db = readDB()
+  if (!db.settings) db.settings = {}
+  db.settings[key] = value
+  writeDB(db)
+  return { lastInsertRowid: 0, changes: 1 }
 }

@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import styles from './dashboard.module.css'
+import { createClient } from '@/lib/supabase/client'
 
 const PAGE_TITLES: { [key: string]: string } = {
     '/dashboard': 'Dashboard',
@@ -12,6 +13,9 @@ const PAGE_TITLES: { [key: string]: string } = {
     '/dashboard/articles': 'Thư Viện Nội Dung',
     '/dashboard/rewrite': 'Viết Lại Nội Dung',
     '/dashboard/brand': 'Cài Đặt Thương Hiệu',
+    '/dashboard/profile': 'Cài Đặt Cá Nhân',
+    '/dashboard/admin/users': 'Quản Lý Thành Viên',
+    '/dashboard/settings': 'Cài Đặt Hệ Thống',
 }
 
 export default function DashboardLayout({
@@ -20,10 +24,23 @@ export default function DashboardLayout({
     children: React.ReactNode
 }) {
     const pathname = usePathname()
+    const router = useRouter()
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
     const [pageTitle, setPageTitle] = useState('Dashboard')
+    const [user, setUser] = useState<any>(null)
+    const supabase = createClient()
 
     useEffect(() => {
+        const fetchUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            setUser(user)
+        }
+        fetchUser()
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setUser(session?.user || null)
+        })
+
         // Find matching title
         let title = 'Dashboard'
         for (const [path, name] of Object.entries(PAGE_TITLES)) {
@@ -36,7 +53,9 @@ export default function DashboardLayout({
 
         // Close sidebar on route change (mobile)
         setIsSidebarOpen(false)
-    }, [pathname])
+
+        return () => subscription.unsubscribe()
+    }, [pathname, supabase])
 
     const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen)
 
@@ -116,14 +135,62 @@ export default function DashboardLayout({
                         </svg>
                         <span>Cài Đặt Thương Hiệu</span>
                     </Link>
+
+                    {user?.user_metadata?.role === 'admin' && (
+                        <div className={styles.adminNav}>
+                            <div className={styles.navSeparator}>Quản Trị Hệ Thống</div>
+                            <Link href="/dashboard/admin/users" className={styles.navLink}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                    <circle cx="9" cy="7" r="4" />
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+                                </svg>
+                                <span>Quản Lý Thành Viên</span>
+                            </Link>
+                            <Link href="/dashboard/settings" className={styles.navLink}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                                </svg>
+                                <span>Cài Đặt Hệ Thống</span>
+                            </Link>
+                        </div>
+                    )}
                 </nav>
 
                 <div className={styles.sidebarFooter}>
+                    <Link href="/dashboard/profile" className={styles.settingsLink}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                        </svg>
+                        <span>Cài đặt tài khoản</span>
+                    </Link>
+                    <button
+                        onClick={async () => {
+                            await supabase.auth.signOut()
+                            router.push('/')
+                        }}
+                        className={styles.logoutBtn}
+                    >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                            <polyline points="16 17 21 12 16 7" />
+                            <line x1="21" y1="12" x2="9" y2="12" />
+                        </svg>
+                        <span>Đăng xuất</span>
+                    </button>
                     <div className={styles.userInfo}>
-                        <div className={styles.userAvatar}>A</div>
+                        <div className={styles.userAvatar}>
+                            {user?.user_metadata?.display_name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'A'}
+                        </div>
                         <div className={styles.userDetails}>
-                            <div className={styles.userName}>Admin</div>
-                            <div className={styles.userRole}>Content Creator</div>
+                            <div className={styles.userName}>
+                                {user?.user_metadata?.display_name || user?.user_metadata?.full_name || 'Người dùng'}
+                            </div>
+                            <div className={styles.userRole}>
+                                {user?.user_metadata?.role || 'Thành viên'}
+                            </div>
                         </div>
                     </div>
                 </div>

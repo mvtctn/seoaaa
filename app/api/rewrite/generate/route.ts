@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateArticle } from '@/lib/ai/groq'
-import { createArticleFromRewrite } from '@/lib/db/database'
+import { createArticleFromRewrite, getDefaultBrand } from '@/lib/db/database'
 
 export async function POST(req: NextRequest) {
     try {
@@ -16,6 +16,16 @@ export async function POST(req: NextRequest) {
         }
 
         console.log('[Rewrite Generate] Starting content rewrite...')
+
+        // 1. Get Brand Context
+        const brand = await getDefaultBrand()
+        const brandContext = brand ? {
+            name: brand.name,
+            coreValues: brand.core_values ? JSON.parse(brand.core_values as string) : [],
+            toneOfVoice: brand.tone_of_voice ? JSON.parse(brand.tone_of_voice as string).name : 'Professional',
+            articleTemplate: brand.article_template || undefined,
+            internalLinks: brand.internal_links ? JSON.parse(brand.internal_links as string) : []
+        } : undefined
 
         // Create a research brief based on the analysis
         const researchBrief = {
@@ -52,7 +62,7 @@ Bài viết mới phải:
             keyword,
             researchBrief,
             contentStrategy,
-            brandContext: undefined // Will use default brand settings
+            brandContext
         })
 
         // Save to database using the new helper function

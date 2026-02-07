@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fetchSERPResults, scrapeURL } from '@/lib/scraper/web-scraper'
 import { analyzeCompetitors, generateContentStrategy, CompetitorData } from '@/lib/ai/gemini'
-import { createResearch, getAllBrands, createKeyword } from '@/lib/db/database'
+import { createResearch, getDefaultBrand, createKeyword } from '@/lib/db/database'
 
 export const maxDuration = 300 // 5 minutes timeout for Vercel/Next.js
 
@@ -17,8 +17,7 @@ export async function POST(req: NextRequest) {
         console.log(`\n🚀 Starting Research for: "${keyword}"`)
 
         // 1. Get Brand Context
-        const brands = await getAllBrands()
-        const brand = brands.length > 0 ? brands[0] : null
+        const brand = await getDefaultBrand()
         console.log(`Checking Brand: ${brand ? brand.name : 'None'}`)
 
         const brandContext = brand ? {
