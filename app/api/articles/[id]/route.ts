@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getArticleById } from '@/lib/db/database'
+import { getArticleById, getKeywordById, getResearchByKeywordId, getResearchById } from '@/lib/db/database'
 
 export async function GET(
     req: NextRequest,
@@ -11,26 +11,25 @@ export async function GET(
             return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
         }
 
-        const article = getArticleById(id)
+        const article = await getArticleById(id)
         if (!article) {
             return NextResponse.json({ error: 'Article not found' }, { status: 404 })
         }
 
         let keywordData = null;
         let researchData = null;
-        const { getKeywordById, getResearchByKeywordId, getResearchById } = require('@/lib/db/database');
 
         // Priority 1: Use direct keyword_id (if valid and not 0)
         if (article.keyword_id && article.keyword_id !== 0) {
-            keywordData = getKeywordById(article.keyword_id);
-            researchData = getResearchByKeywordId(article.keyword_id);
+            keywordData = await getKeywordById(article.keyword_id);
+            researchData = await getResearchByKeywordId(article.keyword_id);
         }
 
         // Priority 2: Use research_id to find associated keyword (fallback for older articles)
         if (!keywordData && article.research_id) {
-            researchData = getResearchById(article.research_id);
+            researchData = await getResearchById(article.research_id);
             if (researchData && researchData.keyword_id) {
-                keywordData = getKeywordById(researchData.keyword_id);
+                keywordData = await getKeywordById(researchData.keyword_id);
             }
         }
 
@@ -69,7 +68,7 @@ export async function PUT(
         // Import dynamically to avoid circular deps if any, though standard import is fine usually
         const { updateArticle } = require('@/lib/db/database')
 
-        const result = updateArticle(id, {
+        const result = await updateArticle(id, {
             title,
             slug,
             meta_title,
@@ -103,7 +102,7 @@ export async function DELETE(
         }
 
         const { deleteArticle } = require('@/lib/db/database')
-        const result = deleteArticle(id)
+        const result = await deleteArticle(id)
 
         if (!result.changes) {
             return NextResponse.json({ error: 'Article not found' }, { status: 404 })

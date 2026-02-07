@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
         }
 
         // 1. Get Brand Context
-        const brands = getAllBrands()
+        const brands = await getAllBrands()
         const brand = brands.length > 0 ? brands[0] : null
 
         const brandContext = brand ? {
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
         const metaDesc = await generateMetaDescription(title, keyword, content)
 
         // 5. Save Artifact
-        const articleId = createArticle({
+        const articleId = await createArticle({
             keyword_id: keywordId || 0,
             title,
             slug,

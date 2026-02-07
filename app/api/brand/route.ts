@@ -4,7 +4,7 @@ import { createBrand, getBrandById, updateBrand, getAllBrands } from '@/lib/db/d
 export async function GET() {
     try {
         console.log('[API Brand] Fetching brand settings...')
-        const brands = getAllBrands()
+        const brands = await getAllBrands()
         console.log('[API Brand] Found brands:', brands.length)
 
         if (brands.length === 0) {
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
         const { name, core_values, tone_of_voice, article_template, internal_links } = body
 
         // Check if a brand already exists
-        const brands = getAllBrands()
+        const brands = await getAllBrands()
         console.log('[API Brand] Existing brands count:', brands.length)
 
         let result
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
             const id = brands[0].id
             console.log('[API Brand] Updating brand ID:', id)
 
-            result = updateBrand(Number(id), {
+            result = await updateBrand(Number(id), {
                 name,
                 core_values: JSON.stringify(core_values),
                 tone_of_voice: JSON.stringify(tone_of_voice),
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
         } else {
             // Create new
             console.log('[API Brand] Creating new brand')
-            result = createBrand({
+            result = await createBrand({
                 name,
                 core_values: JSON.stringify(core_values),
                 tone_of_voice: JSON.stringify(tone_of_voice),

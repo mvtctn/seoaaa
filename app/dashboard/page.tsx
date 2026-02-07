@@ -4,8 +4,8 @@ import { getAllArticles, getAllKeywords } from '@/lib/db/database'
 
 export default async function DashboardPage() {
     // Fetch Data directly from DB (Server Component)
-    const articles = getAllArticles()
-    const keywords = getAllKeywords()
+    const articles = await getAllArticles()
+    const keywords = await getAllKeywords()
 
     // Calculate Stats
     const totalArticles = articles.length

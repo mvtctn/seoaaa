@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
         }
 
         // 1. Get Brand Context
-        const brands = getAllBrands()
+        const brands = await getAllBrands()
         const brand = brands.length > 0 ? brands[0] : null
 
         const brandContext = brand ? {
@@ -87,14 +87,14 @@ export async function POST(req: NextRequest) {
 
         // 6. Save to Database
         // Create Keyword first
-        const keywordResult = createKeyword({
+        const keywordResult = await createKeyword({
             keyword: keyword,
             status: 'researching'
         })
         const keywordId = Number(keywordResult.lastInsertRowid)
 
         // Save Research
-        const researchResult = createResearch({
+        const researchResult = await createResearch({
             keyword_id: keywordId,
             serp_data: JSON.stringify(serpResults),
             competitor_analysis: JSON.stringify(validCompetitors.map(c => ({ url: c.url, title: c.title }))),

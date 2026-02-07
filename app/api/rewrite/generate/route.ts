@@ -56,7 +56,7 @@ Bài viết mới phải:
         })
 
         // Save to database using the new helper function
-        const newArticle = createArticleFromRewrite({
+        const newArticle = await createArticleFromRewrite({
             title: analysis.title,
             content: articleContent,
             status: 'draft',
@@ -64,13 +64,14 @@ Bài viết mới phải:
             meta_description: analysis.metaDescription || null
         })
 
-        console.log('[Rewrite Generate] Article created with ID:', newArticle.id)
+        const articleId = Number(newArticle.lastInsertRowid)
+        console.log('[Rewrite Generate] Article created with ID:', articleId)
 
         return NextResponse.json({
             success: true,
             data: {
-                id: newArticle.id,
-                title: newArticle.title,
+                id: articleId,
+                title: analysis.title,
                 status: 'success',
                 improvements: [
                     `Tăng độ dài từ ${analysis.wordCount} lên ~${Math.floor(analysis.wordCount * 1.4)} từ`,

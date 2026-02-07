@@ -1,10 +1,19 @@
 import path from 'path'
 import fs from 'fs'
 
+// Helper to keep the same return structure as better-sqlite3 for compatibility
+export interface RunResult {
+  lastInsertRowid: number | bigint
+  changes: number
+}
+
+// Use environment variable to determine which database to use
+const USE_SUPABASE = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+// JSON File Database Implementation
 const DEFAULT_LOCAL_PATH = path.join(process.cwd(), 'data', 'database.json')
 const DB_PATH = process.env.DATABASE_PATH || DEFAULT_LOCAL_PATH
 
-// Interfaces for our JSON DB structure
 interface DBStructure {
   brands: any[]
   keywords: any[]
@@ -13,21 +22,14 @@ interface DBStructure {
   batch_jobs: any[]
 }
 
-// Ensure data directory exists
-const dataDir = path.dirname(DB_PATH)
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true })
-}
+// Ensure data directory exists for JSON mode
+if (!USE_SUPABASE) {
+  const dataDir = path.dirname(DB_PATH)
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true })
+  }
 
-// Optimization for Cloud Persistence (Railway/Docker):
-// If DB_PATH is set (likely a persistent volume) but the file doesn't exist,
-// try to seed it with the data from the repository's data folder.
-if (!fs.existsSync(DB_PATH)) {
-  if (DB_PATH !== DEFAULT_LOCAL_PATH && fs.existsSync(DEFAULT_LOCAL_PATH)) {
-    console.log(`Seeding persistent database at ${DB_PATH} from ${DEFAULT_LOCAL_PATH}`)
-    fs.copyFileSync(DEFAULT_LOCAL_PATH, DB_PATH)
-  } else {
-    console.log(`Initializing empty database at ${DB_PATH}`)
+  if (!fs.existsSync(DB_PATH)) {
     const initialData: DBStructure = {
       brands: [],
       keywords: [],
@@ -39,7 +41,7 @@ if (!fs.existsSync(DB_PATH)) {
   }
 }
 
-// Helper to read DB
+// Helper to read JSON DB
 const readDB = (): DBStructure => {
   try {
     const data = fs.readFileSync(DB_PATH, 'utf-8')
@@ -49,42 +51,49 @@ const readDB = (): DBStructure => {
   }
 }
 
-// Helper to write DB
+// Helper to write JSON DB
 const writeDB = (data: DBStructure) => {
   fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2))
 }
 
-// Mock better-sqlite3 RunResult
-interface RunResult {
-  lastInsertRowid: number | bigint
-  changes: number
+// Import Supabase functions dynamically only if needed
+let supabaseFunctions: any = null
+if (USE_SUPABASE) {
+  supabaseFunctions = require('./database-supabase')
 }
 
 // --- Brands ---
 
-export const getBrandById = (id: number) => {
+export const getBrandById = async (id: number) => {
+  if (USE_SUPABASE) return supabaseFunctions.getBrandById(id)
   const db = readDB()
   return db.brands.find(b => b.id === Number(id))
 }
 
-export const getAllBrands = () => {
+export const getAllBrands = async () => {
+  if (USE_SUPABASE) return supabaseFunctions.getAllBrands()
   const db = readDB()
-  // Sort by created_at desc
-  return [...db.brands].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  return db.brands
 }
 
-export const createBrand = (data: {
+export const createBrand = async (data: {
   name: string
   core_values?: string
   tone_of_voice?: string
   article_template?: string
   internal_links?: string
-}): RunResult => {
+}): Promise<RunResult> => {
+  if (USE_SUPABASE) return supabaseFunctions.createBrand(data)
+
   const db = readDB()
   const id = db.brands.length > 0 ? Math.max(...db.brands.map(b => b.id)) + 1 : 1
   const newBrand = {
     id,
-    ...data,
+    name: data.name,
+    core_values: data.core_values || null,
+    tone_of_voice: data.tone_of_voice || null,
+    article_template: data.article_template || null,
+    internal_links: data.internal_links || null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   }
@@ -93,34 +102,33 @@ export const createBrand = (data: {
   return { lastInsertRowid: id, changes: 1 }
 }
 
-export const updateBrand = (id: number, data: Partial<{
+export const updateBrand = async (id: number, data: Partial<{
   name: string
   core_values: string
   tone_of_voice: string
   article_template: string
   internal_links: string
-}>): RunResult => {
+}>): Promise<RunResult> => {
+  if (USE_SUPABASE) return supabaseFunctions.updateBrand(id, data)
+
   const db = readDB()
   const index = db.brands.findIndex(b => b.id === Number(id))
-  if (index !== -1) {
-    db.brands[index] = {
-      ...db.brands[index],
-      ...data,
-      updated_at: new Date().toISOString()
-    }
-    writeDB(db)
-    return { lastInsertRowid: id, changes: 1 }
-  }
-  return { lastInsertRowid: 0, changes: 0 }
+  if (index === -1) return { lastInsertRowid: id, changes: 0 }
+
+  db.brands[index] = { ...db.brands[index], ...data, updated_at: new Date().toISOString() }
+  writeDB(db)
+  return { lastInsertRowid: id, changes: 1 }
 }
 
 // --- Keywords ---
 
-export const createKeyword = (data: {
+export const createKeyword = async (data: {
   keyword: string
   brand_id?: number
   status?: string
-}): RunResult => {
+}): Promise<RunResult> => {
+  if (USE_SUPABASE) return supabaseFunctions.createKeyword(data)
+
   const db = readDB()
   const id = db.keywords.length > 0 ? Math.max(...db.keywords.map(k => k.id)) + 1 : 1
   const newKeyword = {
@@ -128,44 +136,51 @@ export const createKeyword = (data: {
     keyword: data.keyword,
     brand_id: data.brand_id || null,
     status: data.status || 'pending',
-    created_at: new Date().toISOString()
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   }
   db.keywords.push(newKeyword)
   writeDB(db)
   return { lastInsertRowid: id, changes: 1 }
 }
 
-export const getKeywordById = (id: number) => {
+export const getKeywordById = async (id: number) => {
+  if (USE_SUPABASE) return supabaseFunctions.getKeywordById(id)
   const db = readDB()
   return db.keywords.find(k => k.id === Number(id))
 }
 
-export const updateKeywordStatus = (id: number, status: string): RunResult => {
+export const updateKeywordStatus = async (id: number, status: string): Promise<RunResult> => {
+  if (USE_SUPABASE) return supabaseFunctions.updateKeywordStatus(id, status)
+
   const db = readDB()
   const index = db.keywords.findIndex(k => k.id === Number(id))
-  if (index !== -1) {
-    db.keywords[index].status = status
-    writeDB(db)
-    return { lastInsertRowid: id, changes: 1 }
-  }
-  return { lastInsertRowid: 0, changes: 0 }
+  if (index === -1) return { lastInsertRowid: id, changes: 0 }
+
+  db.keywords[index].status = status
+  db.keywords[index].updated_at = new Date().toISOString()
+  writeDB(db)
+  return { lastInsertRowid: id, changes: 1 }
 }
 
-export const getAllKeywords = () => {
+export const getAllKeywords = async () => {
+  if (USE_SUPABASE) return supabaseFunctions.getAllKeywords()
   const db = readDB()
-  return [...db.keywords].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  return db.keywords
 }
 
 // --- Research ---
 
-export const createResearch = (data: {
+export const createResearch = async (data: {
   keyword_id: number
   serp_data?: string
   competitor_analysis?: string
   content_gaps?: string
   strategic_positioning?: string
   gemini_brief?: string
-}): RunResult => {
+}): Promise<RunResult> => {
+  if (USE_SUPABASE) return supabaseFunctions.createResearch(data)
+
   const db = readDB()
   const id = db.research.length > 0 ? Math.max(...db.research.map(r => r.id)) + 1 : 1
   const newResearch = {
@@ -176,26 +191,29 @@ export const createResearch = (data: {
     content_gaps: data.content_gaps || null,
     strategic_positioning: data.strategic_positioning || null,
     gemini_brief: data.gemini_brief || null,
-    created_at: new Date().toISOString()
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   }
   db.research.push(newResearch)
   writeDB(db)
   return { lastInsertRowid: id, changes: 1 }
 }
 
-export const getResearchByKeywordId = (keywordId: number) => {
+export const getResearchByKeywordId = async (keywordId: number) => {
+  if (USE_SUPABASE) return supabaseFunctions.getResearchByKeywordId(keywordId)
   const db = readDB()
   return db.research.find(r => r.keyword_id === Number(keywordId))
 }
 
-export const getResearchById = (id: number) => {
+export const getResearchById = async (id: number) => {
+  if (USE_SUPABASE) return supabaseFunctions.getResearchById(id)
   const db = readDB()
   return db.research.find(r => r.id === Number(id))
 }
 
 // --- Articles ---
 
-export const createArticle = (data: {
+export const createArticle = async (data: {
   keyword_id: number
   research_id?: number
   title: string
@@ -206,7 +224,9 @@ export const createArticle = (data: {
   thumbnail_url?: string
   images?: string
   status?: string
-}): RunResult => {
+}): Promise<RunResult> => {
+  if (USE_SUPABASE) return supabaseFunctions.createArticle(data)
+
   const db = readDB()
   const id = db.articles.length > 0 ? Math.max(...db.articles.map(a => a.id)) + 1 : 1
   const newArticle = {
@@ -229,22 +249,25 @@ export const createArticle = (data: {
   return { lastInsertRowid: id, changes: 1 }
 }
 
-export const getArticleById = (id: number) => {
+export const getArticleById = async (id: number) => {
+  if (USE_SUPABASE) return supabaseFunctions.getArticleById(id)
   const db = readDB()
   return db.articles.find(a => a.id === Number(id))
 }
 
-export const getArticleBySlug = (slug: string) => {
+export const getArticleBySlug = async (slug: string) => {
+  if (USE_SUPABASE) return supabaseFunctions.getArticleBySlug(slug)
   const db = readDB()
   return db.articles.find(a => a.slug === slug)
 }
 
-export const getAllArticles = () => {
+export const getAllArticles = async () => {
+  if (USE_SUPABASE) return supabaseFunctions.getAllArticles()
   const db = readDB()
-  return [...db.articles].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  return db.articles
 }
 
-export const updateArticle = (id: number, data: Partial<{
+export const updateArticle = async (id: number, data: Partial<{
   title: string
   slug: string
   meta_title: string
@@ -253,44 +276,53 @@ export const updateArticle = (id: number, data: Partial<{
   thumbnail_url: string
   images: string
   status: string
-}>): RunResult => {
+}>): Promise<RunResult> => {
+  if (USE_SUPABASE) return supabaseFunctions.updateArticle(id, data)
+
   const db = readDB()
   const index = db.articles.findIndex(a => a.id === Number(id))
-  if (index !== -1) {
-    db.articles[index] = {
-      ...db.articles[index],
-      ...data,
-      updated_at: new Date().toISOString()
-    }
-    writeDB(db)
-    return { lastInsertRowid: id, changes: 1 }
-  }
-  return { lastInsertRowid: 0, changes: 0 }
+  if (index === -1) return { lastInsertRowid: id, changes: 0 }
+
+  db.articles[index] = { ...db.articles[index], ...data, updated_at: new Date().toISOString() }
+  writeDB(db)
+  return { lastInsertRowid: id, changes: 1 }
 }
 
-export const updateArticleImage = (id: number, imageUrl: string): RunResult => {
-  return updateArticle(id, { thumbnail_url: imageUrl })
-}
+export const updateArticleImage = async (id: number, imageUrl: string): Promise<RunResult> => {
+  if (USE_SUPABASE) return supabaseFunctions.updateArticleImage(id, imageUrl)
 
-export const deleteArticle = (id: number): RunResult => {
   const db = readDB()
-  const index = db.articles.findIndex((a: any) => a.id === Number(id))
-  if (index !== -1) {
-    db.articles.splice(index, 1)
-    writeDB(db)
-    return { lastInsertRowid: 0, changes: 1 }
-  }
-  return { lastInsertRowid: 0, changes: 0 }
+  const index = db.articles.findIndex(a => a.id === Number(id))
+  if (index === -1) return { lastInsertRowid: id, changes: 0 }
+
+  db.articles[index].thumbnail_url = imageUrl
+  db.articles[index].updated_at = new Date().toISOString()
+  writeDB(db)
+  return { lastInsertRowid: id, changes: 1 }
+}
+
+export const deleteArticle = async (id: number): Promise<RunResult> => {
+  if (USE_SUPABASE) return supabaseFunctions.deleteArticle(id)
+
+  const db = readDB()
+  const index = db.articles.findIndex(a => a.id === Number(id))
+  if (index === -1) return { lastInsertRowid: id, changes: 0 }
+
+  db.articles.splice(index, 1)
+  writeDB(db)
+  return { lastInsertRowid: id, changes: 1 }
 }
 
 // --- Batch Jobs ---
 
-export const createBatchJob = (data: {
+export const createBatchJob = async (data: {
   brand_id: number
-  keywords: string // JSON
+  keywords: string
   status?: string
   progress?: string
-}): RunResult => {
+}): Promise<RunResult> => {
+  if (USE_SUPABASE) return supabaseFunctions.createBatchJob(data)
+
   const db = readDB()
   const id = db.batch_jobs.length > 0 ? Math.max(...db.batch_jobs.map(j => j.id)) + 1 : 1
   const newJob = {
@@ -299,38 +331,38 @@ export const createBatchJob = (data: {
     keywords: data.keywords,
     status: data.status || 'pending',
     progress: data.progress || null,
-    created_at: new Date().toISOString()
+    created_at: new Date().toISOString(),
+    completed_at: null,
+    updated_at: new Date().toISOString()
   }
   db.batch_jobs.push(newJob)
   writeDB(db)
   return { lastInsertRowid: id, changes: 1 }
 }
 
-export const getBatchJobById = (id: number) => {
+export const getBatchJobById = async (id: number) => {
+  if (USE_SUPABASE) return supabaseFunctions.getBatchJobById(id)
   const db = readDB()
   return db.batch_jobs.find(j => j.id === Number(id))
 }
 
-export const updateBatchJob = (id: number, data: Partial<{
+export const updateBatchJob = async (id: number, data: Partial<{
   status: string
   progress: string
   completed_at: string
-}>): RunResult => {
+}>): Promise<RunResult> => {
+  if (USE_SUPABASE) return supabaseFunctions.updateBatchJob(id, data)
+
   const db = readDB()
   const index = db.batch_jobs.findIndex(j => j.id === Number(id))
-  if (index !== -1) {
-    db.batch_jobs[index] = {
-      ...db.batch_jobs[index],
-      ...data
-    }
-    writeDB(db)
-    return { lastInsertRowid: id, changes: 1 }
-  }
-  return { lastInsertRowid: 0, changes: 0 }
+  if (index === -1) return { lastInsertRowid: id, changes: 0 }
+
+  db.batch_jobs[index] = { ...db.batch_jobs[index], ...data, updated_at: new Date().toISOString() }
+  writeDB(db)
+  return { lastInsertRowid: id, changes: 1 }
 }
 
-// Helper function for creating articles from rewrite (no keyword_id needed)
-export const createArticleFromRewrite = (data: {
+export const createArticleFromRewrite = async (data: {
   title: string
   content: string
   status?: string
@@ -338,48 +370,28 @@ export const createArticleFromRewrite = (data: {
   meta_title?: string
   meta_description?: string
   thumbnail_url?: string
-}) => {
+}): Promise<RunResult> => {
+  if (USE_SUPABASE) return supabaseFunctions.createArticleFromRewrite(data)
+
+  const slug = data.title.toLowerCase().replace(/[^\w\s-]/g, '').replace(/[\s_]+/g, '-').replace(/^-+|-+$/g, '')
   const db = readDB()
   const id = db.articles.length > 0 ? Math.max(...db.articles.map(a => a.id)) + 1 : 1
-
-  // Generate slug from title
-  const slug = data.title
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
-    .replace(/đ/g, 'd')
-    .replace(/[^a-z0-9\s-]/g, '')
-    .trim()
-    .replace(/\s+/g, '-')
-
   const newArticle = {
     id,
-    keyword_id: null, // No keyword association for rewrite
+    keyword_id: null,
     research_id: null,
     title: data.title,
     slug,
-    meta_title: data.meta_title || data.title,
+    meta_title: data.meta_title || null,
     meta_description: data.meta_description || null,
     content: data.content,
     thumbnail_url: data.thumbnail_url || null,
     images: null,
     status: data.status || 'draft',
-    source_url: data.source_url || null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   }
-
   db.articles.push(newArticle)
   writeDB(db)
-
-  // Return the created article object
-  return newArticle
+  return { lastInsertRowid: id, changes: 1 }
 }
-
-// --- Articles Helpers ---
-
-// Export a default object checking existence mostly for backward compat if any code imported default
-const db = {
-  prepare: () => ({ get: () => { }, run: () => { }, all: () => { } })
-}
-export default db
