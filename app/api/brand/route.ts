@@ -33,7 +33,18 @@ export async function GET() {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json()
-        const { id, name, core_values, tone_of_voice, article_template, internal_links, is_default } = body
+        const {
+            id,
+            name,
+            core_values,
+            tone_of_voice,
+            article_template,
+            internal_links,
+            is_default,
+            wp_url,
+            wp_username,
+            wp_password
+        } = body
 
         if (id) {
             await updateBrand(Number(id), {
@@ -42,7 +53,10 @@ export async function POST(req: NextRequest) {
                 tone_of_voice: JSON.stringify(tone_of_voice),
                 article_template,
                 internal_links: JSON.stringify(internal_links),
-                is_default: !!is_default
+                is_default: !!is_default,
+                wp_url,
+                wp_username,
+                wp_password
             })
             return NextResponse.json({ success: true, message: 'Updated' })
         } else {
@@ -52,7 +66,10 @@ export async function POST(req: NextRequest) {
                 tone_of_voice: JSON.stringify(tone_of_voice),
                 article_template,
                 internal_links: JSON.stringify(internal_links),
-                is_default: !!is_default
+                is_default: !!is_default,
+                wp_url,
+                wp_username,
+                wp_password
             })
             return NextResponse.json({ success: true, message: 'Created', id: result.lastInsertRowid })
         }
