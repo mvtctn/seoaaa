@@ -146,9 +146,9 @@ export default function GeneratePage() {
             setProgressLog('✅ Hoàn thành!')
             setLoading(false)
 
-        } catch (err) {
+        } catch (err: any) {
             console.error(err)
-            setError('❌ Có lỗi xảy ra. Vui lòng thử lại.')
+            setError(`❌ Lỗi: ${err.message || 'Có lỗi xảy ra. Vui lòng thử lại.'}`)
             setLoading(false)
             setCurrentStep(1)
         }

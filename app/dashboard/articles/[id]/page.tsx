@@ -616,7 +616,12 @@ export default function ArticleDetailPage() {
                                             <ul className="flex flex-col gap-2">
                                                 {(() => {
                                                     try {
-                                                        const comps = JSON.parse(article.research.competitor_analysis);
+                                                        const comps = typeof article.research.competitor_analysis === 'string'
+                                                            ? JSON.parse(article.research.competitor_analysis)
+                                                            : article.research.competitor_analysis;
+
+                                                        if (!Array.isArray(comps)) return <li className="text-xs opacity-50">Dữ liệu không hợp lệ</li>;
+
                                                         return comps.map((c: any, i: number) => (
                                                             <li key={i} className="text-xs p-2 bg-slate-800/50 rounded border border-slate-700/50 flex flex-col gap-1">
                                                                 <span className="font-medium text-white line-clamp-1">{c.title}</span>
@@ -626,7 +631,7 @@ export default function ArticleDetailPage() {
                                                             </li>
                                                         ));
                                                     } catch (e) {
-                                                        return <li>{article.research.competitor_analysis}</li>;
+                                                        return <li className="text-xs opacity-50">{typeof article.research.competitor_analysis === 'string' ? article.research.competitor_analysis : 'Error loading competitors'}</li>;
                                                     }
                                                 })()}
                                             </ul>
@@ -644,14 +649,19 @@ export default function ArticleDetailPage() {
                                             <ul className="flex flex-col gap-2">
                                                 {(() => {
                                                     try {
-                                                        const gaps = JSON.parse(article.research.content_gaps);
+                                                        const gaps = typeof article.research.content_gaps === 'string'
+                                                            ? JSON.parse(article.research.content_gaps)
+                                                            : article.research.content_gaps;
+
+                                                        if (!Array.isArray(gaps)) return <li className="text-xs opacity-50">Không có dữ liệu</li>;
+
                                                         return gaps.map((gap: string, i: number) => (
                                                             <li key={i} className="text-xs p-3 bg-amber-950/20 border border-amber-900/30 rounded text-amber-200/80 italic">
                                                                 &ldquo;{gap}&rdquo;
                                                             </li>
                                                         ));
                                                     } catch (e) {
-                                                        return <li className="text-xs italic">{article.research.content_gaps}</li>;
+                                                        return <li className="text-xs italic opacity-50">{typeof article.research.content_gaps === 'string' ? article.research.content_gaps : 'Error loading gaps'}</li>;
                                                     }
                                                 })()}
                                             </ul>
@@ -659,6 +669,61 @@ export default function ArticleDetailPage() {
                                     </div>
                                 )}
                             </div>
+
+                            {/* Semantic SEO Section */}
+                            {(article.research.entities || article.research.gemini_brief) && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className={styles.contentCard}>
+                                        <div className={styles.cardHeader}>
+                                            <div className={styles.cardTitle}>🧠 Thực Thể (Entities)</div>
+                                        </div>
+                                        <div className={styles.cardBody}>
+                                            <div className="flex flex-wrap gap-2">
+                                                {(() => {
+                                                    try {
+                                                        const brief = JSON.parse(article.research.gemini_brief || '{}');
+                                                        const entities = brief.entities || [];
+                                                        if (entities.length === 0) return <span className="text-xs text-slate-500 italic">Không tìm thấy thực thể.</span>;
+                                                        return entities.map((e: string, i: number) => (
+                                                            <span key={i} className="text-[10px] px-2 py-1 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-md font-medium">
+                                                                {e}
+                                                            </span>
+                                                        ));
+                                                    } catch (e) {
+                                                        return <span className="text-xs text-slate-500 italic">Lỗi hiển thị thực thể.</span>;
+                                                    }
+                                                })()}
+                                            </div>
+                                            <p className="text-[10px] text-slate-500 mt-3 italic">Các chủ đề, tổ chức, khái niệm mà Google kỳ vọng bài viết phải có.</p>
+                                        </div>
+                                    </div>
+
+                                    <div className={styles.contentCard}>
+                                        <div className={styles.cardHeader}>
+                                            <div className={styles.cardTitle}>🏷️ Từ Khóa Ngữ Nghĩa (LSI)</div>
+                                        </div>
+                                        <div className={styles.cardBody}>
+                                            <div className="flex flex-wrap gap-2">
+                                                {(() => {
+                                                    try {
+                                                        const brief = JSON.parse(article.research.gemini_brief || '{}');
+                                                        const lsi = brief.lsiKeywords || [];
+                                                        if (lsi.length === 0) return <span className="text-xs text-slate-500 italic">Không tìm thấy từ khóa LSI.</span>;
+                                                        return lsi.map((k: string, i: number) => (
+                                                            <span key={i} className="text-[10px] px-2 py-1 bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 rounded-md font-medium">
+                                                                {k}
+                                                            </span>
+                                                        ));
+                                                    } catch (e) {
+                                                        return <span className="text-xs text-slate-500 italic">Lỗi hiển thị từ khóa.</span>;
+                                                    }
+                                                })()}
+                                            </div>
+                                            <p className="text-[10px] text-slate-500 mt-3 italic">Các thuật ngữ liên quan giúp tăng độ tin cậy và chiều sâu cho nội dung.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* SERP Summary */}
                             {article.research.serp_data && (
@@ -670,7 +735,12 @@ export default function ArticleDetailPage() {
                                         <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
                                             {(() => {
                                                 try {
-                                                    const serp = JSON.parse(article.research.serp_data);
+                                                    const serp = typeof article.research.serp_data === 'string'
+                                                        ? JSON.parse(article.research.serp_data)
+                                                        : article.research.serp_data;
+
+                                                    if (!Array.isArray(serp)) return <div className="text-xs opacity-50">Không có dữ liệu SERP</div>;
+
                                                     return serp.map((s: any, i: number) => (
                                                         <div key={i} className="p-3 bg-slate-900/80 rounded border border-slate-800 flex flex-col gap-2">
                                                             <div className="flex items-center gap-2">
@@ -685,13 +755,13 @@ export default function ArticleDetailPage() {
                                                             <p className="text-[10px] text-slate-400 line-clamp-2 leading-relaxed opacity-70">
                                                                 {s.snippet}
                                                             </p>
-                                                            <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-indigo-400 hover:underline truncate mt-auto">
-                                                                {new URL(s.url).hostname}
+                                                            <a href={s.url || '#'} target="_blank" rel="noopener noreferrer" className="text-[9px] text-indigo-400 hover:underline truncate mt-auto">
+                                                                {s.url ? new URL(s.url).hostname : 'N/A'}
                                                             </a>
                                                         </div>
                                                     ));
                                                 } catch (e) {
-                                                    return <div className="text-xs opacity-50">{article.research.serp_data}</div>;
+                                                    return <div className="text-xs opacity-50">{typeof article.research.serp_data === 'string' ? article.research.serp_data : 'Error loading SERP'}</div>;
                                                 }
                                             })()}
                                         </div>

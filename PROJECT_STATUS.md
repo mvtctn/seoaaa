@@ -9,11 +9,12 @@ Xây dựng hệ thống tự động hóa quy trình viết bài SEO chất lư
 
 ### 🎨 Giao diện & Trải nghiệm (UI/UX)
 - [x] **Modern Landing Page**: Thiết kế theo phong cách Together.ai với Dark Theme, hiệu ứng Glassmorphism và Gradient.
-- [x] **Sub-pages Professional**: Hoàn thiện các trang Features, How It Works, Pricing, Blog và Contact với thiết kế đồng bộ.
+- [x] **Auth Modal (Premium)**: Thay thế các trang đăng nhập/đăng ký bằng **Sidepanel Modal lướt từ bên phải**, tối ưu UX.
 - [x] **Reusable Components**: Tách biệt LandingNavbar và LandingFooter để quản lý tập trung và nhất quán.
 
 ### 🤖 Trí tuệ nhân tạo (AI Engine)
 - [x] **Tích hợp Groq AI (Llama 3.3)**: Tốc độ tạo nội dung siêu nhanh, thay thế hoàn toàn Gemini/DeepSeek.
+- [x] **Dynamic Brand Selection**: AI tự động nhận diện **Default Brand** (dấu sao vàng) để viết bài theo đúng tone of voice, giá trị cốt lõi và chèn link nội bộ chính xác.
 - [x] **Nghiên cứu từ khóa & Đối thủ**: Phân tích Top 5 đối thủ trên Google, tìm content gap để tối ưu bài viết.
 - [x] **Hệ thống Schema Markup**: Tự động sinh mã SEO JSON-LD (Article, FAQ, Breadcrumb).
 
@@ -21,51 +22,49 @@ Xây dựng hệ thống tự động hóa quy trình viết bài SEO chất lư
 - [x] **Thư viện Bài viết (Article Library)**: Giao diện quản lý chuyên nghiệp, hỗ trợ tìm kiếm và lọc.
 - [x] **Trình Soạn thảo Markdown**: Tích hợp MdEditor với tính năng Preview trực quan.
 - [x] **Full CRUD Operations**: Hoàn thiện các tính năng Xem, Tạo, Chỉnh sửa và **Xóa bài viết**.
-- [x] **Hệ thống Parser Nâng cao**: Tách bạch rõ ràng Article, Summary, Meta và Schema JSON.
+
+### 🛠️ Quản trị & Hạ tầng (Backend)
+- [x] **Supabase Integration**: Chuyển đổi từ JSON DB sang **Supabase (PostgreSQL)** giúp xử lý dữ liệu lớn và ổn định.
+- [x] **System Settings**: Trang quản lý cấu hình hệ thống (SMTP Server, Admin Notification Email).
+- [x] **Email Test Connection**: Tính năng kiểm tra kết nối SMTP trực tiếp để đảm bảo thông báo email hoạt động.
 
 ### 🎨 Hệ thống Hình ảnh AI (Cải tiến)
 - [x] **AI Image Generator Tool**: Công cụ tạo ảnh tích hợp ngay trong trang chi tiết bài viết.
-- [x] **Auto-Translation Dictionary**: Tự động dịch từ khóa chuyên ngành Việt -> Anh giúp AI tạo ảnh chính xác hơn.
-- [x] **Professional Styling**: Tự động thêm các chỉ lệnh kỹ thuật (3D technical render, industrial visualization) nâng cao chất lượng ảnh.
 - [x] **One-click Image Actions**: Chèn ảnh vào bài (Markdown) hoặc đặt làm Thumbnail chỉ với 1 click.
-
-### 🛠️ Công cụ SEO Đặc biệt
-- [x] **Copy cho Word/Google Docs**: Tính năng chuyển đổi Markdown sang HTML để paste vào Word giữ nguyên định dạng (Heading, Bold, List).
-- [x] **Competitor Research Tab**: Tích hợp tab hiển thị chi tiết nghiên cứu đối thủ, content gaps và chiến lược định hướng ngay trong trang chi tiết bài viết.
-- [x] **Keyword Tracking**: Hiển thị từ khóa mục tiêu trực tiếp trong trình soạn thảo.
-- [x] **Auto-fix Bug**: Fix lỗi link ảnh broken (Bad Gateway), fix lỗi runtime mất dữ liệu Slug.
 
 ---
 
-## 📋 KẾ HOẠCH PHÁT TRIỂN TIẾP THEO (ROADMAP)
+## � ĐỀ XUẤT CÁC TÍNH NĂNG CAO CẤP (PREMIUM SOLUTIONS)
 
-### Giai đoạn 1: Tối ưu Trải nghiệm (UX/UI)
-- [ ] **Upload Ảnh Nội bộ**: Cho phép tải ảnh trực tiếp từ máy tính làm Thumbnail hoặc chèn vào bài.
-- [ ] **Media Manager**: Quản lý tập trung các ảnh đã tạo hoặc tải lên để tái sử dụng.
-- [ ] **Chế độ Lưu Nháp (Auto-save)**: Tự động lưu nội dung chỉnh sửa để tránh mất dữ liệu.
+### 1. 🌐 Topic Cluster Architect (Kiến trúc sư cụm chủ đề)
+*   **Giải pháp**: Tự động nghiên cứu keyword hạt giống và vẽ ra bản đồ "Trình tự nội dung" (Content Silo).
+*   **Giá trị**: Tạo ra bộ 20-30 bài viết liên quan chặt chẽ để chiếm lĩnh toàn bộ một ngách (niche authority) thay vì chỉ viết bài lẻ tẻ.
 
-### Giai đoạn 2: Nâng cao Công cụ SEO & Content
-- [x] **SEO Checklist**: Hệ thống kiểm tra mật độ từ khóa, độ dài thẻ Meta, thẻ Alt ảnh theo tiêu chuẩn SEO.
-- [x] **Internal Link Suggestion**: Gợi ý các bài có sẵn trong thư viện để chèn link liên kết nội bộ tự động.
-- [x] **Đánh giá Readability**: Đo lường độ dễ đọc của bài viết dựa trên AI.
+### 2. 🧠 Semantic SEO & Entity Analysis
+*   **Giải pháp**: Phân tích các thực thể (Entities) và từ khóa ngữ nghĩa (LSI) mà Google đánh giá cao.
+*   **Giá trị**: Đảm bảo bài viết có độ sâu kiến thức vượt qua đối thủ (Knowledge Depth), tăng khả năng lọt vào Featured Snippets.
 
-### Giai đoạn 3: Tự động hóa & Phân phối
-- [ ] **Batch Generation (Chế độ hàng loạt)**: Nhập hàng loạt từ khóa -> Hệ thống tự chạy ngầm tạo bài viết.
-- [ ] **Auto-Publish to WordPress/Shopify**: Một click xuất bản bài viết lên website qua hệ thống API.
-- [ ] **Dịch bài tự động**: Chuyển đổi bài viết Việt <-> Anh giữ nguyên cấu trúc SEO.
+### 3. 🎙️ Brand Voice Cloner (Sao chép giọng điệu thương hiệu)
+*   **Giải pháp**: Cho phép người dùng tải lên 5-10 bài viết mẫu. AI sẽ học cách dùng từ, cấu trúc câu và phong cách riêng của Brand đó.
+*   **Giá trị**: Bài viết AI tạo ra sẽ mang bản sắc riêng, không còn cảm giác "vô hồn" của máy móc.
 
-### Giai đoạn 4: Phân tích Dữ liệu
-- [ ] **Google Search Console Integration**: Theo dõi hiệu quả của bài viết sau khi xuất bản.
-- [ ] **Dashboard Report**: Thống kê bài viết theo Brand và theo thời gian.
+### 4. ⚡ Auto-Posting & Indexing Engine
+*   **Giải pháp**: 
+    *   Tự động đăng bài lên WordPress/Shopify với 1 nút bấm.
+    *   Tích hợp **Google Search Console API** để yêu cầu index bài viết ngay lập tức sau khi xuất bản.
+*   **Giá trị**: Tiết kiệm tối đa thời gian vận hành thu công.
+
+### 5. 📊 Real-time SEO Auditor (Chấm điểm SEO thời gian thực)
+*   **Giải pháp**: Một thang điểm từ 0-100 (Power Score) cập nhật liên tục khi người dùng viết bài, so sánh trực tiếp với độ dài và mật độ từ khóa của đối thủ đang đứng Top 1.
 
 ---
 
 ## 🛠 CÔNG NGHỆ SỬ DỤNG
 - **Frontend**: Next.js 14 (App Router), React, Tailwind CSS.
 - **AI Core**: Groq Cloud (Model: llama-3.3-70b-versatile).
-- **Image Gen**: Pollinations.ai (Model: Turbo AI-Optimized).
-- **Database**: JSON File System (Low latency, Zero config).
-- **Editor**: React-Markdown-Editor-Lite + Markdown-it.
+- **Database**: **Supabase (Main)** / JSON File System (Fallback).
+- **Email**: Nodemailer + SMTP Config.
+- **Image Gen**: Pollinations.ai (Turbo AI-Optimized).
 
 ---
-*Cập nhật lần cuối: 2026-02-07 14:40*
+*Cập nhật lần cuối: 2026-02-07 22:58*

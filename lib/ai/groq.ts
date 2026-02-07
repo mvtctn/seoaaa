@@ -85,14 +85,18 @@ export async function analyzeCompetitors(
   2. Content gaps (what is missing?).
   3. Recommended word count range.
   4. User intent (Informational, Transactional, etc.).
-  5. A winning outline structure that is better than all competitors.
+  5. **Semantic Entities**: Key subject entities (people, places, concepts) important for this topic.
+  6. **LSI Keywords**: Latent Semantic Indexing keywords and related terms.
+  7. A winning outline structure that is better than all competitors.
 
-  Return ONLY valid JSON directly without markdown formatting:
+  Return ONLY valid JSON directly without markdown formatting (start with { and end with }):
   {
     "userIntent": "string",
     "commonThemes": ["string"],
     "contentGaps": ["string"],
     "recommendedWordCount": "string",
+    "entities": ["string"],
+    "lsiKeywords": ["string"],
     "recommendedOutline": {
       "title": "string",
       "headings": [
@@ -167,6 +171,8 @@ export async function generateArticle(params: {
   - **User Intent**: ${researchBrief.userIntent}
   - **Content Strategy**: ${contentStrategy}
   - **Target Word Count**: ${researchBrief.recommendedWordCount}
+  - **Semantic Entities to Cover**: ${researchBrief.entities?.join(', ') || 'N/A'}
+  - **LSI Keywords to Include**: ${researchBrief.lsiKeywords?.join(', ') || 'N/A'}
 
   ## Outline (Strictly Follow This Structure)
   Title: ${researchBrief.recommendedOutline.title}
@@ -277,7 +283,14 @@ export async function analyzeReadability(content: string) {
 
 // Helper to clean JSON string from Markdown code blocks
 function cleanJsonString(text: string) {
-    return text.replace(/```json\n?|\n?```/g, '').trim()
+    // If it contains a code block, extract only the content of the block
+    const match = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/i)
+    if (match) {
+        return match[1].trim()
+    }
+
+    // Fallback: remove markdown symbols and trim
+    return text.replace(/```json\n?|```\n?|```/gi, '').trim()
 }
 
 // Mock data integration
@@ -287,6 +300,8 @@ function mockAnalysis() {
         commonThemes: ["Basic Concepts", "Benefits", "How-to Guide"],
         contentGaps: ["Detailed Case Studies", "Expert Opinions"],
         recommendedWordCount: "1500-2000",
+        entities: ["Khái niệm chính", "Xu hướng thị trường"],
+        lsiKeywords: ["hướng dẫn chi tiết", "lợi ích thực tế"],
         recommendedOutline: {
             title: "Comprehensive Guide (Mock Data)",
             headings: [

@@ -44,13 +44,21 @@ export async function fetchSERPResults(keyword: string, limit: number = 10): Pro
 
         const organicResults = response.data.organic_results || []
 
-        return organicResults.slice(0, limit).map((result: any, index: number) => ({
-            position: index + 1,
-            title: result.title,
-            url: result.link,
-            snippet: result.snippet,
-            domain: new URL(result.link).hostname
-        }))
+        return organicResults.slice(0, limit).map((result: any, index: number) => {
+            const url = result.link || result.url || ''
+            let domain = 'N/A'
+            try {
+                if (url) domain = new URL(url).hostname
+            } catch (e) { }
+
+            return {
+                position: index + 1,
+                title: result.title || 'Untitled',
+                url: url,
+                snippet: result.snippet || '',
+                domain: domain
+            }
+        })
     } catch (error) {
         console.error('Error fetching SERP results:', error)
         return getMockSERPResults(keyword, limit)

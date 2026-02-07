@@ -144,11 +144,11 @@ export const createResearch = async (data: {
 }): Promise<RunResult> => {
     const { data: record, error } = await supabase.from('research').insert([{
         keyword_id: data.keyword_id,
-        serp_data: data.serp_data ? JSON.parse(data.serp_data) : null,
-        competitor_analysis: data.competitor_analysis,
-        content_gaps: data.content_gaps,
+        serp_data: typeof data.serp_data === 'string' ? JSON.parse(data.serp_data) : data.serp_data,
+        competitor_analysis: typeof data.competitor_analysis === 'string' ? JSON.parse(data.competitor_analysis) : data.competitor_analysis,
+        content_gaps: typeof data.content_gaps === 'string' ? JSON.parse(data.content_gaps) : data.content_gaps,
         strategic_positioning: data.strategic_positioning,
-        gemini_brief: data.gemini_brief ? JSON.parse(data.gemini_brief) : null
+        gemini_brief: typeof data.gemini_brief === 'string' ? JSON.parse(data.gemini_brief) : data.gemini_brief
     }]).select().single()
 
     if (error) {

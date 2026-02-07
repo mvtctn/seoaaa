@@ -65,7 +65,9 @@ export async function analyzeCompetitors(
   2. Content gaps (what is missing?).
   3. Recommended word count range.
   4. User intent (Informational, Transactional, etc.).
-  5. A winning outline structure that is better than all competitors.
+  5. **Semantic Entities**: Key organizations, people, locations, and specific concept entities that Google expects for this topic.
+  6. **LSI Keywords**: Related secondary keywords and semantic terms found in top content.
+  7. A winning outline structure that is better than all competitors.
 
   Return ONLY valid JSON directly without markdown formatting (start with { and end with }):
   {
@@ -73,6 +75,8 @@ export async function analyzeCompetitors(
     "commonThemes": ["string"],
     "contentGaps": ["string"],
     "recommendedWordCount": "string",
+    "entities": ["string"],
+    "lsiKeywords": ["string"],
     "recommendedOutline": {
       "title": "string",
       "headings": [
@@ -95,6 +99,8 @@ export async function analyzeCompetitors(
             commonThemes: ['Introduction', 'Benefits', 'How-to'],
             contentGaps: ['Detailed examples', 'Expert quotes'],
             recommendedWordCount: '1500-2000',
+            entities: [keyword],
+            lsiKeywords: [],
             recommendedOutline: {
                 title: `Complete Guide to ${keyword}`,
                 headings: [
@@ -156,6 +162,8 @@ export async function generateArticle(params: {
   - **User Intent**: ${researchBrief.userIntent}
   - **Content Strategy**: ${contentStrategy}
   - **Target Word Count**: ${researchBrief.recommendedWordCount}
+  - **Semantic Entities to Cover**: ${researchBrief.entities?.join(', ') || 'N/A'}
+  - **LSI Keywords to Include**: ${researchBrief.lsiKeywords?.join(', ') || 'N/A'}
 
   ## Outline (Strictly Follow This Structure)
   Title: ${researchBrief.recommendedOutline.title}
