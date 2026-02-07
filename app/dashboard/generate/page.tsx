@@ -45,7 +45,23 @@ export default function GeneratePage() {
         return content.substring(dataStart, endIdx).trim()
     }
 
-    const parseArticleResult = (rawContent: string) => {
+    const parseArticleResult = (data: any) => {
+        // New API flow: content is already clean, schema/summary provided separately
+        if (data.schema || data.summary) {
+            return {
+                article: data.content,
+                summary: data.summary,
+                meta: {
+                    title: data.metaTitle,
+                    description: data.metaDesc,
+                    slug: data.slug
+                },
+                schema: data.schema
+            }
+        }
+
+        // Legacy flow: parse raw content with tags
+        const rawContent = data.content
         const article = extractSection(rawContent, '[ARTICLE]', '[SUMMARY]') || extractSection(rawContent, '[ARTICLE]', '[META]') || rawContent
         const summary = extractSection(rawContent, '[SUMMARY]', '[META]')
         const metaText = extractSection(rawContent, '[META]', '[SCHEMA]')
@@ -54,6 +70,9 @@ export default function GeneratePage() {
         // Parse meta lines
         const metaLines = metaText?.split('\n') || []
         const meta: any = {}
+        if (data.title) meta.title = data.title
+        if (data.slug) meta.slug = data.slug
+
         metaLines.forEach(line => {
             if (line.toLowerCase().includes('title:')) meta.title = line.split(':')[1]?.trim()
             if (line.toLowerCase().includes('description:')) meta.description = line.split(':')[1]?.trim()
@@ -132,7 +151,7 @@ export default function GeneratePage() {
         }
     }
 
-    const parsed = articleData ? parseArticleResult(articleData.content) : null
+    const parsed = articleData ? parseArticleResult(articleData) : null
 
     return (
         <div className={styles.container}>

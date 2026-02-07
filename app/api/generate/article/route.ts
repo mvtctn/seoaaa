@@ -28,38 +28,88 @@ export async function POST(req: NextRequest) {
         } : undefined
 
         // 2. Generate Article Content (Now using Gemini)
-        console.log(`Generating article for: ${keyword} using Gemini...`)
-        const content = await generateArticle({
+        // 2. Generate Article Content (Now using Gemini/Groq)
+        console.log(`Generating article for: ${keyword} using AI...`)
+        const rawContent = await generateArticle({
             keyword,
             researchBrief,
             contentStrategy,
             brandContext
         })
 
+        // --- PARSE AI OUTPUT ---
+        const sections = {
+            article: '',
+            summary: '',
+            meta: { title: '', description: '', slug: '' },
+            schema: ''
+        }
+
+        // Parse Article
+        // Look for [ARTICLE] tag, or assume start of string if not found
+        const articleMatch = rawContent.match(/\[ARTICLE\]\s*([\s\S]*?)(?=\[SUMMARY\]|\[META\]|\[SCHEMA\]|$)/i)
+        if (articleMatch) {
+            sections.article = articleMatch[1].trim()
+        } else {
+            // Fallback: cleaning up potential tags if [ARTICLE] missing but others present
+            sections.article = rawContent.replace(/\[SUMMARY\][\s\S]*|\[META\][\s\S]*|\[SCHEMA\][\s\S]*/i, '').trim()
+        }
+
+        // Parse Summary
+        const summaryMatch = rawContent.match(/\[SUMMARY\]\s*([\s\S]*?)(?=\[META\]|\[SCHEMA\]|$)/i)
+        if (summaryMatch) sections.summary = summaryMatch[1].trim()
+
+        // Parse Meta
+        const metaMatch = rawContent.match(/\[META\]\s*([\s\S]*?)(?=\[SCHEMA\]|$)/i)
+        if (metaMatch) {
+            const metaText = metaMatch[1]
+            const titleMatch = metaText.match(/Meta Title:\s*(.*)/i)
+            const descMatch = metaText.match(/Meta Description:\s*(.*)/i)
+            const slugMatch = metaText.match(/URL Slug:\s*(.*)/i)
+
+            if (titleMatch) sections.meta.title = titleMatch[1].trim().replace(/^"|"$/g, '')
+            if (descMatch) sections.meta.description = descMatch[1].trim().replace(/^"|"$/g, '')
+            if (slugMatch) sections.meta.slug = slugMatch[1].trim()
+        }
+
+        // Parse Schema
+        // TODO: Save Schema to DB when column available
+        const schemaMatch = rawContent.match(/\[SCHEMA\]\s*([\s\S]*)/i)
+        if (schemaMatch) {
+            // Try to extract JSON block only
+            const jsonMatch = schemaMatch[1].match(/```json\s*([\s\S]*?)\s*```/i)
+            sections.schema = jsonMatch ? jsonMatch[1].trim() : schemaMatch[1].trim()
+        }
+
+        const content = sections.article // Clean content
+
         // 3. Post-processing & SEO
-        let title = researchBrief.recommendedOutline.title
+        let title = sections.meta.title || researchBrief.recommendedOutline.title
         const h1Match = content.match(/^#\s+(.+)$/m)
         if (h1Match) {
+            // Prefer H1 in content if available, as it's the actual article title
             title = h1Match[1]
         }
 
-        // Fallback title if none found
+        // Fallback title
         if (!title) title = keyword
 
-        const slug = generateSlug(title)
-        // reading_time removed from DB logic for now, but calculated for display if needed
+        let slug = sections.meta.slug
+        if (!slug || slug.length < 5) {
+            slug = generateSlug(title)
+        }
 
-        // 4. Generate Metadata (Gemini)
-        console.log('Generating metadata...')
-        const metaTitle = await generateMetaTitle(title, keyword)
-        const metaDesc = await generateMetaDescription(title, keyword, content)
+        // 4. Generate Metadata (Use AI extracted first, fallback to separate generation)
+        console.log('Finalizing metadata...')
+        const metaTitle = sections.meta.title || await generateMetaTitle(title, keyword)
+        const metaDesc = sections.meta.description || await generateMetaDescription(title, keyword, content)
 
         // 5. Save Artifact
         const articleId = await createArticle({
             keyword_id: keywordId || 0,
             title,
             slug,
-            content,
+            content, // Saved clean content only
             meta_title: metaTitle,
             meta_description: metaDesc,
             status: 'draft',
@@ -74,7 +124,9 @@ export async function POST(req: NextRequest) {
                 slug,
                 content,
                 metaTitle,
-                metaDesc
+                metaDesc,
+                schema: sections.schema,
+                summary: sections.summary
             }
         })
 
