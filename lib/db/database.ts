@@ -94,6 +94,9 @@ export const createBrand = async (data: {
   article_template?: string
   internal_links?: string
   is_default?: boolean
+  wp_url?: string
+  wp_username?: string
+  wp_password?: string
 }): Promise<RunResult> => {
   if (USE_SUPABASE) return supabaseFunctions.createBrand(data)
 
@@ -107,6 +110,9 @@ export const createBrand = async (data: {
     article_template: data.article_template || null,
     internal_links: data.internal_links || null,
     is_default: data.is_default || false,
+    wp_url: data.wp_url || null,
+    wp_username: data.wp_username || null,
+    wp_password: data.wp_password || null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   }
@@ -127,6 +133,9 @@ export const updateBrand = async (id: number, data: Partial<{
   article_template: string
   internal_links: string
   is_default: boolean
+  wp_url: string
+  wp_username: string
+  wp_password: string
 }>): Promise<RunResult> => {
   if (USE_SUPABASE) return supabaseFunctions.updateBrand(id, data)
 
@@ -260,8 +269,9 @@ export const getResearchById = async (id: number) => {
 // --- Articles ---
 
 export const createArticle = async (data: {
-  keyword_id: number
+  keyword_id: number | null
   research_id?: number
+  brand_id?: number
   title: string
   slug: string
   meta_title?: string
@@ -279,6 +289,7 @@ export const createArticle = async (data: {
     id,
     keyword_id: data.keyword_id,
     research_id: data.research_id || null,
+    brand_id: data.brand_id || null,
     title: data.title,
     slug: data.slug,
     meta_title: data.meta_title || null,
@@ -416,8 +427,12 @@ export const createArticleFromRewrite = async (data: {
   meta_title?: string
   meta_description?: string
   thumbnail_url?: string
+  brand_id?: number
 }): Promise<RunResult> => {
   if (USE_SUPABASE) return supabaseFunctions.createArticleFromRewrite(data)
+
+  const defaultBrand = await getDefaultBrand()
+  const brandId = data.brand_id || defaultBrand?.id
 
   const slug = data.title.toLowerCase().replace(/[^\w\s-]/g, '').replace(/[\s_]+/g, '-').replace(/^-+|-+$/g, '')
   const db = readDB()
@@ -434,6 +449,7 @@ export const createArticleFromRewrite = async (data: {
     thumbnail_url: data.thumbnail_url || null,
     images: null,
     status: data.status || 'draft',
+    brand_id: brandId || null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   }

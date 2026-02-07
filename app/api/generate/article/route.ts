@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
         // 1. Get Brand Context
         console.log('[API] Fetching brand context...')
         const brand = await getDefaultBrand()
+        console.log(`[API] Using brand: ${brand ? brand.name : 'NONE (Using Generic)'}`)
 
         const brandContext = brand ? {
             name: brand.name,
@@ -109,7 +110,8 @@ export async function POST(req: NextRequest) {
             meta_title: metaTitle,
             meta_description: metaDesc,
             status: 'draft',
-            research_id: researchId || undefined
+            research_id: researchId || undefined,
+            brand_id: brand?.id
         })
 
         const articleId = dbResult.lastInsertRowid

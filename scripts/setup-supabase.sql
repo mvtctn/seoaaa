@@ -6,6 +6,10 @@ CREATE TABLE brands (
     tone_of_voice JSONB, -- {description, tone, style...}
     article_template TEXT,
     internal_links JSONB, -- list of {title, url, keyword}
+    is_default BOOLEAN DEFAULT false,
+    wp_url TEXT,
+    wp_username TEXT,
+    wp_password TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -46,7 +50,15 @@ CREATE TABLE articles (
     thumbnail_url TEXT,
     images JSONB, -- [{url, alt}] or string search keywords
     status TEXT DEFAULT 'draft',
+    brand_id BIGINT REFERENCES brands(id),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create App Settings table
+CREATE TABLE IF NOT EXISTS app_settings (
+    key TEXT PRIMARY KEY,
+    value JSONB,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -77,3 +89,7 @@ CREATE POLICY "Allow All Access" ON keywords FOR ALL USING (true) WITH CHECK (tr
 CREATE POLICY "Allow All Access" ON research FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow All Access" ON articles FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow All Access" ON batch_jobs FOR ALL USING (true) WITH CHECK (true);
+
+-- Settings Policy
+ALTER TABLE app_settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow All Access" ON app_settings FOR ALL USING (true) WITH CHECK (true);

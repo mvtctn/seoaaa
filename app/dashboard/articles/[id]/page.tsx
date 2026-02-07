@@ -42,6 +42,7 @@ export default function ArticleDetailPage() {
     const [isAnalyzing, setIsAnalyzing] = useState(false)
     const [readabilityReport, setReadabilityReport] = useState<any>(null)
     const [isAnalyzingReadability, setIsAnalyzingReadability] = useState(false)
+    const [isPublishing, setIsPublishing] = useState(false)
 
     // Instance of markdown-it
     const mdParser = new MarkdownIt({
@@ -143,6 +144,40 @@ export default function ArticleDetailPage() {
             alert('Lỗi kết nối')
         } finally {
             setIsGeneratingImage(false)
+        }
+    }
+
+    const handlePublishToWP = async () => {
+        if (!article) return
+        if (!confirm('Bạn có chắc muốn đăng bài viết này lên WordPress?')) return
+
+        setIsPublishing(true)
+
+        try {
+            const res = await fetch('/api/wordpress/publish', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    articleId: article.id,
+                    status: 'publish' // Directly publish
+                })
+            })
+
+            const data = await res.json()
+
+            if (res.ok) {
+                alert(`✨ Tuyệt vời! Bài viết đã được đăng thành công.\nURL: ${data.url}`)
+                if (data.url) {
+                    window.open(data.url, '_blank')
+                }
+            } else {
+                alert(`❌ Lỗi đăng bài: ${data.error || 'Vui lòng kiểm tra lại cấu hình WordPress của Brand.'}`)
+            }
+        } catch (error) {
+            console.error('Publish failed', error)
+            alert('❌ Lỗi kết nối khi đăng bài.')
+        } finally {
+            setIsPublishing(false)
         }
     }
 
@@ -467,9 +502,19 @@ export default function ArticleDetailPage() {
                             </button>
                         </>
                     ) : (
-                        <button className="btn btn-primary btn-sm" onClick={() => setIsEditing(true)}>
-                            Chỉnh Sửa
-                        </button>
+                        <div className="flex gap-2">
+                            <button
+                                className="btn btn-secondary btn-sm flex items-center gap-2"
+                                onClick={handlePublishToWP}
+                                disabled={isPublishing}
+                            >
+                                <span style={{ fontSize: '1.2rem' }}>🌐</span>
+                                {isPublishing ? 'Đang đăng...' : 'Đăng WordPress'}
+                            </button>
+                            <button className="btn btn-primary btn-sm" onClick={() => setIsEditing(true)}>
+                                Chỉnh Sửa
+                            </button>
+                        </div>
                     )}
                 </div>
             </header>

@@ -21,10 +21,10 @@ export async function POST(req: NextRequest) {
         const brand = await getDefaultBrand()
         const brandContext = brand ? {
             name: brand.name,
-            coreValues: brand.core_values ? JSON.parse(brand.core_values as string) : [],
-            toneOfVoice: brand.tone_of_voice ? JSON.parse(brand.tone_of_voice as string).name : 'Professional',
+            coreValues: Array.isArray(brand.core_values) ? brand.core_values : (typeof brand.core_values === 'string' ? JSON.parse(brand.core_values) : []),
+            toneOfVoice: typeof brand.tone_of_voice === 'object' ? (brand.tone_of_voice as any)?.description : (typeof brand.tone_of_voice === 'string' ? JSON.parse(brand.tone_of_voice).description : 'Professional'),
             articleTemplate: brand.article_template || undefined,
-            internalLinks: brand.internal_links ? JSON.parse(brand.internal_links as string) : []
+            internalLinks: Array.isArray(brand.internal_links) ? brand.internal_links : (typeof brand.internal_links === 'string' ? JSON.parse(brand.internal_links) : [])
         } : undefined
 
         // Create a research brief based on the analysis
@@ -71,7 +71,8 @@ Bài viết mới phải:
             content: articleContent,
             status: 'draft',
             source_url: originalUrl || null,
-            meta_description: analysis.metaDescription || null
+            meta_description: analysis.metaDescription || null,
+            brand_id: brand?.id
         })
 
         const articleId = Number(newArticle.lastInsertRowid)

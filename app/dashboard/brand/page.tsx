@@ -23,6 +23,9 @@ interface BrandSettings {
     article_template: string
     internal_links: InternalLink[]
     is_default: boolean
+    wp_url?: string
+    wp_username?: string
+    wp_password?: string
     created_at?: string
 }
 
@@ -83,7 +86,10 @@ export default function BrandManagementPage() {
             tone_of_voice: TONE_OPTIONS[0],
             article_template: DEFAULT_TEMPLATE,
             internal_links: [],
-            is_default: false
+            is_default: false,
+            wp_url: '',
+            wp_username: '',
+            wp_password: ''
         })
         setShowModal(true)
     }
@@ -391,6 +397,47 @@ export default function BrandManagementPage() {
                                     value={selectedBrand.article_template}
                                     onChange={e => updateSelected({ article_template: e.target.value })}
                                 />
+                            </div>
+
+                            {/* WordPress Integration */}
+                            <div className={styles.brandFormSection}>
+                                <div className={styles.sectionTitle}>🌐 WordPress Integration (Cấu hình đăng bài)</div>
+                                <p className="text-xs text-tertiary mb-3">Thông tin để tự động đăng bài lên website WordPress của bạn.</p>
+                                <div className="form-group mb-3">
+                                    <label className="form-label">WordPress Site URL</label>
+                                    <input
+                                        type="url"
+                                        className="form-input"
+                                        value={selectedBrand.wp_url || ''}
+                                        onChange={e => updateSelected({ wp_url: e.target.value })}
+                                        placeholder="https://yourwebsite.com"
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="form-group">
+                                        <label className="form-label">Username</label>
+                                        <input
+                                            type="text"
+                                            className="form-input"
+                                            value={selectedBrand.wp_username || ''}
+                                            onChange={e => updateSelected({ wp_username: e.target.value })}
+                                            placeholder="admin"
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">App Password</label>
+                                        <input
+                                            type="password"
+                                            className="form-input"
+                                            value={selectedBrand.wp_password || ''}
+                                            onChange={e => updateSelected({ wp_password: e.target.value })}
+                                            placeholder="xxxx xxxx xxxx xxxx"
+                                        />
+                                    </div>
+                                </div>
+                                <p className="text-[10px] text-tertiary mt-2 italic">
+                                    * Sử dụng <strong>Application Password</strong> (trong WP Admin &gt; Users &gt; Profile), không dùng mật khẩu chính.
+                                </p>
                             </div>
                         </div>
 

@@ -79,6 +79,7 @@ export async function analyzeCompetitors(
   ${JSON.stringify(competitors.map(c => ({ title: c.title, headings: c.headings })), null, 2)}
 
   Brand Context: ${JSON.stringify(brandContext || {})}
+  Brand Name: ${brandContext?.name || 'Generic Brand'}
 
   Identify:
   1. Common themes and structure directly from the headings.
@@ -127,6 +128,7 @@ export async function generateContentStrategy(
   Create a content strategy for "${keyword}" based on this research:
   ${JSON.stringify(researchData)}
 
+  Brand Name: ${brandContext?.name || 'Professional'}
   Brand Voice: ${brandContext?.toneOfVoice || 'Professional'}
   Core Values: ${brandContext?.coreValues?.join(', ') || 'N/A'}
 
@@ -162,6 +164,7 @@ export async function generateArticle(params: {
   You are an expert SEO Content Writer. Write a comprehensive, high-ranking article for the keyword: "${keyword}".
 
   ## Context
+  - **Brand Name**: ${brandContext?.name || 'N/A'}
   - **Tone of Voice**: ${brandContext?.toneOfVoice || 'Professional, Authoritative'}
   - **Brand Values**: ${brandContext?.coreValues?.join(', ') || 'N/A'}
   - **Article Template**: ${brandContext?.articleTemplate || 'Standard SEO Structure'}

@@ -18,8 +18,13 @@ export const getAllBrands = async () => {
 }
 
 export const getDefaultBrand = async () => {
+    // Try to get the one marked as default
     const { data } = await supabase.from('brands').select('*').eq('is_default', true).maybeSingle()
-    return data
+    if (data) return data
+
+    // Fallback: Get the most recent one if no default exists
+    const { data: latestBrand } = await supabase.from('brands').select('*').order('created_at', { ascending: false }).limit(1).maybeSingle()
+    return latestBrand || null
 }
 
 export const createBrand = async (data: {
@@ -29,6 +34,9 @@ export const createBrand = async (data: {
     article_template?: string
     internal_links?: string
     is_default?: boolean
+    wp_url?: string
+    wp_username?: string
+    wp_password?: string
 }): Promise<RunResult> => {
     if (data.is_default) {
         await supabase.from('brands').update({ is_default: false }).neq('id', 0)
@@ -40,7 +48,10 @@ export const createBrand = async (data: {
         tone_of_voice: data.tone_of_voice ? JSON.parse(data.tone_of_voice) : {},
         article_template: data.article_template,
         internal_links: data.internal_links ? JSON.parse(data.internal_links) : [],
-        is_default: data.is_default || false
+        is_default: data.is_default || false,
+        wp_url: data.wp_url,
+        wp_username: data.wp_username,
+        wp_password: data.wp_password
     }]).select().single()
 
     if (error) {
@@ -57,6 +68,9 @@ export const updateBrand = async (id: number, data: Partial<{
     article_template: string
     internal_links: string
     is_default: boolean
+    wp_url: string
+    wp_username: string
+    wp_password: string
 }>): Promise<RunResult> => {
     try {
         if (data.is_default) {
@@ -181,10 +195,12 @@ export const createArticle = async (data: {
     thumbnail_url?: string
     images?: string
     status?: string
+    brand_id?: number
 }): Promise<RunResult> => {
     const { data: record, error } = await supabase.from('articles').insert([{
         keyword_id: data.keyword_id || null,
         research_id: data.research_id || null,
+        brand_id: data.brand_id || null,
         title: data.title,
         slug: data.slug,
         meta_title: data.meta_title,
@@ -317,7 +333,11 @@ export const createArticleFromRewrite = async (data: {
     meta_title?: string
     meta_description?: string
     thumbnail_url?: string
+    brand_id?: number
 }): Promise<RunResult> => {
+    const defaultBrand = await getDefaultBrand()
+    const brandId = data.brand_id || defaultBrand?.id
+
     const { data: record, error } = await supabase.from('articles').insert([{
         title: data.title,
         content: data.content,
@@ -325,6 +345,7 @@ export const createArticleFromRewrite = async (data: {
         meta_title: data.meta_title,
         meta_description: data.meta_description,
         thumbnail_url: data.thumbnail_url,
+        brand_id: brandId || null,
         slug: data.title.toLowerCase().replace(/[^\w\s-]/g, '').replace(/[\s_]+/g, '-').replace(/^-+|-+$/g, '')
     }]).select().single()
 
