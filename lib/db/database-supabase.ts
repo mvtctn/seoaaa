@@ -196,6 +196,7 @@ export const createArticle = async (data: {
     images?: string
     status?: string
     brand_id?: number
+    wp_post_url?: string
 }): Promise<RunResult> => {
     const { data: record, error } = await supabase.from('articles').insert([{
         keyword_id: data.keyword_id || null,
@@ -208,7 +209,8 @@ export const createArticle = async (data: {
         content: data.content,
         thumbnail_url: data.thumbnail_url,
         images: data.images ? JSON.parse(data.images) : null,
-        status: data.status || 'draft'
+        status: data.status || 'draft',
+        wp_post_url: data.wp_post_url || null
     }]).select().single()
 
     if (error) {

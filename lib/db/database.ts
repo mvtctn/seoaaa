@@ -280,6 +280,7 @@ export const createArticle = async (data: {
   thumbnail_url?: string
   images?: string
   status?: string
+  wp_post_url?: string
 }): Promise<RunResult> => {
   if (USE_SUPABASE) return supabaseFunctions.createArticle(data)
 
@@ -298,6 +299,7 @@ export const createArticle = async (data: {
     thumbnail_url: data.thumbnail_url || null,
     images: data.images || null,
     status: data.status || 'draft',
+    wp_post_url: data.wp_post_url || null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   }
@@ -333,6 +335,7 @@ export const updateArticle = async (id: number, data: Partial<{
   thumbnail_url: string
   images: string
   status: string
+  wp_post_url: string
 }>): Promise<RunResult> => {
   if (USE_SUPABASE) return supabaseFunctions.updateArticle(id, data)
 

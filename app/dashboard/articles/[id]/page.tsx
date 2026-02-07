@@ -167,6 +167,8 @@ export default function ArticleDetailPage() {
 
             if (res.ok) {
                 alert(`✨ Tuyệt vời! Bài viết đã được đăng thành công.\nURL: ${data.url}`)
+                // Update local status and URL
+                setArticle((prev: any) => prev ? { ...prev, status: 'PUBLISHED', wp_post_url: data.url } : prev)
                 if (data.url) {
                     window.open(data.url, '_blank')
                 }
@@ -476,6 +478,16 @@ export default function ArticleDetailPage() {
                         <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded border border-primary/20 font-bold uppercase">
                             {article.status || 'DRAFT'}
                         </span>
+                        {article.wp_post_url && (
+                            <a
+                                href={article.wp_post_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[10px] bg-green-500/10 text-green-500 px-1.5 py-0.5 rounded border border-green-500/20 font-bold flex items-center gap-1 hover:bg-green-500/20 transition-all"
+                            >
+                                <span>🔗</span> XEM BÀI VIẾT
+                            </a>
+                        )}
                     </div>
 
                     <h2 style={{ fontSize: '1.25rem' }}>
