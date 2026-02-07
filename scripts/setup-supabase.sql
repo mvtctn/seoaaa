@@ -48,6 +48,7 @@ CREATE TABLE articles (
     meta_description TEXT,
     content TEXT,
     thumbnail_url TEXT,
+    wp_post_url TEXT, -- Added for WordPress integration
     images JSONB, -- [{url, alt}] or string search keywords
     status TEXT DEFAULT 'draft',
     brand_id BIGINT REFERENCES brands(id),
