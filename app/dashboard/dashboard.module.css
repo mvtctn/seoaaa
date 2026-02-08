@@ -72,7 +72,7 @@
 
 .navLink:hover {
     color: var(--color-text-primary);
-    background: rgba(99, 102, 241, 0.05);
+    background: var(--color-surface-hover);
 }
 
 .navLink:hover::before {
@@ -143,6 +143,62 @@
     text-overflow: ellipsis;
 }
 
+/* Subscription Card */
+.subscriptionCard {
+    background: var(--color-background);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 0.875rem;
+    margin-bottom: 1rem;
+}
+
+.subHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.planBadge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    background: var(--color-primary-light);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+
+.upgradeLink {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+.upgradeLink:hover {
+    text-decoration: underline;
+}
+
+.usageRow {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.progressBar {
+    height: 6px;
+    background: var(--color-border);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progressFill {
+    height: 100%;
+    background: var(--gradient-primary);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
 /* New Compact User Profile */
 .userProfileRow {
     display: flex;
@@ -165,7 +221,7 @@
 }
 
 .userInfoLink:hover {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: var(--color-surface-hover);
 }
 
 .userInfoLink .userDetails .userName {
@@ -190,8 +246,8 @@
 }
 
 .compactLogoutBtn:hover {
-    color: #f87171;
-    background-color: rgba(248, 113, 113, 0.1);
+    color: var(--color-danger);
+    background-color: var(--color-danger-bg);
 }
 
 
@@ -257,7 +313,7 @@
 }
 
 .menuBurger:hover {
-    background-color: rgba(99, 102, 241, 0.1);
+    background-color: var(--color-surface-hover);
 }
 
 .menuBurger:active {
@@ -277,7 +333,7 @@
 }
 
 .closeSidebar:hover {
-    background-color: rgba(99, 102, 241, 0.1);
+    background-color: var(--color-surface-hover);
     color: var(--color-text-primary);
 }
 

@@ -316,8 +316,12 @@ export const updateBatchJob = async (id: number, userId: string, data: Partial<{
 
 // --- Settings ---
 
-export const getSetting = async (key: string, userId: string) => {
-    const { data, error } = await supabase.from('app_settings').select('value').eq('key', key).eq('user_id', userId).maybeSingle()
+export const getSetting = async (key: string, userId?: string) => {
+    let query = supabase.from('app_settings').select('value').eq('key', key)
+    if (userId) {
+        query = query.eq('user_id', userId)
+    }
+    const { data, error } = await query.maybeSingle()
     if (error) {
         console.warn(`[Supabase Settings] Could not fetch ${key}:`, error.message)
         return null
@@ -325,8 +329,12 @@ export const getSetting = async (key: string, userId: string) => {
     return data?.value || null
 }
 
-export const updateSetting = async (key: string, value: any, userId: string) => {
-    const { error } = await supabase.from('app_settings').upsert({ key, value, user_id: userId, updated_at: new Date().toISOString() })
+export const updateSetting = async (key: string, value: any, userId?: string) => {
+    const payload: any = { key, value, updated_at: new Date().toISOString() }
+    if (userId) {
+        payload.user_id = userId
+    }
+    const { error } = await supabase.from('app_settings').upsert(payload)
     if (error) {
         if (error.code === 'PGRST204' || error.message?.includes('relation "app_settings" does not exist')) {
             throw new Error('Lỗi: Bảng "app_settings" chưa tồn tại trong Supabase. Vui lòng chạy lệnh SQL khởi tạo bảng trong SQL Editor.')
@@ -451,16 +459,16 @@ export const getUserSubscription = async (userId: string) => {
     const { data } = await supabase.from('user_subscriptions').select('*').eq('user_id', userId).maybeSingle()
     if (!data) {
         // Create default trial if not exists
-        return createUserSubscription(userId, 'trial')
+        return createUserSubscription(userId, 'free')
     }
     return data
 }
 
-export const createUserSubscription = async (userId: string, plan: 'trial' | 'eco' | 'business') => {
+export const createUserSubscription = async (userId: string, plan: 'free' | 'premium' | 'enterprise') => {
     const limits = {
-        trial: 10000,
-        eco: 100000,
-        business: 500000
+        free: 5000,
+        premium: 150000,
+        enterprise: 1000000
     }
     const { data, error } = await supabase.from('user_subscriptions').insert([{
         user_id: userId,

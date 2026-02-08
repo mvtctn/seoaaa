@@ -13,6 +13,10 @@ export default function SettingsPage() {
         from: ''
     })
     const [adminEmail, setAdminEmail] = useState('')
+    const [seo, setSeo] = useState({
+        google_analytics_id: '',
+        search_console_id: ''
+    })
     const [loading, setLoading] = useState(false)
     const [saved, setSaved] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -25,15 +29,18 @@ export default function SettingsPage() {
 
     const fetchSettings = async () => {
         try {
-            const [smtpRes, adminRes] = await Promise.all([
+            const [smtpRes, adminRes, seoRes] = await Promise.all([
                 fetch('/api/settings?key=smtp_config'),
-                fetch('/api/settings?key=admin_notification_email')
+                fetch('/api/settings?key=admin_notification_email'),
+                fetch('/api/settings?key=seo_config')
             ])
             const smtpData = await smtpRes.json()
             const adminData = await adminRes.json()
+            const seoData = await seoRes.json()
 
             if (smtpData.value) setSmtp(smtpData.value)
             if (adminData.value) setAdminEmail(adminData.value)
+            if (seoData.value) setSeo(seoData.value)
         } catch (err) {
             console.error('Failed to load settings', err)
         }
@@ -91,6 +98,11 @@ export default function SettingsPage() {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ key: 'admin_notification_email', value: adminEmail })
+                }),
+                fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key: 'seo_config', value: seo })
                 })
             ])
 
@@ -98,7 +110,6 @@ export default function SettingsPage() {
                 setSaved(true)
                 setTimeout(() => setSaved(false), 3000)
             } else {
-                // Try to get error message from first failing response
                 const failingRes = results.find(r => !r.ok)
                 const errorData = await failingRes?.json()
                 throw new Error(errorData?.error || 'Some settings failed to save')
@@ -114,7 +125,7 @@ export default function SettingsPage() {
         <div className={styles.container}>
             <header className={styles.header}>
                 <h1 className={styles.title}>Cài Đặt Hệ Thống</h1>
-                <p className={styles.subtitle}>Cấu hình Email, Thông báo và các thiết lập chung của ứng dụng.</p>
+                <p className={styles.subtitle}>Cấu hình Email, Thông báo và các thiết lập SEO của ứng dụng.</p>
             </header>
 
             <form onSubmit={handleSave}>
@@ -170,6 +181,31 @@ export default function SettingsPage() {
                             />
                         </div>
                     </div>
+                </div>
+
+                <div className={styles.section}>
+                    <h2 className={styles.sectionTitle}>📈 Google Analytics & Console</h2>
+                    <div className={styles.formGrid}>
+                        <div className={styles.formGroup}>
+                            <label className={styles.label}>Google Analytics ID (G-XXXXXXX)</label>
+                            <input
+                                className={styles.input}
+                                placeholder="G-XXXXXXXXXX"
+                                value={seo.google_analytics_id}
+                                onChange={e => setSeo({ ...seo, google_analytics_id: e.target.value })}
+                            />
+                        </div>
+                        <div className={styles.formGroup}>
+                            <label className={styles.label}>Google Search Console ID</label>
+                            <input
+                                className={styles.input}
+                                placeholder="Mã xác thực meta tag"
+                                value={seo.search_console_id}
+                                onChange={e => setSeo({ ...seo, search_console_id: e.target.value })}
+                            />
+                        </div>
+                    </div>
+                    <p className="text-xs text-secondary mt-3">Các mã này sẽ được tự động chèn vào thẻ &lt;head&gt; của toàn bộ trang web.</p>
                 </div>
 
                 <div className={styles.section}>

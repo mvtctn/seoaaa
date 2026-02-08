@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import styles from './dashboard.module.css'
 import { createClient } from '@/lib/supabase/client'
+import ThemeToggle from '@/components/ThemeToggle'
 
 const PAGE_TITLES: { [key: string]: string } = {
     '/dashboard': 'Dashboard',
@@ -29,17 +30,30 @@ export default function DashboardLayout({
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
     const [pageTitle, setPageTitle] = useState('Dashboard')
     const [user, setUser] = useState<any>(null)
+    const [subscription, setSubscription] = useState<any>(null)
     const supabase = createClient()
 
     useEffect(() => {
-        const fetchUser = async () => {
+        const fetchUserData = async () => {
             const { data: { user } } = await supabase.auth.getUser()
             setUser(user)
-        }
-        fetchUser()
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUser(session?.user || null)
+            if (user) {
+                const { data: sub } = await supabase.from('user_subscriptions').select('*').eq('user_id', user.id).maybeSingle()
+                setSubscription(sub)
+            }
+        }
+        fetchUserData()
+
+        const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+            const newUser = session?.user || null
+            setUser(newUser)
+            if (newUser) {
+                const { data: sub } = await supabase.from('user_subscriptions').select('*').eq('user_id', newUser.id).maybeSingle()
+                setSubscription(sub)
+            } else {
+                setSubscription(null)
+            }
         })
 
         // Find matching title
@@ -55,7 +69,7 @@ export default function DashboardLayout({
         // Close sidebar on route change (mobile)
         setIsSidebarOpen(false)
 
-        return () => subscription.unsubscribe()
+        return () => authSub.unsubscribe()
     }, [pathname, supabase])
 
     const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen)
@@ -73,8 +87,9 @@ export default function DashboardLayout({
             {/* Sidebar */}
             <aside className={`${styles.sidebar} ${isSidebarOpen ? styles.sidebarOpen : ''}`}>
                 <div className={styles.sidebarHeader}>
-                    <Link href="/">
-                        <h2 className={styles.logo}>SEO Engine</h2>
+                    <Link href="/" className="flex items-center gap-3 no-underline">
+                        <img src="/logo.svg" alt="SEOAAA Logo" width="28" height="28" />
+                        <h2 className={styles.logo} style={{ margin: 0, fontSize: '1.25rem' }}>SEOAAA</h2>
                     </Link>
                     <button
                         className={styles.closeSidebar}
@@ -123,7 +138,7 @@ export default function DashboardLayout({
 
                     <Link href="/dashboard/rewrite" className={styles.navLink}>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7" />
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                         </svg>
                         <span>Viết Lại Nội Dung</span>
@@ -167,6 +182,24 @@ export default function DashboardLayout({
                 </nav>
 
                 <div className={styles.sidebarFooter}>
+                    {subscription && (
+                        <div className={styles.subscriptionCard}>
+                            <div className={styles.subHeader}>
+                                <span className={styles.planBadge}>{subscription.plan_tier?.toUpperCase()}</span>
+                                <Link href="/pricing" className={styles.upgradeLink}>Nâng cấp</Link>
+                            </div>
+                            <div className={styles.usageRow}>
+                                <span>Credits: {subscription.credits_used.toLocaleString()} / {subscription.credits_limit.toLocaleString()}</span>
+                            </div>
+                            <div className={styles.progressBar}>
+                                <div
+                                    className={styles.progressFill}
+                                    style={{ width: `${Math.min(100, (subscription.credits_used / subscription.credits_limit) * 100)}%` }}
+                                ></div>
+                            </div>
+                        </div>
+                    )}
+
                     <div className={styles.userProfileRow}>
                         <Link href="/dashboard/profile" className={styles.userInfoLink} title="Cài đặt tài khoản">
                             <div className={styles.userAvatar}>
@@ -177,7 +210,8 @@ export default function DashboardLayout({
                                     {user?.user_metadata?.display_name || user?.user_metadata?.full_name || 'Người dùng'}
                                 </div>
                                 <div className={styles.userRole}>
-                                    {user?.user_metadata?.role || 'Thành viên'}
+                                    {subscription?.plan_tier === 'enterprise' ? 'Enterprise' :
+                                        subscription?.plan_tier === 'premium' ? 'Premium' : 'Free Plan'}
                                 </div>
                             </div>
                         </Link>
@@ -223,12 +257,7 @@ export default function DashboardLayout({
                             </svg>
                         </button>
 
-                        <button className="btn btn-icon btn-ghost">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <circle cx="12" cy="12" r="3" />
-                                <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24" />
-                            </svg>
-                        </button>
+                        <ThemeToggle />
                     </div>
                 </header>
 

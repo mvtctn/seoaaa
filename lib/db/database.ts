@@ -544,7 +544,7 @@ export const updateAISetting = async (key: string, value: any, userId?: string) 
 
 export const getUserSubscription = async (userId: string) => {
   if (USE_SUPABASE) return supabaseFunctions.getUserSubscription(userId)
-  return { plan_tier: 'trial', status: 'active', credits_used: 0, credits_limit: 10000 }
+  return { plan_tier: 'free', status: 'active', credits_used: 0, credits_limit: 5000 }
 }
 
 export const checkUserLimit = async (userId: string, cost: number) => {

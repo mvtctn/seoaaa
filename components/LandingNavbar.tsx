@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import styles from './LandingNavbar.module.css'
 import { createClient } from '@/lib/supabase/client'
 import AuthModal from './AuthModal'
+import ThemeToggle from './ThemeToggle'
 
 export default function LandingNavbar() {
     const pathname = usePathname()
@@ -50,17 +51,8 @@ export default function LandingNavbar() {
             <nav className={styles.nav}>
                 <div className={styles.navContent}>
                     <Link href="/" className={styles.logo}>
-                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                            <rect width="32" height="32" rx="8" fill="url(#gradient)" />
-                            <path d="M16 8L24 12V20L16 24L8 20V12L16 8Z" fill="white" opacity="0.9" />
-                            <defs>
-                                <linearGradient id="gradient" x1="0" y1="0" x2="32" y2="32">
-                                    <stop offset="0%" stopColor="#0ea5e9" />
-                                    <stop offset="100%" stopColor="#2563eb" />
-                                </linearGradient>
-                            </defs>
-                        </svg>
-                        <span>SEO Engine</span>
+                        <img src="/logo.svg" alt="SEOAAA Logo" width="32" height="32" />
+                        <span>SEOAAA</span>
                     </Link>
 
                     <div className={styles.navLinks}>
@@ -78,11 +70,15 @@ export default function LandingNavbar() {
                                 <button onClick={handleLogout} className={styles.logoutButton}>
                                     Logout
                                 </button>
+                                <ThemeToggle />
                             </div>
                         ) : (
-                            <button onClick={() => openAuth('login')} className={styles.navButton}>
-                                Đăng ký / Đăng nhập
-                            </button>
+                            <div className={styles.loggedInActions}>
+                                <button onClick={() => openAuth('login')} className={styles.navButton}>
+                                    Đăng ký / Đăng nhập
+                                </button>
+                                <ThemeToggle />
+                            </div>
                         )}
                     </div>
 
@@ -98,7 +94,10 @@ export default function LandingNavbar() {
 
             <div className={`${styles.mobileMenu} ${isMenuOpen ? styles.open : ''}`}>
                 <div className={styles.mobileHeader}>
-                    <span className="text-xl font-bold text-white">Menu</span>
+                    <div className="flex items-center gap-3">
+                        <span className="text-xl font-bold text-white">Menu</span>
+                        <ThemeToggle />
+                    </div>
                     <button className={styles.closeBtn} onClick={() => setIsMenuOpen(false)}>&times;</button>
                 </div>
 

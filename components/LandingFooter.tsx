@@ -7,17 +7,8 @@ export default function LandingFooter() {
             <div className={styles.footerContent}>
                 <div className={styles.footerBrand}>
                     <div className={styles.logo}>
-                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                            <rect width="32" height="32" rx="8" fill="url(#gradient2)" />
-                            <path d="M16 8L24 12V20L16 24L8 20V12L16 8Z" fill="white" opacity="0.9" />
-                            <defs>
-                                <linearGradient id="gradient2" x1="0" y1="0" x2="32" y2="32">
-                                    <stop offset="0%" stopColor="#0ea5e9" />
-                                    <stop offset="100%" stopColor="#2563eb" />
-                                </linearGradient>
-                            </defs>
-                        </svg>
-                        <span>SEO Engine</span>
+                        <img src="/logo.svg" alt="SEOAAA Logo" width="32" height="32" />
+                        <span>SEOAAA</span>
                     </div>
                     <p>Tự động hóa hoàn toàn quy trình tạo nội dung SEO của bạn.</p>
                 </div>
@@ -45,7 +36,7 @@ export default function LandingFooter() {
             </div>
 
             <div className={styles.footerBottom}>
-                <p>&copy; 2026 SEO Content Engine. All rights reserved.</p>
+                <p>&copy; 2026 SEOAAA. All rights reserved.</p>
             </div>
         </footer>
     )

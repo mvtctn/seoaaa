@@ -193,8 +193,8 @@ export default function HowItWorksPage() {
             <section className={styles.cta}>
                 <h2>Bắt Đầu Tạo Nội Dung Ngay</h2>
                 <p>Trải nghiệm quy trình tự động hóa hoàn toàn</p>
-                <Link href="/dashboard" className={styles.ctaButton}>
-                    Vào Dashboard
+                <Link href="/contact" className={styles.ctaButton}>
+                    Liên Hệ Ngay
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M5 12h14M12 5l7 7-7 7" />
                     </svg>

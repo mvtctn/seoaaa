@@ -6,7 +6,6 @@ import AnimateEntrance from '@/components/AnimateEntrance'
 import GlowingCard from '@/components/GlowingCard'
 import SparkleBackground from '@/components/SparkleBackground'
 import ShinyText from '@/components/ShinyText'
-import { motion } from 'framer-motion'
 
 export default function Home() {
     return (
@@ -38,40 +37,40 @@ export default function Home() {
 
                     <AnimateEntrance delay={0.6} distance={20}>
                         <p className={styles.heroSubtitle}>
-                            Từ nghiên cứu từ khóa đến bài viết hoàn chỉnh.
-                            Được hỗ trợ bởi <ShinyText text="mô hình Groq AI siêu tốc" /> và hệ thống phân tích đối thủ chuyên sâu.
+                            Từ nghiên cứu đối thủ đến bài viết hoàn chỉnh chuẩn SEO.
+                            Tăng tốc độ sản xuất nội dung gấp 10 lần với <ShinyText text="Groq AI (Llama 3.3 70B)" /> cực nhanh và chính xác.
                         </p>
                     </AnimateEntrance>
 
                     <AnimateEntrance delay={0.8} distance={20}>
                         <div className={styles.heroActions}>
-                            <Link href="/dashboard" className={styles.primaryButton}>
-                                Bắt Đầu Miễn Phí
+                            <Link href="/contact" className={styles.primaryButton}>
+                                Bắt Đầu Miễn Phí (5,000 Credits)
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <path d="M5 12h14M12 5l7 7-7 7" />
                                 </svg>
                             </Link>
-                            <a href="#features" className={styles.secondaryButton}>
-                                Xem Demo
-                            </a>
+                            <Link href="/pricing" className={styles.secondaryButton}>
+                                Xem Bảng Giá Premium
+                            </Link>
                         </div>
                     </AnimateEntrance>
 
                     <AnimateEntrance delay={1.0} distance={10}>
                         <div className={styles.stats}>
                             <div className={styles.stat}>
-                                <div className={styles.statValue}>5 phút</div>
-                                <div className={styles.statLabel}>Tạo bài viết</div>
+                                <div className={styles.statValue}>-95%</div>
+                                <div className={styles.statLabel}>Chi phí bài viết</div>
                             </div>
                             <div className={styles.statDivider}></div>
                             <div className={styles.stat}>
-                                <div className={styles.statValue}>10+</div>
-                                <div className={styles.statLabel}>Bài/giờ batch</div>
+                                <div className={styles.statValue}>150K+</div>
+                                <div className={styles.statLabel}>Credits gói Premium</div>
                             </div>
                             <div className={styles.statDivider}></div>
                             <div className={styles.stat}>
                                 <div className={styles.statValue}>100%</div>
-                                <div className={styles.statLabel}>Tự động hóa</div>
+                                <div className={styles.statLabel}>Nội dung duy nhất</div>
                             </div>
                         </div>
                     </AnimateEntrance>
@@ -185,7 +184,7 @@ export default function Home() {
                     <div className={styles.ctaContent}>
                         <h2>Sẵn Sàng Tự Động Hóa SEO?</h2>
                         <p>Tham gia cùng hàng nghìn marketers đang tăng tốc content production</p>
-                        <Link href="/dashboard" className={styles.primaryButton}>
+                        <Link href="/contact" className={styles.primaryButton}>
                             Truy Cập Dashboard
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M5 12h14M12 5l7 7-7 7" />

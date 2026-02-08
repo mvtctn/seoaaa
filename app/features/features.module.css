@@ -1,20 +1,20 @@
 /* Features Page */
 .container {
     min-height: 100vh;
-    background: #0a0a0a;
-    color: #ffffff;
+    background: var(--color-background);
+    color: var(--color-text-primary);
 }
 
-/* Navigation - Same as landing */
+/* Navigation - Same style */
 .nav {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     z-index: 1000;
-    background: rgba(10, 10, 10, 0.8);
+    background: var(--color-surface);
     backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid var(--color-border);
 }
 
 .navContent {
@@ -32,18 +32,12 @@
     gap: 0.75rem;
     font-size: 1.25rem;
     font-weight: 700;
-    color: #ffffff;
+    color: var(--color-text-primary);
     text-decoration: none;
 }
 
-.navLinks {
-    display: flex;
-    align-items: center;
-    gap: 2rem;
-}
-
 .navLinks a {
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--color-text-secondary);
     text-decoration: none;
     font-size: 0.9375rem;
     transition: color 0.2s;
@@ -51,89 +45,28 @@
 
 .navLinks a:hover,
 .navLinks a.active {
-    color: #0ea5e9;
+    color: var(--color-primary);
 }
 
 .navButton {
     padding: 0.5rem 1.25rem !important;
-    background: rgba(59, 130, 246, 0.1);
-    border: 1px solid rgba(59, 130, 246, 0.3);
+    background: var(--color-primary-light);
+    border: 1px solid var(--color-primary);
     border-radius: 8px;
-    color: #3b82f6 !important;
+    color: var(--color-primary-dark) !important;
     font-weight: 500;
-    transition: all 0.2s;
-}
-
-.navButton:hover {
-    background: rgba(59, 130, 246, 0.2);
-    border-color: rgba(59, 130, 246, 0.5);
 }
 
 /* Hero */
 .hero {
     padding: 8rem 2rem 4rem;
     text-align: center;
-    background: linear-gradient(180deg, rgba(14, 165, 233, 0.05) 0%, transparent 100%);
-}
-
-.heroContent {
-    max-width: 800px;
-    margin: 0 auto;
-}
-
-.badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: rgba(14, 165, 233, 0.1);
-    border: 1px solid rgba(14, 165, 233, 0.3);
-    border-radius: 50px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #0ea5e9;
-    margin-bottom: 2rem;
-}
-
-.badgePulse {
-    width: 8px;
-    height: 8px;
-    background: #0ea5e9;
-    border-radius: 50%;
-    animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-
-    0%,
-    100% {
-        opacity: 1;
-        transform: scale(1);
-    }
-
-    50% {
-        opacity: 0.5;
-        transform: scale(1.2);
-    }
-}
-
-.hero h1 {
-    font-size: clamp(2.5rem, 6vw, 4rem);
-    font-weight: 800;
-    line-height: 1.1;
-    margin-bottom: 1.5rem;
-}
-
-.gradient {
-    background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    background: linear-gradient(180deg, var(--color-primary-light) 0%, transparent 100%);
 }
 
 .hero p {
     font-size: 1.25rem;
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--color-text-secondary);
 }
 
 /* Main Features */
@@ -143,199 +76,91 @@
     padding: 4rem 2rem;
 }
 
-.featureRow {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4rem;
-    align-items: center;
-    margin-bottom: 6rem;
-}
-
-.featureRow.reverse {
-    direction: rtl;
-}
-
-.featureRow.reverse>* {
-    direction: ltr;
-}
-
 .featureBadge {
     display: inline-block;
     padding: 0.5rem 1rem;
-    background: rgba(14, 165, 233, 0.1);
-    border: 1px solid rgba(14, 165, 233, 0.3);
+    background: var(--color-primary-light);
+    border: 1px solid var(--color-primary);
     border-radius: 8px;
     font-size: 0.875rem;
     font-weight: 600;
-    color: #0ea5e9;
+    color: var(--color-primary);
     margin-bottom: 1.5rem;
-}
-
-.featureContent h2 {
-    font-size: 2rem;
-    font-weight: 700;
-    margin-bottom: 1rem;
 }
 
 .featureContent p {
     font-size: 1.125rem;
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--color-text-secondary);
     line-height: 1.6;
     margin-bottom: 2rem;
-}
-
-.featureList {
-    list-style: none;
-    padding: 0;
-    margin: 0;
 }
 
 .featureList li {
     padding: 0.75rem 0;
     font-size: 1rem;
-    color: rgba(255, 255, 255, 0.8);
-}
-
-.featureVisual {
-    position: relative;
+    color: var(--color-text-secondary);
 }
 
 .mockup {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
     border-radius: 16px;
     padding: 1.5rem;
     backdrop-filter: blur(10px);
-}
-
-.mockupHeader {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 1.5rem;
 }
 
 .dot {
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.3);
-}
-
-.mockupContent {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.mockupItem {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    background: var(--color-border);
 }
 
 .mockupItem span {
     font-size: 0.875rem;
-    color: rgba(255, 255, 255, 0.7);
-}
-
-.bar {
-    height: 8px;
-    background: linear-gradient(90deg, #0ea5e9 0%, #2563eb 100%);
-    border-radius: 4px;
+    color: var(--color-text-secondary);
 }
 
 .textLine {
     height: 10px;
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--color-surface-hover);
     border-radius: 4px;
     margin-bottom: 0.5rem;
 }
 
-.imageGrid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-}
-
 .imgPlaceholder {
     aspect-ratio: 1;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
     border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 3rem;
+    color: var(--color-text-tertiary);
 }
 
 /* More Features */
-.moreFeatures {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 6rem 2rem;
-    text-align: center;
-}
-
-.moreFeatures h2 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    margin-bottom: 3rem;
-}
-
-.grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1.5rem;
-}
-
 .card {
     padding: 2rem;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
     border-radius: 16px;
     text-align: left;
     transition: all 0.3s;
 }
 
 .card:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(14, 165, 233, 0.3);
+    background: var(--color-surface-hover);
+    border-color: var(--color-primary);
     transform: translateY(-4px);
 }
 
-.cardIcon {
-    font-size: 2.5rem;
-    margin-bottom: 1rem;
-}
-
-.card h3 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin-bottom: 0.75rem;
-}
-
 .card p {
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--color-text-secondary);
     line-height: 1.6;
 }
 
 /* CTA */
-.cta {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 6rem 2rem;
-    text-align: center;
-}
-
-.cta h2 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    margin-bottom: 1rem;
-}
-
 .cta p {
     font-size: 1.125rem;
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--color-text-secondary);
     margin-bottom: 2rem;
 }
 
@@ -344,35 +169,19 @@
     align-items: center;
     gap: 0.5rem;
     padding: 1rem 2rem;
-    background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+    background: var(--gradient-primary);
     color: white;
     font-weight: 600;
     font-size: 1rem;
     border-radius: 12px;
     text-decoration: none;
     transition: all 0.3s;
-    box-shadow: 0 4px 20px rgba(14, 165, 233, 0.3);
-}
-
-.ctaButton:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(14, 165, 233, 0.4);
+    box-shadow: var(--shadow-md);
 }
 
 /* Responsive */
 @media (max-width: 768px) {
     .navLinks {
         display: none;
-    }
-
-    .featureRow,
-    .featureRow.reverse {
-        grid-template-columns: 1fr;
-        gap: 2rem;
-        direction: ltr;
-    }
-
-    .grid {
-        grid-template-columns: 1fr;
     }
 }

@@ -1,3 +1,5 @@
+'use client'
+
 import { useMemo } from 'react'
 import styles from './dashboard-charts.module.css'
 import { motion } from 'framer-motion'
