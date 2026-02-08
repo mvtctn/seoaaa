@@ -2,12 +2,20 @@ import { NextRequest, NextResponse } from 'next/server'
 import { AIOrchestrator } from '@/lib/ai/orchestrator'
 import { generateSlug } from '@/lib/seo/utils'
 import { createArticle, getDefaultBrand } from '@/lib/db/database'
+import { createClient } from '@/lib/supabase/server'
 
 export const maxDuration = 300 // 5 minutes timeout
 
 export async function POST(req: NextRequest) {
     try {
-        console.log('--- [API] /api/generate/article CALLED ---')
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
+        console.log(`--- [API] /api/generate/article CALLED by ${user.id} ---`)
         const body = await req.json()
         const { keyword, researchBrief, contentStrategy, researchId, keywordId } = body
 
@@ -18,7 +26,7 @@ export async function POST(req: NextRequest) {
 
         // 1. Get Brand Context
         console.log('[API] Fetching brand context...')
-        const brand = await getDefaultBrand()
+        const brand = await getDefaultBrand(user.id)
         console.log(`[API] Using brand: ${brand ? brand.name : 'NONE (Using Generic)'}`)
 
         const brandContextForAI = brand ? {
@@ -36,7 +44,8 @@ export async function POST(req: NextRequest) {
             keyword,
             researchBrief,
             contentStrategy,
-            brandContext: brandContextForAI
+            brandContext: brandContextForAI,
+            userId: user.id
         })
         const rawContent = generationResult.content
         console.log('[API] ✓ Raw content generated')
@@ -110,8 +119,8 @@ export async function POST(req: NextRequest) {
 
         // 4. Finalize Metadata (Using Orchestrator)
         console.log('[API] Finalizing metadata...')
-        const metaTitleResult = sections.meta.title ? { content: sections.meta.title } : await AIOrchestrator.generateMetaTitle(title, keyword, brandContextForAI)
-        const metaDescResult = sections.meta.description ? { content: sections.meta.description } : await AIOrchestrator.generateMetaDescription(title, keyword, content, brandContextForAI)
+        const metaTitleResult = sections.meta.title ? { content: sections.meta.title } : await AIOrchestrator.generateMetaTitle(title, keyword, brandContextForAI, user.id)
+        const metaDescResult = sections.meta.description ? { content: sections.meta.description } : await AIOrchestrator.generateMetaDescription(title, keyword, content, brandContextForAI, user.id)
 
         const metaTitle = metaTitleResult.content
         const metaDesc = metaDescResult.content
@@ -119,6 +128,7 @@ export async function POST(req: NextRequest) {
         // 5. Save Artifact
         console.log('[API] Saving article to DB...')
         const dbResult = await createArticle({
+            user_id: user.id,
             keyword_id: keywordId || 0,
             title,
             slug,

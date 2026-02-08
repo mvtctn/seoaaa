@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateImage, generateImagePrompt } from '@/lib/ai/image'
-import { updateArticleImage } from '@/lib/db/database' // We need to add this helper
+import { updateArticleImage } from '@/lib/db/database'
+import { createClient } from '@/lib/supabase/server'
 
 export async function POST(req: NextRequest) {
     try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
         const { articleId, title, keyword, prompt: customPrompt, saveToDb = true } = await req.json()
 
         // 1. Create a prompt (if not provided)
@@ -19,7 +27,7 @@ export async function POST(req: NextRequest) {
 
         // 3. Update Article in DB (optional)
         if (articleId && saveToDb) {
-            updateArticleImage(articleId, imageUrl)
+            await updateArticleImage(articleId, user.id, imageUrl)
         }
 
         return NextResponse.json({

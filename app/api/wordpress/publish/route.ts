@@ -1,10 +1,18 @@
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getArticleById, getBrandById, updateArticle } from '@/lib/db/database'
+import { getArticleById, getBrandById, updateArticle, getDefaultBrand, getKeywordById } from '@/lib/db/database'
 import { publishToWordPress, uploadImageToWordPress } from '@/lib/wordpress/client'
+import { createClient } from '@/lib/supabase/server'
 
 export async function POST(req: NextRequest) {
     try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
         const { articleId, status = 'draft' } = await req.json()
 
         if (!articleId) {
@@ -12,7 +20,7 @@ export async function POST(req: NextRequest) {
         }
 
         // 1. Get Article
-        const article = await getArticleById(Number(articleId))
+        const article = await getArticleById(Number(articleId), user.id)
         if (!article) {
             return NextResponse.json({ error: 'Article not found' }, { status: 404 })
         }
@@ -22,19 +30,17 @@ export async function POST(req: NextRequest) {
         console.log(`[WordPress] Initial brand_id from article: ${brandId}`)
 
         if (!brandId && article.keyword_id) {
-            const { getKeywordById } = require('@/lib/db/database')
-            const keyword = await getKeywordById(article.keyword_id)
+            const keyword = await getKeywordById(article.keyword_id, user.id)
             brandId = keyword?.brand_id
             console.log(`[WordPress] Found brand_id from keyword: ${brandId}`)
         }
 
-        let brand = brandId ? await getBrandById(Number(brandId)) : null
+        let brand = brandId ? await getBrandById(Number(brandId), user.id) : null
 
         // Final fallback: use default brand if no brand found or if specific brand lacks WP config
         if (!brand || !brand.wp_url || !brand.wp_username || !brand.wp_password) {
             console.log('[WordPress] Specific brand missing or lacks WP config, trying default brand...')
-            const { getDefaultBrand } = require('@/lib/db/database')
-            const defaultBrand = await getDefaultBrand()
+            const defaultBrand = await getDefaultBrand(user.id)
             if (defaultBrand) {
                 brand = defaultBrand
                 console.log(`[WordPress] Using default brand: ${brand.name}`)
@@ -138,7 +144,7 @@ export async function POST(req: NextRequest) {
 
         // 8. Update article status in our DB
         try {
-            await updateArticle(Number(articleId), {
+            await updateArticle(Number(articleId), user.id, {
                 status: 'PUBLISHED',
                 wp_post_url: result.link
             })

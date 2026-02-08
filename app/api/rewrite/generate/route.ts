@@ -1,14 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { generateArticle } from '@/lib/ai/groq'
+import { AIOrchestrator } from '@/lib/ai/orchestrator'
 import { createArticleFromRewrite, getDefaultBrand } from '@/lib/db/database'
+import { createClient } from '@/lib/supabase/server'
 
 export async function POST(req: NextRequest) {
     try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
         const {
             originalUrl,
             originalContent,
             targetKeyword,
             analysis
+        }: {
+            originalUrl: string
+            originalContent: string
+            targetKeyword: string
+            analysis: any
         } = await req.json()
 
         if (!originalContent) {
@@ -18,7 +31,7 @@ export async function POST(req: NextRequest) {
         console.log('[Rewrite Generate] Starting content rewrite...')
 
         // 1. Get Brand Context
-        const brand = await getDefaultBrand()
+        const brand = await getDefaultBrand(user.id)
         const brandContext = brand ? {
             name: brand.name,
             coreValues: Array.isArray(brand.core_values) ? brand.core_values : (typeof brand.core_values === 'string' ? JSON.parse(brand.core_values) : []),
@@ -56,14 +69,16 @@ Bài viết mới phải:
 - Tối ưu cho SEO và trải nghiệm người dùng
         `.trim()
 
-        // Generate improved article using Groq AI
+        // Generate improved article using AI Orchestrator
         const keyword = targetKeyword || analysis.title
-        const articleContent = await generateArticle({
+        const generatedResult = await AIOrchestrator.generateArticle({
             keyword,
             researchBrief,
             contentStrategy,
-            brandContext
+            brandContext,
+            userId: user.id
         })
+        const articleContent = generatedResult.content
 
         // Save to database using the new helper function
         const newArticle = await createArticleFromRewrite({
@@ -72,7 +87,8 @@ Bài viết mới phải:
             status: 'draft',
             source_url: originalUrl || null,
             meta_description: analysis.metaDescription || null,
-            brand_id: brand?.id
+            brand_id: brand?.id,
+            user_id: user.id
         })
 
         const articleId = Number(newArticle.lastInsertRowid)
@@ -114,7 +130,7 @@ function generateImprovedOutline(originalHeadings: string[], gaps: string[]): an
     })
 
     // Add main sections based on original headings
-    originalHeadings.forEach((heading, idx) => {
+    originalHeadings.forEach((heading: string) => {
         const text = heading.replace(/^H[123]:\s*/, '')
         outline.push({
             level: 2,
@@ -124,7 +140,7 @@ function generateImprovedOutline(originalHeadings: string[], gaps: string[]): an
     })
 
     // Add missing sections based on gaps
-    if (gaps.some(g => g.includes('ví dụ'))) {
+    if (gaps.some((g: string) => g.includes('ví dụ'))) {
         outline.push({
             level: 2,
             text: 'Ví Dụ Thực Tế',
@@ -132,7 +148,7 @@ function generateImprovedOutline(originalHeadings: string[], gaps: string[]): an
         })
     }
 
-    if (gaps.some(g => g.includes('case study'))) {
+    if (gaps.some((g: string) => g.includes('case study'))) {
         outline.push({
             level: 2,
             text: 'Case Study',
@@ -140,7 +156,7 @@ function generateImprovedOutline(originalHeadings: string[], gaps: string[]): an
         })
     }
 
-    if (gaps.some(g => g.includes('FAQ'))) {
+    if (gaps.some((g: string) => g.includes('FAQ'))) {
         outline.push({
             level: 2,
             text: 'Câu Hỏi Thường Gặp (FAQ)',

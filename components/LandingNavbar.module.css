@@ -61,8 +61,90 @@
     border-color: rgba(59, 130, 246, 0.5);
 }
 
+.loggedInActions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.logoutButton {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: color 0.2s;
+}
+
+.logoutButton:hover {
+    color: #f87171;
+}
+
 @media (max-width: 768px) {
     .navLinks {
         display: none;
     }
+
+    .burgerBtn {
+        display: block;
+    }
+}
+
+.burgerBtn {
+    display: none;
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 0.5rem;
+}
+
+.mobileMenu {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 2000;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    transform: translateX(100%);
+    transition: transform 0.3s ease-in-out;
+}
+
+.mobileMenu.open {
+    transform: translateX(0);
+}
+
+.mobileHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.mobileLinks {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    font-size: 1.25rem;
+}
+
+.mobileLinks a {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.mobileLinks a:hover,
+.mobileLinks a.active {
+    color: #0ea5e9;
+}
+
+.closeBtn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
 }

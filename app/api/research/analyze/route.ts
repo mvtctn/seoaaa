@@ -2,13 +2,20 @@ import { NextRequest, NextResponse } from 'next/server'
 import { fetchSERPResults, scrapeURL } from '@/lib/scraper/web-scraper'
 import { AIOrchestrator } from '@/lib/ai/orchestrator'
 import { createResearch, getDefaultBrand, createKeyword } from '@/lib/db/database'
-import { supabase } from '@/lib/db/supabase-client'
+import { createClient } from '@/lib/supabase/server'
 
 export const maxDuration = 300 // 5 minutes timeout for Vercel/Next.js
 
 export async function POST(req: NextRequest) {
     try {
-        console.log('--- [API] /api/research/analyze CALLED ---')
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
+        console.log(`--- [API] /api/research/analyze CALLED by ${user.id} ---`)
         const body = await req.json()
         const { keyword } = body
 
@@ -21,7 +28,7 @@ export async function POST(req: NextRequest) {
 
         // 1. Get Brand Context
         console.log('[API] Step 1: Fetching brand context...')
-        const brand = await getDefaultBrand()
+        const brand = await getDefaultBrand(user.id)
         console.log(`[API] Brand: ${brand ? brand.name : 'No default brand found'}`)
 
         const brandContextForAI = brand ? {
@@ -74,19 +81,20 @@ export async function POST(req: NextRequest) {
 
         // 4. Analyze with AI Orchestrator
         console.log('[API] Step 4: Analyzing with AI Orchestrator...')
-        const analysisResult = await AIOrchestrator.analyzeCompetitors(keyword, validCompetitors, brandContextForAI)
+        const analysisResult = await AIOrchestrator.analyzeCompetitors(keyword, validCompetitors, brandContextForAI, user.id)
         const researchBrief = analysisResult // Keeping the name for compatibility
         console.log('[API] ✓ Research Brief generated')
 
         // 5. Generate Strategy
         console.log('[API] Step 5: Generating content strategy...')
-        const strategyResult = await AIOrchestrator.generateContentStrategy(keyword, researchBrief, brandContextForAI)
+        const strategyResult = await AIOrchestrator.generateContentStrategy(keyword, researchBrief, brandContextForAI, user.id)
         const strategy = strategyResult.content
         console.log('[API] ✓ Strategy generated')
 
         // 6. Save to Database
         console.log('[API] Step 6: Saving research results to DB...')
 
+        // Check for existing keyword for THIS user using RLS-enabled client
         const { data: existingKeyword } = await supabase
             .from('keywords')
             .select('id')
@@ -104,13 +112,15 @@ export async function POST(req: NextRequest) {
         } else {
             const keywordResult = await createKeyword({
                 keyword: keyword,
-                status: 'researching'
+                status: 'researching',
+                user_id: user.id
             })
             keywordId = Number(keywordResult.lastInsertRowid)
         }
 
         const researchResult = await createResearch({
             keyword_id: keywordId,
+            user_id: user.id,
             serp_data: JSON.stringify(serpResults),
             competitor_analysis: JSON.stringify(validCompetitors.map(c => ({ url: c.url, title: c.title }))),
             content_gaps: JSON.stringify(researchBrief.contentGaps),

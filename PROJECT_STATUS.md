@@ -22,6 +22,8 @@ Xây dựng hệ thống tự động hóa quy trình viết bài SEO chất lư
 - [x] **Thư viện Bài viết (Article Library)**: Giao diện quản lý chuyên nghiệp, hỗ trợ tìm kiếm và lọc.
 - [x] **Trình Soạn thảo Markdown**: Tích hợp MdEditor với tính năng Preview trực quan.
 - [x] **Full CRUD Operations**: Hoàn thiện các tính năng Xem, Tạo, Chỉnh sửa và **Xóa bài viết**.
+- [x] **Multi-Tenancy & Subscriptions**: Hệ thống phân quyền người dùng, gói đăng ký (Trial, Eco, Business) và giới hạn tín dụng.
+- [x] **Data Isolation**: Bảo mật dữ liệu người dùng tuyệt đối thông qua **Supabase Row Level Security (RLS)**.
 
 ### 🛠️ Quản trị & Hạ tầng (Backend)
 - [x] **Supabase Integration**: Chuyển đổi từ JSON DB sang **Supabase (PostgreSQL)** giúp xử lý dữ liệu lớn và ổn định.
@@ -67,4 +69,7 @@ Xây dựng hệ thống tự động hóa quy trình viết bài SEO chất lư
 - **Image Gen**: Pollinations.ai (Turbo AI-Optimized).
 
 ---
-*Cập nhật lần cuối: 2026-02-07 22:58*
+*Cập nhật lần cuối: 2026-02-08 09:15:00*
+
+## ⚠️ LƯU Ý QUAN TRỌNG
+Nếu gặp lỗi `Could not find the 'user_id' column...` hoặc bài viết mới tạo không hiển thị, vui lòng chạy script migration SQL trong file `MIGRATION_GUIDE.md` để cập nhật cấu trúc Database.

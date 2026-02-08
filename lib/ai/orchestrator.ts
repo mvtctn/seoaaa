@@ -9,6 +9,7 @@ export interface AIRequestOptions {
     taskType: string
     brand_id?: number
     article_id?: number
+    userId?: string
 }
 
 /**
@@ -62,7 +63,8 @@ export class AIOrchestrator {
                         output_tokens: result.usage.output_tokens,
                         cost: 0,
                         status: 'success',
-                        duration_ms: Date.now() - start
+                        duration_ms: Date.now() - start,
+                        user_id: options.userId || ''
                     })
                 } catch (logErr) {
                     console.error('[AI Orchestrator] Logging failed:', logErr)
@@ -86,7 +88,8 @@ export class AIOrchestrator {
                         cost: 0,
                         status: 'failed',
                         error_message: error.message,
-                        duration_ms: Date.now() - start
+                        duration_ms: Date.now() - start,
+                        user_id: options.userId || ''
                     })
                 } catch (logErr) {
                     console.error('[AI Orchestrator] Error logging failed:', logErr)
@@ -97,10 +100,10 @@ export class AIOrchestrator {
         throw new Error(`All AI providers failed for ${taskName}: ${JSON.stringify(errors)}`)
     }
 
-    static async analyzeCompetitors(keyword: string, competitors: any[], brandContext: any) {
+    static async analyzeCompetitors(keyword: string, competitors: any[], brandContext: any, userId: string) {
         return this.executeWithFailover(
             'Analyze Competitors',
-            { taskType: 'research_analysis', brand_id: brandContext?.id },
+            { taskType: 'research_analysis', brand_id: brandContext?.id, userId },
             async (provider) => {
                 if (provider === 'groq') return groq.analyzeCompetitors(keyword, competitors, brandContext)
                 if (provider === 'gemini') return gemini.analyzeCompetitors(keyword, competitors, brandContext)
@@ -116,15 +119,18 @@ export class AIOrchestrator {
         contentStrategy: string
         brandContext?: any
         articleId?: number
+        userId: string
     }) {
         return this.executeWithFailover(
             'Generate Article',
             {
                 taskType: 'article_generation',
                 brand_id: params.brandContext?.id,
-                article_id: params.articleId
+                article_id: params.articleId,
+                userId: params.userId
             },
             async (provider) => {
+                // Pass params, provider functions don't usually need userId unless they log usage internally (which they don't, orchestrator does)
                 if (provider === 'groq') return groq.generateArticle(params)
                 if (provider === 'gemini') return gemini.generateArticle(params)
                 if (provider === 'deepseek') return deepseek.generateArticle(params)
@@ -144,10 +150,10 @@ export class AIOrchestrator {
         })
     }
 
-    static async generateContentStrategy(keyword: string, researchBrief: any, brandContext: any) {
+    static async generateContentStrategy(keyword: string, researchBrief: any, brandContext: any, userId: string) {
         return this.executeWithFailover(
             'Generate Content Strategy',
-            { taskType: 'content_strategy', brand_id: brandContext?.id },
+            { taskType: 'content_strategy', brand_id: brandContext?.id, userId },
             async (provider) => {
                 if (provider === 'groq') {
                     const content = await groq.generateContentStrategy(keyword, researchBrief, brandContext)
@@ -166,10 +172,10 @@ export class AIOrchestrator {
         )
     }
 
-    static async generateMetaTitle(title: string, keyword: string, brandContext?: any) {
+    static async generateMetaTitle(title: string, keyword: string, brandContext?: any, userId?: string) {
         return this.executeWithFailover(
             'Generate Meta Title',
-            { taskType: 'meta_tag_generation', brand_id: brandContext?.id },
+            { taskType: 'meta_tag_generation', brand_id: brandContext?.id, userId: userId },
             async (provider) => {
                 if (provider === 'groq') {
                     const content = await groq.generateMetaTitle(title, keyword)
@@ -188,10 +194,10 @@ export class AIOrchestrator {
         )
     }
 
-    static async generateMetaDescription(title: string, keyword: string, content: string, brandContext?: any) {
+    static async generateMetaDescription(title: string, keyword: string, content: string, brandContext?: any, userId?: string) {
         return this.executeWithFailover(
             'Generate Meta Description',
-            { taskType: 'meta_tag_generation', brand_id: brandContext?.id },
+            { taskType: 'meta_tag_generation', brand_id: brandContext?.id, userId: userId },
             async (provider) => {
                 if (provider === 'groq') {
                     const res = await groq.generateMetaDescription(title, keyword, content)
@@ -210,10 +216,10 @@ export class AIOrchestrator {
         )
     }
 
-    static async analyzeReadability(content: string, brandContext?: any) {
+    static async analyzeReadability(content: string, brandContext?: any, userId?: string) {
         return this.executeWithFailover(
             'Analyze Readability',
-            { taskType: 'content_analysis', brand_id: brandContext?.id },
+            { taskType: 'content_analysis', brand_id: brandContext?.id, userId },
             async (provider) => {
                 if (provider === 'groq') return groq.analyzeReadability(content)
                 if (provider === 'gemini') return gemini.analyzeReadability(content)

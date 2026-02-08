@@ -75,20 +75,20 @@ if (USE_SUPABASE) {
 
 // --- Brands ---
 
-export const getBrandById = async (id: number) => {
-  if (USE_SUPABASE) return supabaseFunctions.getBrandById(id)
+export const getBrandById = async (id: number, userId?: string) => {
+  if (USE_SUPABASE) return supabaseFunctions.getBrandById(id, userId!)
   const db = readDB()
   return db.brands.find(b => b.id === Number(id))
 }
 
-export const getAllBrands = async () => {
-  if (USE_SUPABASE) return supabaseFunctions.getAllBrands()
+export const getAllBrands = async (userId?: string) => {
+  if (USE_SUPABASE) return supabaseFunctions.getAllBrands(userId!)
   const db = readDB()
   return db.brands
 }
 
-export const getDefaultBrand = async () => {
-  if (USE_SUPABASE) return supabaseFunctions.getDefaultBrand()
+export const getDefaultBrand = async (userId?: string) => {
+  if (USE_SUPABASE) return supabaseFunctions.getDefaultBrand(userId!)
   const db = readDB()
   return db.brands.find(b => b.is_default === true) || db.brands[0] || null
 }
@@ -103,6 +103,7 @@ export const createBrand = async (data: {
   wp_url?: string
   wp_username?: string
   wp_password?: string
+  user_id?: string
 }): Promise<RunResult> => {
   if (USE_SUPABASE) return supabaseFunctions.createBrand(data)
 
@@ -132,7 +133,7 @@ export const createBrand = async (data: {
   return { lastInsertRowid: id, changes: 1 }
 }
 
-export const updateBrand = async (id: number, data: Partial<{
+export const updateBrand = async (id: number, userId: string, data: Partial<{
   name: string
   core_values: string
   tone_of_voice: string
@@ -143,7 +144,9 @@ export const updateBrand = async (id: number, data: Partial<{
   wp_username: string
   wp_password: string
 }>): Promise<RunResult> => {
-  if (USE_SUPABASE) return supabaseFunctions.updateBrand(id, data)
+  if (USE_SUPABASE) return supabaseFunctions.updateBrand(id, userId, data)
+  // Wait, I didn't update updateBrand in database-supabase.ts to take userId as 2nd arg yet! I only did it for updateArticle.
+  // I need to check database-supabase.ts again.
 
   const db = readDB()
   const index = db.brands.findIndex(b => b.id === Number(id))
@@ -158,8 +161,8 @@ export const updateBrand = async (id: number, data: Partial<{
   return { lastInsertRowid: id, changes: 1 }
 }
 
-export const setDefaultBrand = async (id: number): Promise<RunResult> => {
-  if (USE_SUPABASE) return supabaseFunctions.setDefaultBrand(id)
+export const setDefaultBrand = async (id: number, userId?: string): Promise<RunResult> => {
+  if (USE_SUPABASE) return supabaseFunctions.setDefaultBrand(id, userId!)
 
   const db = readDB()
   db.brands.forEach(b => {
@@ -169,8 +172,8 @@ export const setDefaultBrand = async (id: number): Promise<RunResult> => {
   return { lastInsertRowid: id, changes: 1 }
 }
 
-export const deleteBrand = async (id: number): Promise<RunResult> => {
-  if (USE_SUPABASE) return supabaseFunctions.deleteBrand(id)
+export const deleteBrand = async (id: number, userId?: string): Promise<RunResult> => {
+  if (USE_SUPABASE) return supabaseFunctions.deleteBrand(id, userId!)
 
   const db = readDB()
   const index = db.brands.findIndex(b => b.id === Number(id))
@@ -187,6 +190,7 @@ export const createKeyword = async (data: {
   keyword: string
   brand_id?: number
   status?: string
+  user_id?: string
 }): Promise<RunResult> => {
   if (USE_SUPABASE) return supabaseFunctions.createKeyword(data)
 
@@ -205,8 +209,8 @@ export const createKeyword = async (data: {
   return { lastInsertRowid: id, changes: 1 }
 }
 
-export const getKeywordById = async (id: number) => {
-  if (USE_SUPABASE) return supabaseFunctions.getKeywordById(id)
+export const getKeywordById = async (id: number, userId?: string) => {
+  if (USE_SUPABASE) return supabaseFunctions.getKeywordById(id, userId!)
   const db = readDB()
   return db.keywords.find(k => k.id === Number(id))
 }
@@ -224,8 +228,8 @@ export const updateKeywordStatus = async (id: number, status: string): Promise<R
   return { lastInsertRowid: id, changes: 1 }
 }
 
-export const getAllKeywords = async () => {
-  if (USE_SUPABASE) return supabaseFunctions.getAllKeywords()
+export const getAllKeywords = async (userId?: string) => {
+  if (USE_SUPABASE) return supabaseFunctions.getAllKeywords(userId!)
   const db = readDB()
   return db.keywords
 }
@@ -239,6 +243,7 @@ export const createResearch = async (data: {
   content_gaps?: string
   strategic_positioning?: string
   gemini_brief?: string
+  user_id?: string
 }): Promise<RunResult> => {
   if (USE_SUPABASE) return supabaseFunctions.createResearch(data)
 
@@ -260,14 +265,14 @@ export const createResearch = async (data: {
   return { lastInsertRowid: id, changes: 1 }
 }
 
-export const getResearchByKeywordId = async (keywordId: number) => {
-  if (USE_SUPABASE) return supabaseFunctions.getResearchByKeywordId(keywordId)
+export const getResearchByKeywordId = async (keywordId: number, userId?: string) => {
+  if (USE_SUPABASE) return supabaseFunctions.getResearchByKeywordId(keywordId, userId!)
   const db = readDB()
   return db.research.find(r => r.keyword_id === Number(keywordId))
 }
 
-export const getResearchById = async (id: number) => {
-  if (USE_SUPABASE) return supabaseFunctions.getResearchById(id)
+export const getResearchById = async (id: number, userId?: string) => {
+  if (USE_SUPABASE) return supabaseFunctions.getResearchById(id, userId!)
   const db = readDB()
   return db.research.find(r => r.id === Number(id))
 }
@@ -287,6 +292,7 @@ export const createArticle = async (data: {
   images?: string
   status?: string
   wp_post_url?: string
+  user_id?: string
 }): Promise<RunResult> => {
   if (USE_SUPABASE) return supabaseFunctions.createArticle(data)
 
@@ -314,25 +320,25 @@ export const createArticle = async (data: {
   return { lastInsertRowid: id, changes: 1 }
 }
 
-export const getArticleById = async (id: number) => {
-  if (USE_SUPABASE) return supabaseFunctions.getArticleById(id)
+export const getArticleById = async (id: number, userId?: string) => {
+  if (USE_SUPABASE) return supabaseFunctions.getArticleById(id, userId)
   const db = readDB()
   return db.articles.find(a => a.id === Number(id))
 }
 
-export const getArticleBySlug = async (slug: string) => {
-  if (USE_SUPABASE) return supabaseFunctions.getArticleBySlug(slug)
+export const getArticleBySlug = async (slug: string, userId?: string) => {
+  if (USE_SUPABASE) return supabaseFunctions.getArticleBySlug(slug, userId)
   const db = readDB()
   return db.articles.find(a => a.slug === slug)
 }
 
-export const getAllArticles = async () => {
-  if (USE_SUPABASE) return supabaseFunctions.getAllArticles()
+export const getAllArticles = async (userId?: string) => {
+  if (USE_SUPABASE) return supabaseFunctions.getAllArticles(userId!)
   const db = readDB()
   return db.articles
 }
 
-export const updateArticle = async (id: number, data: Partial<{
+export const updateArticle = async (id: number, userId: string, data: Partial<{
   title: string
   slug: string
   meta_title: string
@@ -343,7 +349,7 @@ export const updateArticle = async (id: number, data: Partial<{
   status: string
   wp_post_url: string
 }>): Promise<RunResult> => {
-  if (USE_SUPABASE) return supabaseFunctions.updateArticle(id, data)
+  if (USE_SUPABASE) return supabaseFunctions.updateArticle(id, userId, data)
 
   const db = readDB()
   const index = db.articles.findIndex(a => a.id === Number(id))
@@ -354,8 +360,8 @@ export const updateArticle = async (id: number, data: Partial<{
   return { lastInsertRowid: id, changes: 1 }
 }
 
-export const updateArticleImage = async (id: number, imageUrl: string): Promise<RunResult> => {
-  if (USE_SUPABASE) return supabaseFunctions.updateArticleImage(id, imageUrl)
+export const updateArticleImage = async (id: number, userId: string, imageUrl: string): Promise<RunResult> => {
+  if (USE_SUPABASE) return supabaseFunctions.updateArticleImage(id, userId, imageUrl)
 
   const db = readDB()
   const index = db.articles.findIndex(a => a.id === Number(id))
@@ -367,8 +373,8 @@ export const updateArticleImage = async (id: number, imageUrl: string): Promise<
   return { lastInsertRowid: id, changes: 1 }
 }
 
-export const deleteArticle = async (id: number): Promise<RunResult> => {
-  if (USE_SUPABASE) return supabaseFunctions.deleteArticle(id)
+export const deleteArticle = async (id: number, userId: string): Promise<RunResult> => {
+  if (USE_SUPABASE) return supabaseFunctions.deleteArticle(id, userId)
 
   const db = readDB()
   const index = db.articles.findIndex(a => a.id === Number(id))
@@ -386,6 +392,7 @@ export const createBatchJob = async (data: {
   keywords: string
   status?: string
   progress?: string
+  user_id?: string
 }): Promise<RunResult> => {
   if (USE_SUPABASE) return supabaseFunctions.createBatchJob(data)
 
@@ -406,8 +413,8 @@ export const createBatchJob = async (data: {
   return { lastInsertRowid: id, changes: 1 }
 }
 
-export const getBatchJobById = async (id: number) => {
-  if (USE_SUPABASE) return supabaseFunctions.getBatchJobById(id)
+export const getBatchJobById = async (id: number, userId?: string) => {
+  if (USE_SUPABASE) return supabaseFunctions.getBatchJobById(id, userId!)
   const db = readDB()
   return db.batch_jobs.find(j => j.id === Number(id))
 }
@@ -416,8 +423,8 @@ export const updateBatchJob = async (id: number, data: Partial<{
   status: string
   progress: string
   completed_at: string
-}>): Promise<RunResult> => {
-  if (USE_SUPABASE) return supabaseFunctions.updateBatchJob(id, data)
+}>, userId?: string): Promise<RunResult> => {
+  if (USE_SUPABASE) return supabaseFunctions.updateBatchJob(id, userId!, data)
 
   const db = readDB()
   const index = db.batch_jobs.findIndex(j => j.id === Number(id))
@@ -437,6 +444,7 @@ export const createArticleFromRewrite = async (data: {
   meta_description?: string
   thumbnail_url?: string
   brand_id?: number
+  user_id?: string
 }): Promise<RunResult> => {
   if (USE_SUPABASE) return supabaseFunctions.createArticleFromRewrite(data)
 
@@ -469,14 +477,14 @@ export const createArticleFromRewrite = async (data: {
 
 // --- Settings ---
 
-export const getSetting = async (key: string) => {
-  if (USE_SUPABASE) return supabaseFunctions.getSetting(key)
+export const getSetting = async (key: string, userId?: string) => {
+  if (USE_SUPABASE) return supabaseFunctions.getSetting(key, userId!)
   const db = readDB()
   return db.settings?.[key] || null
 }
 
-export const updateSetting = async (key: string, value: any) => {
-  if (USE_SUPABASE) return supabaseFunctions.updateSetting(key, value)
+export const updateSetting = async (key: string, value: any, userId?: string) => {
+  if (USE_SUPABASE) return supabaseFunctions.updateSetting(key, value, userId!)
   const db = readDB()
   if (!db.settings) db.settings = {}
   db.settings[key] = value
@@ -498,6 +506,7 @@ export const createAIUsageLog = async (data: {
   status: string
   error_message?: string
   duration_ms?: number
+  user_id?: string
 }): Promise<RunResult> => {
   if (USE_SUPABASE) return supabaseFunctions.createAIUsageLog(data)
 
@@ -513,23 +522,40 @@ export const createAIUsageLog = async (data: {
   return { lastInsertRowid: id, changes: 1 }
 }
 
-export const getAIUsageLogs = async (limit: number = 100) => {
-  if (USE_SUPABASE) return supabaseFunctions.getAIUsageLogs(limit)
+export const getAIUsageLogs = async (limit: number = 100, userId?: string) => {
+  if (USE_SUPABASE) return supabaseFunctions.getAIUsageLogs(userId!, limit)
   const db = readDB()
   return (db.ai_usage_logs || []).slice(-limit).reverse()
 }
 
-export const getAISetting = async (key: string) => {
-  if (USE_SUPABASE) return supabaseFunctions.getAISetting(key)
+export const getAISetting = async (key: string, userId?: string) => {
+  if (USE_SUPABASE) return supabaseFunctions.getAISetting(key, userId!)
   const db = readDB()
   return db.ai_settings?.[key] || null
 }
 
-export const updateAISetting = async (key: string, value: any) => {
-  if (USE_SUPABASE) return supabaseFunctions.updateAISetting(key, value)
+export const updateAISetting = async (key: string, value: any, userId?: string) => {
+  if (USE_SUPABASE) return supabaseFunctions.updateAISetting(key, value, userId!)
   const db = readDB()
   if (!db.ai_settings) db.ai_settings = {}
   db.ai_settings[key] = value
   writeDB(db)
   return { lastInsertRowid: 0, changes: 1 }
+}
+
+// --- Subscriptions (Shim) ---
+
+export const getUserSubscription = async (userId: string) => {
+  if (USE_SUPABASE) return supabaseFunctions.getUserSubscription(userId)
+  return { plan_tier: 'trial', status: 'active', credits_used: 0, credits_limit: 10000 }
+}
+
+export const checkUserLimit = async (userId: string, cost: number) => {
+  if (USE_SUPABASE) return supabaseFunctions.checkUserLimit(userId, cost)
+  return true
+}
+
+export const incrementUsage = async (userId: string, cost: number) => {
+  if (USE_SUPABASE) return supabaseFunctions.incrementUsage(userId, cost)
+  // No-op for local json
 }

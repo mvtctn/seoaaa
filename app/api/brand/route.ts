@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createBrand, updateBrand, getAllBrands, setDefaultBrand, deleteBrand } from '@/lib/db/database'
+import { createClient } from '@/lib/supabase/server'
 
 // Helper to safely parse JSON
 const parseJSON = (str: any, fallback: any) => {
@@ -14,7 +15,14 @@ const parseJSON = (str: any, fallback: any) => {
 
 export async function GET() {
     try {
-        const brands = await getAllBrands()
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
+        const brands = await getAllBrands(user.id)
 
         const parsedBrands = brands.map((brand: any) => ({
             ...brand,
@@ -32,6 +40,13 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
     try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
         const body = await req.json()
         const {
             id,
@@ -47,7 +62,7 @@ export async function POST(req: NextRequest) {
         } = body
 
         if (id) {
-            await updateBrand(Number(id), {
+            await updateBrand(Number(id), user.id, {
                 name,
                 core_values: JSON.stringify(core_values),
                 tone_of_voice: JSON.stringify(tone_of_voice),
@@ -69,7 +84,8 @@ export async function POST(req: NextRequest) {
                 is_default: !!is_default,
                 wp_url,
                 wp_username,
-                wp_password
+                wp_password,
+                user_id: user.id
             })
             return NextResponse.json({ success: true, message: 'Created', id: result.lastInsertRowid })
         }
@@ -81,6 +97,13 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
     try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
         const { searchParams } = new URL(req.url)
         const id = searchParams.get('id')
         const action = searchParams.get('action')
@@ -88,7 +111,7 @@ export async function PATCH(req: NextRequest) {
         if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 })
 
         if (action === 'set_default') {
-            await setDefaultBrand(Number(id))
+            await setDefaultBrand(Number(id), user.id)
             return NextResponse.json({ success: true })
         }
 
@@ -100,11 +123,18 @@ export async function PATCH(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
     try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
         const { searchParams } = new URL(req.url)
         const id = searchParams.get('id')
         if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 })
 
-        await deleteBrand(Number(id))
+        await deleteBrand(Number(id), user.id)
         return NextResponse.json({ success: true })
     } catch (error: any) {
         return NextResponse.json({ error: error.message || 'Failed' }, { status: 500 })

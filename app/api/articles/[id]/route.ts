@@ -1,18 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getArticleById, getKeywordById, getResearchByKeywordId, getResearchById } from '@/lib/db/database'
+import { getArticleById, getKeywordById, getResearchByKeywordId, getResearchById, updateArticle, deleteArticle } from '@/lib/db/database'
+import { createClient } from '@/lib/supabase/server'
 
 export async function GET(
     req: NextRequest,
     { params }: { params: { id: string } }
 ) {
     try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
         const id = Number(params.id)
         if (isNaN(id)) {
             return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
         }
 
-        const article = await getArticleById(id)
+        const article = await getArticleById(id, user.id)
         if (!article) {
+            // Debugging: If article exists but user checks fail, it returns null.
+            console.warn(`Article ${id} not found for user ${user.id}`)
             return NextResponse.json({ error: 'Article not found' }, { status: 404 })
         }
 
@@ -21,15 +31,17 @@ export async function GET(
 
         // Priority 1: Use direct keyword_id (if valid and not 0)
         if (article.keyword_id && article.keyword_id !== 0) {
-            keywordData = await getKeywordById(article.keyword_id);
-            researchData = await getResearchByKeywordId(article.keyword_id);
+            keywordData = await getKeywordById(article.keyword_id, user.id);
+            // Wait, getResearchByKeywordId might return null if not found
+            const research = await getResearchByKeywordId(article.keyword_id, user.id);
+            researchData = research;
         }
 
         // Priority 2: Use research_id to find associated keyword (fallback for older articles)
         if (!keywordData && article.research_id) {
-            researchData = await getResearchById(article.research_id);
+            researchData = await getResearchById(article.research_id, user.id);
             if (researchData && researchData.keyword_id) {
-                keywordData = await getKeywordById(researchData.keyword_id);
+                keywordData = await getKeywordById(researchData.keyword_id, user.id);
             }
         }
 
@@ -55,29 +67,32 @@ export async function PUT(
     { params }: { params: { id: string } }
 ) {
     try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
         const id = Number(params.id)
         if (isNaN(id)) {
             return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
         }
 
         const body = await req.json()
-        const { title, slug, meta_title, meta_description, content, status } = body
+        const { title, slug, meta_title, meta_description, content, status, thumbnail_url } = body
 
-        // Validate minimal required fields if necessary, currently flexible
-
-        // Import dynamically to avoid circular deps if any, though standard import is fine usually
-        const { updateArticle } = require('@/lib/db/database')
-
-        const result = await updateArticle(id, {
+        const result = await updateArticle(id, user.id, {
             title,
             slug,
             meta_title,
             meta_description,
             content,
-            status
+            status,
+            thumbnail_url
         })
 
-        if (!result.changes) {
+        if (!result || !result.changes) {
             return NextResponse.json({ error: 'Failed to update or article not found' }, { status: 404 })
         }
 
@@ -96,13 +111,19 @@ export async function DELETE(
     { params }: { params: { id: string } }
 ) {
     try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
         const id = Number(params.id)
         if (isNaN(id)) {
             return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
         }
 
-        const { deleteArticle } = require('@/lib/db/database')
-        const result = await deleteArticle(id)
+        const result = await deleteArticle(id, user.id)
 
         if (!result.changes) {
             return NextResponse.json({ error: 'Article not found' }, { status: 404 })
