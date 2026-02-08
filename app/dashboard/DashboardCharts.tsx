@@ -146,7 +146,7 @@ export default function DashboardCharts({ articles, keywords }: DashboardChartsP
                     <>
                         <div className={styles.pieChartContainer}>
                             <svg width="200" height="200" viewBox="0 0 120 120">
-                                <circle cx="60" cy="60" r="50" fill="transparent" stroke="#1f2937" strokeWidth="20" />
+                                <circle cx="60" cy="60" r="50" fill="transparent" stroke="var(--color-border)" strokeWidth="20" />
                                 {statusData.map((item, index) => {
                                     const { dashArray, dashOffset, circumference } = generatePiePath(item.percentage, cumulativePercentage)
                                     cumulativePercentage += item.percentage
@@ -170,7 +170,7 @@ export default function DashboardCharts({ articles, keywords }: DashboardChartsP
                                     )
                                 })}
                                 {/* Text in center */}
-                                <text x="60" y="60" textAnchor="middle" dy="0.3em" fill="#fff" fontSize="14" fontWeight="bold">
+                                <text x="60" y="60" textAnchor="middle" dy="0.3em" fill="var(--color-text-primary)" fontSize="14" fontWeight="bold">
                                     {articles.length} Total
                                 </text>
                             </svg>
