@@ -67,11 +67,8 @@ const writeDB = (data: DBStructure) => {
   fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2))
 }
 
-// Import Supabase functions dynamically only if needed
-let supabaseFunctions: any = null
-if (USE_SUPABASE) {
-  supabaseFunctions = require('./database-supabase')
-}
+// Import Supabase functions (Static import to rely on Webpack's tree shaking/bundling)
+import * as supabaseFunctions from './database-supabase'
 
 // --- Brands ---
 
@@ -105,7 +102,7 @@ export const createBrand = async (data: {
   wp_password?: string
   user_id?: string
 }): Promise<RunResult> => {
-  if (USE_SUPABASE) return supabaseFunctions.createBrand(data)
+  if (USE_SUPABASE) return supabaseFunctions.createBrand(data as any)
 
   const db = readDB()
   const id = db.brands.length > 0 ? Math.max(...db.brands.map(b => b.id)) + 1 : 1
@@ -192,7 +189,7 @@ export const createKeyword = async (data: {
   status?: string
   user_id?: string
 }): Promise<RunResult> => {
-  if (USE_SUPABASE) return supabaseFunctions.createKeyword(data)
+  if (USE_SUPABASE) return supabaseFunctions.createKeyword(data as any)
 
   const db = readDB()
   const id = db.keywords.length > 0 ? Math.max(...db.keywords.map(k => k.id)) + 1 : 1
@@ -245,7 +242,7 @@ export const createResearch = async (data: {
   gemini_brief?: string
   user_id?: string
 }): Promise<RunResult> => {
-  if (USE_SUPABASE) return supabaseFunctions.createResearch(data)
+  if (USE_SUPABASE) return supabaseFunctions.createResearch(data as any)
 
   const db = readDB()
   const id = db.research.length > 0 ? Math.max(...db.research.map(r => r.id)) + 1 : 1
@@ -294,7 +291,7 @@ export const createArticle = async (data: {
   wp_post_url?: string
   user_id?: string
 }): Promise<RunResult> => {
-  if (USE_SUPABASE) return supabaseFunctions.createArticle(data)
+  if (USE_SUPABASE) return supabaseFunctions.createArticle(data as any)
 
   const db = readDB()
   const id = db.articles.length > 0 ? Math.max(...db.articles.map(a => a.id)) + 1 : 1
@@ -321,13 +318,13 @@ export const createArticle = async (data: {
 }
 
 export const getArticleById = async (id: number, userId?: string) => {
-  if (USE_SUPABASE) return supabaseFunctions.getArticleById(id, userId)
+  if (USE_SUPABASE) return supabaseFunctions.getArticleById(id, userId!)
   const db = readDB()
   return db.articles.find(a => a.id === Number(id))
 }
 
 export const getArticleBySlug = async (slug: string, userId?: string) => {
-  if (USE_SUPABASE) return supabaseFunctions.getArticleBySlug(slug, userId)
+  if (USE_SUPABASE) return supabaseFunctions.getArticleBySlug(slug, userId!)
   const db = readDB()
   return db.articles.find(a => a.slug === slug)
 }
@@ -394,7 +391,7 @@ export const createBatchJob = async (data: {
   progress?: string
   user_id?: string
 }): Promise<RunResult> => {
-  if (USE_SUPABASE) return supabaseFunctions.createBatchJob(data)
+  if (USE_SUPABASE) return supabaseFunctions.createBatchJob(data as any)
 
   const db = readDB()
   const id = db.batch_jobs.length > 0 ? Math.max(...db.batch_jobs.map(j => j.id)) + 1 : 1
@@ -446,7 +443,7 @@ export const createArticleFromRewrite = async (data: {
   brand_id?: number
   user_id?: string
 }): Promise<RunResult> => {
-  if (USE_SUPABASE) return supabaseFunctions.createArticleFromRewrite(data)
+  if (USE_SUPABASE) return supabaseFunctions.createArticleFromRewrite(data as any)
 
   const defaultBrand = await getDefaultBrand()
   const brandId = data.brand_id || defaultBrand?.id
@@ -508,7 +505,7 @@ export const createAIUsageLog = async (data: {
   duration_ms?: number
   user_id?: string
 }): Promise<RunResult> => {
-  if (USE_SUPABASE) return supabaseFunctions.createAIUsageLog(data)
+  if (USE_SUPABASE) return supabaseFunctions.createAIUsageLog(data as any)
 
   const db = readDB()
   const id = (db.ai_usage_logs?.length || 0) > 0 ? Math.max(...db.ai_usage_logs!.map(l => l.id)) + 1 : 1

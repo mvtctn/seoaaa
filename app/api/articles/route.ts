@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAllArticles } from '@/lib/db/database'
+import { getAllArticles, getKeywordById } from '@/lib/db/database'
 import { createClient } from '@/lib/supabase/server'
 
 export async function GET(req: NextRequest) {
@@ -11,7 +11,6 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        const { getAllArticles, getKeywordById } = require('@/lib/db/database')
         const articles = await getAllArticles(user.id)
 
         // Enrich articles with keyword data

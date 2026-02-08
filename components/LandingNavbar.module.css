@@ -80,15 +80,6 @@
     color: #f87171;
 }
 
-@media (max-width: 768px) {
-    .navLinks {
-        display: none;
-    }
-
-    .burgerBtn {
-        display: block;
-    }
-}
 
 .burgerBtn {
     display: none;
@@ -147,4 +138,14 @@
     color: white;
     font-size: 2rem;
     cursor: pointer;
+}
+
+@media (max-width: 768px) {
+    .navLinks {
+        display: none;
+    }
+
+    .burgerBtn {
+        display: block;
+    }
 }
