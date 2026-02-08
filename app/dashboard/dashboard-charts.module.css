@@ -1,0 +1,144 @@
+.chartsContainer {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.chartCard {
+    background: rgba(30, 30, 30, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.chartHeader {
+    margin-bottom: 1.5rem;
+}
+
+.chartTitle {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 0.25rem;
+}
+
+.chartSubtitle {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.barChartContainer {
+    height: 240px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 8px;
+    padding-top: 20px;
+    padding-bottom: 24px;
+    position: relative;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.barColumn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    height: 100%;
+    position: relative;
+    cursor: pointer;
+}
+
+.bar {
+    width: 60%;
+    background: linear-gradient(180deg, #6366f1 0%, rgba(99, 102, 241, 0.6) 100%);
+    border-radius: 4px 4px 0 0;
+    transition: all 0.3s ease;
+    min-height: 4px;
+    position: relative;
+}
+
+.bar:hover {
+    filter: brightness(1.2);
+    transform: scaleY(1.02);
+}
+
+.barLabel {
+    margin-top: 8px;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.6);
+    position: absolute;
+    bottom: -24px;
+    text-align: center;
+    width: 100%;
+}
+
+.barTooltip {
+    position: absolute;
+    top: -30px;
+    background: #0f172a;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+    white-space: nowrap;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.bar:hover .barTooltip {
+    opacity: 1;
+}
+
+/* Pie Chart */
+.pieChartContainer {
+    height: 240px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.pieLegend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 1rem;
+    justify-content: center;
+}
+
+.legendItem {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.legendDot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.emptyState {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.875rem;
+}
+
+@media (max-width: 768px) {
+    .chartsContainer {
+        grid-template-columns: 1fr;
+    }
+}

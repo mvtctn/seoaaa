@@ -2,6 +2,7 @@ import Link from 'next/link'
 import styles from './dashboard-home.module.css'
 import { getAllArticles, getAllKeywords } from '@/lib/db/database'
 import { createClient } from '@/lib/supabase/server'
+import DashboardCharts from './DashboardCharts'
 
 export default async function DashboardPage() {
     const supabase = createClient()
@@ -103,6 +104,9 @@ export default async function DashboardPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Charts Section */}
+            <DashboardCharts articles={articles} keywords={keywords} />
 
             {/* Quick Actions */}
             <div className={styles.quickActions}>
