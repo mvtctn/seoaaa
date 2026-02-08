@@ -1,11 +1,19 @@
 import Link from 'next/link'
 import styles from './dashboard-home.module.css'
 import { getAllArticles, getAllKeywords } from '@/lib/db/database'
+import { createClient } from '@/lib/supabase/server'
 
 export default async function DashboardPage() {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return <div className={styles.dashboard}>Please log in to view your dashboard.</div>
+    }
+
     // Fetch Data directly from DB (Server Component)
-    const articles = await getAllArticles()
-    const keywords = await getAllKeywords()
+    const articles = await getAllArticles(user.id)
+    const keywords = await getAllKeywords(user.id) // This keyword function needs to be checked if it supports userId too
 
     // Calculate Stats
     const totalArticles = articles.length
