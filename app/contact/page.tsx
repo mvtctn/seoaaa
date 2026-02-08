@@ -87,28 +87,49 @@ export default function ContactPage() {
                             <div className={styles.formRow}>
                                 <div className={styles.formGroup}>
                                     <label>Họ và Tên</label>
-                                    <input type="text" placeholder="Nguyễn Văn A" required />
+                                    <input
+                                        type="text"
+                                        placeholder="Nguyễn Văn A"
+                                        required
+                                        value={formData.name}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                    />
                                 </div>
                                 <div className={styles.formGroup}>
                                     <label>Email</label>
-                                    <input type="email" placeholder="email@example.com" required />
+                                    <input
+                                        type="email"
+                                        placeholder="email@example.com"
+                                        required
+                                        value={formData.email}
+                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                    />
                                 </div>
                             </div>
 
                             <div className={styles.formGroup}>
                                 <label>Chủ Đề</label>
-                                <select required>
-                                    <option value="">Chọn chủ đề...</option>
-                                    <option>Hỗ trợ kỹ thuật</option>
-                                    <option>Báo giá Enterprise</option>
-                                    <option>Hợp tác đại lý</option>
-                                    <option>Khác</option>
+                                <select
+                                    required
+                                    value={formData.subject}
+                                    onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                                >
+                                    <option value="Hỗ trợ kỹ thuật">Hỗ trợ kỹ thuật</option>
+                                    <option value="Báo giá Enterprise">Báo giá Enterprise</option>
+                                    <option value="Hợp tác đại lý">Hợp tác đại lý</option>
+                                    <option value="Khác">Khác</option>
                                 </select>
                             </div>
 
                             <div className={styles.formGroup}>
                                 <label>Tin Nhắn</label>
-                                <textarea rows={5} placeholder="Nhập nội dung tin nhắn của bạn..." required></textarea>
+                                <textarea
+                                    rows={5}
+                                    placeholder="Nhập nội dung tin nhắn của bạn..."
+                                    required
+                                    value={formData.message}
+                                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                                ></textarea>
                             </div>
 
                             <button type="submit" className={styles.submitBtn} disabled={loading}>
