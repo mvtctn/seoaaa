@@ -48,36 +48,36 @@ export default function ContactPage() {
 
             <section className={styles.hero}>
                 <h1>Liên Hệ Với <span className={styles.gradient}>Chúng Tôi</span></h1>
-                <p>Chúng tôi luôn sẵn sàng hỗ trợ bạn tự động hóa quy trình SEO.</p>
+                <p>Đội ngũ BizLite Soft luôn sẵn sàng lắng nghe và hỗ trợ bạn. Hãy để lại thông tin, chuyên gia của chúng tôi sẽ phản hồi trong thời gian sớm nhất.</p>
             </section>
 
             <section className={styles.contactSection}>
                 <div className={styles.contactGrid}>
                     <div className={styles.contactInfo}>
                         <div className={styles.infoCard}>
-                            <div className={styles.infoIcon}>📧</div>
+                            <div className={styles.infoIcon}>🏢</div>
                             <div>
-                                <h3>Email</h3>
-                                <p>support@seoengine.com</p>
-                                <p>sales@seoengine.com</p>
+                                <h3>Công ty TNHH BizLite Soft</h3>
+                                <p>Mã số thuế: 0109xxxxxx</p>
                             </div>
                         </div>
 
                         <div className={styles.infoCard}>
                             <div className={styles.infoIcon}>📍</div>
                             <div>
-                                <h3>Địa Chỉ</h3>
-                                <p>Khu Công Nghệ Cao, Quận 9</p>
-                                <p>TP. Hồ Chí Minh, Việt Nam</p>
+                                <h3>Trụ sở chính</h3>
+                                <p>Tầng 4, Tòa nhà N07B1.2, Đường Thành Phái,</p>
+                                <p>Phường Cầu Giấy, TP Hà Nội, Việt Nam</p>
                             </div>
                         </div>
 
                         <div className={styles.infoCard}>
-                            <div className={styles.infoIcon}>💬</div>
+                            <div className={styles.infoIcon}>📞</div>
                             <div>
-                                <h3>Hỗ Trợ Trực Tuyến</h3>
-                                <p>Thứ 2 - Thứ 6: 8:00 - 18:00</p>
-                                <p>Thứ 7: 8:00 - 12:00</p>
+                                <h3>Liên hệ</h3>
+                                <p>Hotline: 0967 60 8585</p>
+                                <p>Email: info@bizlitecrm.com</p>
+                                <p>8:00 - 17:30 (Thứ 2 - Thứ 7)</p>
                             </div>
                         </div>
                     </div>

@@ -45,15 +45,18 @@ export default function DashboardLayout({
         }
         fetchUserData()
 
-        const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-            const newUser = session?.user || null
-            setUser(newUser)
-            if (newUser) {
-                const { data: sub } = await supabase.from('user_subscriptions').select('*').eq('user_id', newUser.id).maybeSingle()
-                setSubscription(sub)
-            } else {
-                setSubscription(null)
+        const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
+            const handleAuth = async () => {
+                const newUser = session?.user || null
+                setUser(newUser)
+                if (newUser) {
+                    const { data: sub } = await supabase.from('user_subscriptions').select('*').eq('user_id', newUser.id).maybeSingle()
+                    setSubscription(sub)
+                } else {
+                    setSubscription(null)
+                }
             }
+            handleAuth()
         })
 
         // Find matching title

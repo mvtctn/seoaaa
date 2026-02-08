@@ -8,13 +8,14 @@ import { createClient } from '@/lib/supabase/client'
 import AuthModal from './AuthModal'
 import ThemeToggle from './ThemeToggle'
 
+const supabase = createClient()
+
 export default function LandingNavbar() {
     const pathname = usePathname()
     const [isLoggedIn, setIsLoggedIn] = useState(false)
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
     const [authMode, setAuthMode] = useState<'login' | 'register'>('login')
     const [isMenuOpen, setIsMenuOpen] = useState(false)
-    const supabase = createClient()
 
     useEffect(() => {
         const checkUser = async () => {
@@ -23,7 +24,7 @@ export default function LandingNavbar() {
         }
         checkUser()
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
             setIsLoggedIn(!!session?.user)
             if (session?.user) setIsAuthModalOpen(false)
         })
