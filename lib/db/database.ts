@@ -552,6 +552,11 @@ export const checkUserLimit = async (userId: string, cost: number) => {
   return true
 }
 
+export const createUserSubscription = async (userId: string, plan: 'free' | 'premium' | 'enterprise') => {
+  if (USE_SUPABASE) return supabaseFunctions.createUserSubscription(userId, plan)
+  return null
+}
+
 export const incrementUsage = async (userId: string, cost: number) => {
   if (USE_SUPABASE) return supabaseFunctions.incrementUsage(userId, cost)
   // No-op for local json

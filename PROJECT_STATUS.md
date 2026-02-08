@@ -73,3 +73,6 @@ Xây dựng hệ thống tự động hóa quy trình viết bài SEO chất lư
 
 ## ⚠️ LƯU Ý QUAN TRỌNG
 Nếu gặp lỗi `Could not find the 'user_id' column...` hoặc bài viết mới tạo không hiển thị, vui lòng chạy script migration SQL trong file `MIGRATION_GUIDE.md` để cập nhật cấu trúc Database.
+
+## ⚠️ ACTION REQUIRED: RESTART SERVER
+Please restart the development server (`npm run dev`) to apply changes to `next.config.js` for fixing image loading issues.

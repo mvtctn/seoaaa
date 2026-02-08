@@ -10,6 +10,11 @@ const nextConfig = {
                 hostname: 'image.pollinations.ai',
                 pathname: '/**',
             },
+            {
+                protocol: 'https',
+                hostname: 'via.placeholder.com',
+                pathname: '/**',
+            },
         ],
     },
     async headers() {

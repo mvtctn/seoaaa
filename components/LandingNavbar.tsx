@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import styles from './LandingNavbar.module.css'
+import Logo from './Logo'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import AuthModal from './AuthModal'
@@ -33,7 +34,7 @@ export default function LandingNavbar() {
         return () => {
             subscription.unsubscribe()
         }
-    }, [supabase])
+    }, [])
 
     const openAuth = (mode: 'login' | 'register') => {
         setAuthMode(mode)
@@ -52,9 +53,8 @@ export default function LandingNavbar() {
         <>
             <nav className={styles.nav}>
                 <div className={styles.navContent}>
-                    <Link href="/" className={styles.logo}>
-                        <Image src="/logo.svg" alt="SEOAAA Logo" width={32} height={32} />
-                        <span>SEOAAA</span>
+                    <Link href="/" className="no-underline">
+                        <Logo width={40} height={40} />
                     </Link>
 
                     <div className={styles.navLinks}>

@@ -1,7 +1,8 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import styles from './brand.module.css'
 
 interface InternalLink {
@@ -48,10 +49,41 @@ const DEFAULT_TEMPLATE = `# {{title}}
 ## Kết Luận
 {{conclusion}}`
 
+// API Functions
+const getBrands = async (): Promise<BrandSettings[]> => {
+    const res = await fetch('/api/brand')
+    if (!res.ok) throw new Error('Failed to fetch brands')
+    const data = await res.json()
+    return data.brands || []
+}
+
+const saveBrandApi = async (brand: BrandSettings) => {
+    const res = await fetch('/api/brand', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(brand)
+    })
+    if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to save')
+    }
+    return res.json()
+}
+
+const deleteBrandApi = async (id: number) => {
+    const res = await fetch(`/api/brand?id=${id}`, { method: 'DELETE' })
+    if (!res.ok) throw new Error('Failed to delete')
+    return res.json()
+}
+
+const setDefaultBrandApi = async (id: number) => {
+    const res = await fetch(`/api/brand?id=${id}&action=set_default`, { method: 'PATCH' })
+    if (!res.ok) throw new Error('Failed to set default')
+    return res.json()
+}
+
 export default function BrandManagementPage() {
-    const [loading, setLoading] = useState(true)
-    const [saving, setSaving] = useState(false)
-    const [brands, setBrands] = useState<BrandSettings[]>([])
+    const queryClient = useQueryClient()
     const [showModal, setShowModal] = useState(false)
     const [selectedBrand, setSelectedBrand] = useState<BrandSettings | null>(null)
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
@@ -60,23 +92,49 @@ export default function BrandManagementPage() {
     const [newTag, setNewTag] = useState('')
     const [newLink, setNewLink] = useState({ text: '', url: '', keywords: '' })
 
-    useEffect(() => {
-        fetchBrands()
-    }, [])
+    // Queries
+    const { data: brands = [], isLoading: loading } = useQuery({
+        queryKey: ['brands'],
+        queryFn: getBrands,
+    })
 
-    const fetchBrands = async () => {
-        try {
-            setLoading(true)
-            const res = await fetch('/api/brand')
-            const data = await res.json()
-            if (data.brands) {
-                setBrands(data.brands)
-            }
-        } catch (error) {
-            console.error('Failed to load brands', error)
-        } finally {
-            setLoading(false)
+    // Mutations
+    const saveMutation = useMutation({
+        mutationFn: saveBrandApi,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['brands'] })
+            setShowModal(false)
+            showMessage('success', selectedBrand?.id ? 'Đã cập nhật thương hiệu' : 'Đã tạo thương hiệu mới')
+        },
+        onError: (error: Error) => {
+            showMessage('error', error.message)
         }
+    })
+
+    const deleteMutation = useMutation({
+        mutationFn: deleteBrandApi,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['brands'] })
+            showMessage('success', 'Đã xóa thương hiệu')
+        },
+        onError: () => {
+            showMessage('error', 'Lỗi khi xóa')
+        }
+    })
+
+    const setDefaultMutation = useMutation({
+        mutationFn: setDefaultBrandApi,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['brands'] })
+        },
+        onError: (error) => {
+            console.error('Set default failed', error)
+        }
+    })
+
+    const showMessage = (type: 'success' | 'error', text: string) => {
+        setMessage({ type, text })
+        setTimeout(() => setMessage(null), 3000)
     }
 
     const openCreateModal = () => {
@@ -99,60 +157,23 @@ export default function BrandManagementPage() {
         setShowModal(true)
     }
 
-    const handleSave = async () => {
+    const handleSave = () => {
         if (!selectedBrand) return
         if (!selectedBrand.name.trim()) {
             alert('Vui lòng nhập tên thương hiệu')
             return
         }
+        saveMutation.mutate(selectedBrand)
+    }
 
-        try {
-            setSaving(true)
-            const res = await fetch('/api/brand', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(selectedBrand)
-            })
-
-            const data = await res.json()
-
-            if (res.ok) {
-                setMessage({ type: 'success', text: selectedBrand.id ? 'Đã cập nhật thương hiệu' : 'Đã tạo thương hiệu mới' })
-                await fetchBrands()
-                setShowModal(false)
-                setTimeout(() => setMessage(null), 3000)
-            } else {
-                throw new Error(data.error || 'Failed to save')
-            }
-        } catch (error: any) {
-            alert('Lỗi: ' + error.message)
-        } finally {
-            setSaving(false)
+    const handleDelete = (id: number) => {
+        if (confirm('Bạn có chắc muốn xóa thương hiệu này?')) {
+            deleteMutation.mutate(id)
         }
     }
 
-    const handleDelete = async (id: number) => {
-        if (!confirm('Bạn có chắc muốn xóa thương hiệu này?')) return
-        try {
-            const res = await fetch(`/api/brand?id=${id}`, { method: 'DELETE' })
-            if (res.ok) {
-                await fetchBrands()
-                setShowModal(false)
-            }
-        } catch (error) {
-            alert('Lỗi khi xóa')
-        }
-    }
-
-    const handleSetDefault = async (id: number) => {
-        try {
-            const res = await fetch(`/api/brand?id=${id}&action=set_default`, { method: 'PATCH' })
-            if (res.ok) {
-                await fetchBrands()
-            }
-        } catch (error) {
-            console.error('Set default failed', error)
-        }
+    const handleSetDefault = (id: number) => {
+        setDefaultMutation.mutate(id)
     }
 
     const updateSelected = (data: Partial<BrandSettings>) => {
@@ -194,7 +215,7 @@ export default function BrandManagementPage() {
         }
     }
 
-    if (loading && brands.length === 0) {
+    if (loading) {
         return <div className="flex items-center justify-center p-20"><div className="spinner spinner-lg"></div></div>
     }
 
@@ -443,8 +464,8 @@ export default function BrandManagementPage() {
 
                         <div className={styles.modalFooter}>
                             <button className="btn btn-ghost" onClick={() => setShowModal(false)}>Hủy</button>
-                            <button className="btn btn-primary px-10" onClick={handleSave} disabled={saving}>
-                                {saving ? 'Đang lưu...' : 'Lưu Thay Đổi'}
+                            <button className="btn btn-primary px-10" onClick={handleSave} disabled={saveMutation.isPending}>
+                                {saveMutation.isPending ? 'Đang lưu...' : 'Lưu Thay Đổi'}
                             </button>
                         </div>
                     </div>

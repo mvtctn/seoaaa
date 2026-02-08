@@ -2,8 +2,52 @@ import Link from 'next/link'
 import styles from './pricing.module.css'
 import LandingNavbar from '@/components/LandingNavbar'
 import LandingFooter from '@/components/LandingFooter'
+import PricingCard from '@/components/PricingCard'
+import { createClient } from '@/lib/supabase/server'
 
-export default function PricingPage() {
+export const dynamic = 'force-dynamic'
+
+export default async function PricingPage() {
+    const supabase = createClient()
+
+    // Fetch active plans from database
+    const { data: plans } = await supabase
+        .from('subscription_plans')
+        .select('*')
+        .eq('is_active', true)
+        .order('price', { ascending: true })
+
+    // Fallback if no plans found in DB
+    const displayPlans = (plans && plans.length > 0) ? plans : [
+        {
+            id: 'free',
+            name: 'Free',
+            price: 0,
+            credits: 5000,
+            features: ["5,000 Credits", "1 bài viết SEO chất lượng cao", "Gợi ý từ khóa cơ bản"],
+            is_popular: false,
+            description: "Khởi đầu hành trình SEO của bạn"
+        },
+        {
+            id: 'premium',
+            name: 'Premium',
+            price: 990000,
+            credits: 150000,
+            features: ["150,000 Credits", "~30-50 bài viết SEO hoàn chỉnh", "Tạo hình ảnh AI không giới hạn", "Batch processing tốc độ cao"],
+            is_popular: true,
+            description: "Cho Professional & Freelancer"
+        },
+        {
+            id: 'enterprise',
+            name: 'Enterprise',
+            price: 2990000,
+            credits: 1000000,
+            features: ["1,000,000 Credits", "Hỗ trợ đa thương hiệu (Multi-brand)", "Hệ thống AI Orchestrator nâng cao", "Xuất bản trực tiếp lên CMS"],
+            is_popular: false,
+            description: "Cho Agencies & Doanh nghiệp"
+        }
+    ]
+
     return (
         <div className={styles.container}>
             <LandingNavbar />
@@ -23,141 +67,18 @@ export default function PricingPage() {
             {/* Pricing Cards */}
             <section className={styles.pricing}>
                 <div className={styles.pricingGrid}>
-                    {/* Free Plan */}
-                    <div className={styles.pricingCard}>
-                        <div className={styles.cardHeader}>
-                            <h3>Free</h3>
-                            <p className={styles.cardDesc}>Khởi đầu hành trình SEO của bạn</p>
-                        </div>
-                        <div className={styles.price}>
-                            <span className={styles.priceAmount}>Free</span>
-                            <span className={styles.pricePeriod}>/vĩnh viễn</span>
-                        </div>
-                        <ul className={styles.features}>
-                            <li>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                                    <polyline points="22 4 12 14.01 9 11.01" />
-                                </svg>
-                                <span><strong>5,000 Credits</strong></span>
-                            </li>
-                            <li>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                                    <polyline points="22 4 12 14.01 9 11.01" />
-                                </svg>
-                                <span>1 bài viết SEO chất lượng cao</span>
-                            </li>
-                            <li>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                                    <polyline points="22 4 12 14.01 9 11.01" />
-                                </svg>
-                                <span>Gợi ý từ khóa cơ bản</span>
-                            </li>
-                            <li className={styles.disabled}>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <line x1="18" y1="6" x2="6" y2="18" />
-                                    <line x1="6" y1="6" x2="18" y2="18" />
-                                </svg>
-                                <span>Tạo hình ảnh AI nâng cao</span>
-                            </li>
-                        </ul>
-                        <Link href="/contact" className={styles.button}>
-                            Bắt Đầu Ngay
-                        </Link>
-                    </div>
-
-                    {/* Premium Plan - Popular */}
-                    <div className={`${styles.pricingCard} ${styles.popular}`}>
-                        <div className={styles.popularBadge}>LỰA CHỌN TỐT NHẤT</div>
-                        <div className={styles.cardHeader}>
-                            <h3>Premium</h3>
-                            <p className={styles.cardDesc}>Cho Professional & Freelancer</p>
-                        </div>
-                        <div className={styles.price}>
-                            <span className={styles.priceAmount}>$39</span>
-                            <span className={styles.pricePeriod}>/tháng</span>
-                        </div>
-                        <ul className={styles.features}>
-                            <li>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                                    <polyline points="22 4 12 14.01 9 11.01" />
-                                </svg>
-                                <span><strong>150,000 Credits</strong></span>
-                            </li>
-                            <li>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                                    <polyline points="22 4 12 14.01 9 11.01" />
-                                </svg>
-                                <span>~30-50 bài viết SEO hoàn chỉnh</span>
-                            </li>
-                            <li>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                                    <polyline points="22 4 12 14.01 9 11.01" />
-                                </svg>
-                                <span>Tạo hình ảnh AI không giới hạn</span>
-                            </li>
-                            <li>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                                    <polyline points="22 4 12 14.01 9 11.01" />
-                                </svg>
-                                <span>Batch processing tốc độ cao</span>
-                            </li>
-                        </ul>
-                        <Link href="/contact" className={styles.buttonPrimary}>
-                            Nâng Cấp Premium
-                        </Link>
-                    </div>
-
-                    {/* Enterprise Plan */}
-                    <div className={styles.pricingCard}>
-                        <div className={styles.cardHeader}>
-                            <h3>Enterprise</h3>
-                            <p className={styles.cardDesc}>Cho Agencies & Doanh nghiệp lớn</p>
-                        </div>
-                        <div className={styles.price}>
-                            <span className={styles.priceAmount}>$129</span>
-                            <span className={styles.pricePeriod}>/tháng</span>
-                        </div>
-                        <ul className={styles.features}>
-                            <li>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                                    <polyline points="22 4 12 14.01 9 11.01" />
-                                </svg>
-                                <span><strong>1,000,000 Credits</strong></span>
-                            </li>
-                            <li>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                                    <polyline points="22 4 12 14.01 9 11.01" />
-                                </svg>
-                                <span>Hỗ trợ đa thương hiệu (Multi-brand)</span>
-                            </li>
-                            <li>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                                    <polyline points="22 4 12 14.01 9 11.01" />
-                                </svg>
-                                <span>Hệ thống AI Orchestrator nâng cao</span>
-                            </li>
-                            <li>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                                    <polyline points="22 4 12 14.01 9 11.01" />
-                                </svg>
-                                <span>Xuất bản trực tiếp lên CMS</span>
-                            </li>
-                        </ul>
-                        <Link href="/contact" className={styles.button}>
-                            Liên Hệ Enterprise
-                        </Link>
-                    </div>
+                    {displayPlans.map((plan: any) => (
+                        <PricingCard
+                            key={plan.id}
+                            plan={plan.name}
+                            tierKey={plan.tier_key}
+                            price={plan.price}
+                            credits={plan.credits}
+                            features={Array.isArray(plan.features) ? plan.features : JSON.parse(plan.features || '[]')}
+                            isPopular={plan.is_popular}
+                            description={plan.description || (plan.price === 0 ? "Khởi đầu hành trình SEO của bạn" : undefined)}
+                        />
+                    ))}
                 </div>
             </section>
 

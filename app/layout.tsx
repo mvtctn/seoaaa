@@ -4,6 +4,7 @@ import LayoutWrapper from '@/components/LayoutWrapper'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import Script from 'next/script'
 import { getSetting } from '@/lib/db/database'
+import QueryProvider from '@/components/QueryProvider'
 
 export const metadata: Metadata = {
     title: 'SEOAAA - Automated SEO Solution',
@@ -46,9 +47,11 @@ export default async function RootLayout({
             </head>
             <body>
                 <ThemeProvider>
-                    <LayoutWrapper>
-                        {children}
-                    </LayoutWrapper>
+                    <QueryProvider>
+                        <LayoutWrapper>
+                            {children}
+                        </LayoutWrapper>
+                    </QueryProvider>
                 </ThemeProvider>
             </body>
         </html>

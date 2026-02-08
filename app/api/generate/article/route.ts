@@ -121,8 +121,24 @@ export async function POST(req: NextRequest) {
 
         // 4. Finalize Metadata (Using Orchestrator)
         console.log('[API] Finalizing metadata...')
-        const metaTitleResult = sections.meta.title ? { content: sections.meta.title } : await AIOrchestrator.generateMetaTitle(title, keyword, brandContextForAI, user.id)
-        const metaDescResult = sections.meta.description ? { content: sections.meta.description } : await AIOrchestrator.generateMetaDescription(title, keyword, content, brandContextForAI, user.id)
+
+        const titlePromise = sections.meta.title
+            ? Promise.resolve({ content: sections.meta.title })
+            : AIOrchestrator.generateMetaTitle(title, keyword, brandContextForAI, user.id)
+                .catch(err => {
+                    logger.warn(`[API] Meta Title Avg Failed: ${err.message}`)
+                    return { content: title.substring(0, 60) }
+                })
+
+        const descPromise = sections.meta.description
+            ? Promise.resolve({ content: sections.meta.description })
+            : AIOrchestrator.generateMetaDescription(title, keyword, content, brandContextForAI, user.id)
+                .catch(err => {
+                    logger.warn(`[API] Meta Desc Gen Failed: ${err.message}`)
+                    return { content: (sections.summary || content.substring(0, 150)).substring(0, 160) }
+                })
+
+        const [metaTitleResult, metaDescResult] = await Promise.all([titlePromise, descPromise])
 
         const metaTitle = metaTitleResult.content
         const metaDesc = metaDescResult.content

@@ -2,123 +2,133 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import styles from './settings.module.css'
 
+// Initial state for form
+const INITIAL_STATE = {
+    smtp: { host: '', port: '587', user: '', pass: '', from: '' },
+    adminEmail: '',
+    seo: { google_analytics_id: '', search_console_id: '' }
+}
+
+// Fetch function
+const fetchSettings = async () => {
+    const [smtpRes, adminRes, seoRes] = await Promise.all([
+        fetch('/api/settings?key=smtp_config'),
+        fetch('/api/settings?key=admin_notification_email'),
+        fetch('/api/settings?key=seo_config')
+    ])
+
+    const smtpData = await smtpRes.json()
+    const adminData = await adminRes.json()
+    const seoData = await seoRes.json()
+
+    return {
+        smtp: smtpData.value || INITIAL_STATE.smtp,
+        adminEmail: adminData.value || '',
+        seo: seoData.value || INITIAL_STATE.seo
+    }
+}
+
+// Save function
+const saveSettingsApi = async (data: typeof INITIAL_STATE) => {
+    const results = await Promise.all([
+        fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: 'smtp_config', value: data.smtp })
+        }),
+        fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: 'admin_notification_email', value: data.adminEmail })
+        }),
+        fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: 'seo_config', value: data.seo })
+        })
+    ])
+
+    if (!results.every(r => r.ok)) {
+        throw new Error('Một số cài đặt không lưu được.')
+    }
+    return true
+}
+
+// Test Email function
+const testEmailApi = async ({ smtp, testEmail }: { smtp: any, testEmail: string }) => {
+    const res = await fetch('/api/settings/test-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ smtp, testEmail })
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Gửi mail test thất bại')
+    return data
+}
+
 export default function SettingsPage() {
-    const [smtp, setSmtp] = useState({
-        host: '',
-        port: '587',
-        user: '',
-        pass: '',
-        from: ''
-    })
-    const [adminEmail, setAdminEmail] = useState('')
-    const [seo, setSeo] = useState({
-        google_analytics_id: '',
-        search_console_id: ''
-    })
-    const [loading, setLoading] = useState(false)
-    const [saved, setSaved] = useState(false)
-    const [error, setError] = useState<string | null>(null)
-    const [testLoading, setTestLoading] = useState(false)
-    const [testStatus, setTestStatus] = useState<'success' | 'error' | null>(null)
+    const queryClient = useQueryClient()
+    const [formData, setFormData] = useState(INITIAL_STATE)
+    const [successMessage, setSuccessMessage] = useState('')
 
+    // Fetch Data
+    const { data: settings, isLoading } = useQuery({
+        queryKey: ['settings'],
+        queryFn: fetchSettings,
+        staleTime: 5 * 60 * 1000, // cache for 5 mins
+    })
+
+    // Sync data to form
     useEffect(() => {
-        fetchSettings()
-    }, [])
-
-    const fetchSettings = async () => {
-        try {
-            const [smtpRes, adminRes, seoRes] = await Promise.all([
-                fetch('/api/settings?key=smtp_config'),
-                fetch('/api/settings?key=admin_notification_email'),
-                fetch('/api/settings?key=seo_config')
-            ])
-            const smtpData = await smtpRes.json()
-            const adminData = await adminRes.json()
-            const seoData = await seoRes.json()
-
-            if (smtpData.value) setSmtp(smtpData.value)
-            if (adminData.value) setAdminEmail(adminData.value)
-            if (seoData.value) setSeo(seoData.value)
-        } catch (err) {
-            console.error('Failed to load settings', err)
+        if (settings) {
+            setFormData(settings)
         }
-    }
+    }, [settings])
 
-    const handleTestEmail = async () => {
-        if (!smtp.host || !smtp.user || !smtp.pass) {
-            setError('Vui lòng điền đầy đủ cấu hình SMTP trước khi test')
-            return
+    // Save Mutation
+    const saveMutation = useMutation({
+        mutationFn: saveSettingsApi,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['settings'] })
+            setSuccessMessage('✨ Đã lưu cấu hình hệ thống')
+            setTimeout(() => setSuccessMessage(''), 3000)
+        },
+        onError: (err) => {
+            console.error(err)
         }
-        if (!adminEmail) {
-            setError('Vui lòng nhập Email Nhận Thông Báo để test')
-            return
+    })
+
+    // Test Email Mutation
+    const testEmailMutation = useMutation({
+        mutationFn: testEmailApi,
+        onSuccess: () => {
+            setSuccessMessage('✅ Kết nối thành công! Kiểm tra hộp thư của bạn.')
+            setTimeout(() => setSuccessMessage(''), 5000)
         }
+    })
 
-        setTestLoading(true)
-        setTestStatus(null)
-        setError(null)
-
-        try {
-            const res = await fetch('/api/settings/test-email', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ smtp, testEmail: adminEmail })
-            })
-            const data = await res.json()
-            if (res.ok) {
-                setTestStatus('success')
-            } else {
-                throw new Error(data.error || 'Gửi mail test thất bại')
-            }
-        } catch (err: any) {
-            setError(err.message)
-            setTestStatus('error')
-        } finally {
-            setTestLoading(false)
-        }
-    }
-
-    const handleSave = async (e: React.FormEvent) => {
+    const handleSave = (e: React.FormEvent) => {
         e.preventDefault()
-        setLoading(true)
-        setSaved(false)
-        setError(null)
-        setTestStatus(null)
+        saveMutation.mutate(formData)
+    }
 
-        try {
-            const results = await Promise.all([
-                fetch('/api/settings', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ key: 'smtp_config', value: smtp })
-                }),
-                fetch('/api/settings', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ key: 'admin_notification_email', value: adminEmail })
-                }),
-                fetch('/api/settings', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ key: 'seo_config', value: seo })
-                })
-            ])
-
-            if (results.every(r => r.ok)) {
-                setSaved(true)
-                setTimeout(() => setSaved(false), 3000)
-            } else {
-                const failingRes = results.find(r => !r.ok)
-                const errorData = await failingRes?.json()
-                throw new Error(errorData?.error || 'Some settings failed to save')
-            }
-        } catch (err: any) {
-            setError(err.message)
-        } finally {
-            setLoading(false)
+    const handleTestEmail = () => {
+        if (!formData.smtp.host || !formData.smtp.user || !formData.smtp.pass) {
+            alert('Vui lòng điền đầy đủ cấu hình SMTP trước khi test')
+            return
         }
+        if (!formData.adminEmail) {
+            alert('Vui lòng nhập Email Nhận Thông Báo để test')
+            return
+        }
+        testEmailMutation.mutate({ smtp: formData.smtp, testEmail: formData.adminEmail })
+    }
+
+    if (isLoading) {
+        return <div className="text-center py-20 text-secondary">Đang tải cài đặt...</div>
     }
 
     return (
@@ -138,8 +148,8 @@ export default function SettingsPage() {
                                 <input
                                     className={styles.input}
                                     placeholder="smtp.gmail.com"
-                                    value={smtp.host}
-                                    onChange={e => setSmtp({ ...smtp, host: e.target.value })}
+                                    value={formData.smtp.host}
+                                    onChange={e => setFormData({ ...formData, smtp: { ...formData.smtp, host: e.target.value } })}
                                 />
                             </div>
                         </div>
@@ -148,8 +158,8 @@ export default function SettingsPage() {
                             <input
                                 className={styles.input}
                                 placeholder="587"
-                                value={smtp.port}
-                                onChange={e => setSmtp({ ...smtp, port: e.target.value })}
+                                value={formData.smtp.port}
+                                onChange={e => setFormData({ ...formData, smtp: { ...formData.smtp, port: e.target.value } })}
                             />
                         </div>
                         <div className={styles.formGroup}>
@@ -157,8 +167,8 @@ export default function SettingsPage() {
                             <input
                                 className={styles.input}
                                 placeholder="SeoAAA Bot"
-                                value={smtp.from}
-                                onChange={e => setSmtp({ ...smtp, from: e.target.value })}
+                                value={formData.smtp.from}
+                                onChange={e => setFormData({ ...formData, smtp: { ...formData.smtp, from: e.target.value } })}
                             />
                         </div>
                         <div className={styles.formGroup}>
@@ -166,8 +176,8 @@ export default function SettingsPage() {
                             <input
                                 className={styles.input}
                                 placeholder="your-email@gmail.com"
-                                value={smtp.user}
-                                onChange={e => setSmtp({ ...smtp, user: e.target.value })}
+                                value={formData.smtp.user}
+                                onChange={e => setFormData({ ...formData, smtp: { ...formData.smtp, user: e.target.value } })}
                             />
                         </div>
                         <div className={styles.formGroup}>
@@ -176,8 +186,8 @@ export default function SettingsPage() {
                                 type="password"
                                 className={styles.input}
                                 placeholder="••••••••••••"
-                                value={smtp.pass}
-                                onChange={e => setSmtp({ ...smtp, pass: e.target.value })}
+                                value={formData.smtp.pass}
+                                onChange={e => setFormData({ ...formData, smtp: { ...formData.smtp, pass: e.target.value } })}
                             />
                         </div>
                     </div>
@@ -191,8 +201,8 @@ export default function SettingsPage() {
                             <input
                                 className={styles.input}
                                 placeholder="G-XXXXXXXXXX"
-                                value={seo.google_analytics_id}
-                                onChange={e => setSeo({ ...seo, google_analytics_id: e.target.value })}
+                                value={formData.seo.google_analytics_id}
+                                onChange={e => setFormData({ ...formData, seo: { ...formData.seo, google_analytics_id: e.target.value } })}
                             />
                         </div>
                         <div className={styles.formGroup}>
@@ -200,8 +210,8 @@ export default function SettingsPage() {
                             <input
                                 className={styles.input}
                                 placeholder="Mã xác thực meta tag"
-                                value={seo.search_console_id}
-                                onChange={e => setSeo({ ...seo, search_console_id: e.target.value })}
+                                value={formData.seo.search_console_id}
+                                onChange={e => setFormData({ ...formData, seo: { ...formData.seo, search_console_id: e.target.value } })}
                             />
                         </div>
                     </div>
@@ -215,8 +225,8 @@ export default function SettingsPage() {
                         <input
                             className={styles.input}
                             placeholder="admin@example.com"
-                            value={adminEmail}
-                            onChange={e => setAdminEmail(e.target.value)}
+                            value={formData.adminEmail}
+                            onChange={e => setFormData({ ...formData, adminEmail: e.target.value })}
                         />
                         <p className="text-xs text-secondary mt-2">Địa chỉ email này sẽ nhận thông báo khi có người dùng mới đăng ký hoặc liên hệ.</p>
                     </div>
@@ -224,22 +234,23 @@ export default function SettingsPage() {
 
                 <div className={styles.footer}>
                     <div className="flex-1">
-                        {error && <div className={styles.errorMessage}>❌ {error}</div>}
-                        {testStatus === 'success' && <div className={styles.successMessage}>✅ Kết nối thành công! Kiểm tra hộp thư của bạn.</div>}
-                        {saved && <div className={styles.successMessage}>✨ Đã lưu cấu hình hệ thống</div>}
+                        {saveMutation.isError && <div className={styles.errorMessage}>❌ {saveMutation.error?.message}</div>}
+                        {testEmailMutation.isError && <div className={styles.errorMessage}>❌ {testEmailMutation.error?.message}</div>}
+
+                        {successMessage && <div className={styles.successMessage}>{successMessage}</div>}
                     </div>
 
                     <button
                         type="button"
                         className={styles.testBtn}
                         onClick={handleTestEmail}
-                        disabled={testLoading || loading}
+                        disabled={saveMutation.isPending || testEmailMutation.isPending}
                     >
-                        {testLoading ? 'Đang kiểm tra...' : 'Test Connection'}
+                        {testEmailMutation.isPending ? 'Đang kiểm tra...' : 'Test Connection'}
                     </button>
 
-                    <button type="submit" className={styles.saveBtn} disabled={loading || testLoading}>
-                        {loading ? 'Đang lưu...' : 'Lưu Cài Đặt'}
+                    <button type="submit" className={styles.saveBtn} disabled={saveMutation.isPending || testEmailMutation.isPending}>
+                        {saveMutation.isPending ? 'Đang lưu...' : 'Lưu Cài Đặt'}
                     </button>
                 </div>
             </form>

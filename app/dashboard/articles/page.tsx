@@ -1,127 +1,48 @@
-'use client'
+import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
+import { createClient } from '@/lib/supabase/server'
+import { getAllArticles, getKeywordById } from '@/lib/db/database'
+import ArticlesClient from './ArticlesClient'
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import styles from './articles.module.css'
+export const dynamic = 'force-dynamic' // Ensure dynamic rendering for latest data
 
-export default function ArticlesPage() {
-    const [articles, setArticles] = useState<any[]>([])
-    const [loading, setLoading] = useState(true)
+export default async function ArticlesPage() {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
 
-    useEffect(() => {
-        fetchArticles()
-    }, [])
-
-    const fetchArticles = async () => {
-        try {
-            const res = await fetch('/api/articles')
-            const data = await res.json()
-            if (data.success) {
-                setArticles(data.data)
-            }
-        } catch (error) {
-            console.error('Failed to fetch articles', error)
-        } finally {
-            setLoading(false)
-        }
+    if (!user) {
+        return (
+            <div className="flex items-center justify-center min-h-screen text-secondary">
+                Please log in to view articles.
+            </div>
+        )
     }
 
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString('vi-VN', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        })
-    }
+    const queryClient = new QueryClient()
 
-    const handleDelete = async (id: number) => {
-        if (!confirm('Bạn có chắc chắn muốn xóa bài viết này không? Hành động này không thể hoàn tác.')) return
+    // Prefetch articles on the server
+    await queryClient.prefetchQuery({
+        queryKey: ['articles'],
+        queryFn: async () => {
+            const articles = await getAllArticles(user.id)
 
-        try {
-            const res = await fetch(`/api/articles/${id}`, {
-                method: 'DELETE'
-            })
-            if (res.ok) {
-                setArticles(prev => prev.filter(article => article.id !== id))
-            } else {
-                alert('Xóa thất bại')
-            }
-        } catch (error) {
-            console.error('Failed to delete article', error)
-            alert('Lỗi kết nối')
-        }
-    }
+            // Enrich articles with keyword data manually (matching API logic)
+            // Note: This logic must match /app/api/articles/route.ts to ensure consistent data shape
+            const enrichedArticles = await Promise.all(articles.map(async (article: any) => {
+                let keyword = 'N/A';
+                if (article.keyword_id) {
+                    const kw = await getKeywordById(article.keyword_id, user.id);
+                    if (kw) keyword = kw.keyword;
+                }
+                return { ...article, keyword };
+            }));
+
+            return enrichedArticles
+        },
+    })
 
     return (
-        <div className={styles.container}>
-            <header className={styles.header}>
-                <div>
-                    <h2>Thư Viện Bài Viết</h2>
-                    <p className="text-secondary">Quản lý tất cả nội dung đã được tạo.</p>
-                </div>
-                <Link href="/dashboard/generate" className="btn btn-primary">
-                    + Tạo Mới
-                </Link>
-            </header>
-
-            {loading ? (
-                <div className="text-center py-8 text-secondary">Đang tải danh sách...</div>
-            ) : articles.length === 0 ? (
-                <div className={styles.emptyState}>
-                    <p>Chưa có bài viết nào.</p>
-                    <Link href="/dashboard/generate" className="text-primary hover:underline mt-2 inline-block">
-                        Bắt đầu tạo bài viết đầu tiên ngay!
-                    </Link>
-                </div>
-            ) : (
-                <div className={styles.tableContainer}>
-                    <table className={styles.table}>
-                        <thead>
-                            <tr>
-                                <th style={{ width: '40%' }}>Bài Viết</th>
-                                <th>Từ Khóa</th>
-                                <th>Trạng Thái</th>
-                                <th>Ngày Tạo</th>
-                                <th>Hành Động</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {articles.map((article) => (
-                                <tr key={article.id}>
-                                    <td>
-                                        <Link href={`/dashboard/articles/${article.id}`} className={styles.articleTitle}>
-                                            {article.title || 'Untitled Article'}
-                                        </Link>
-                                        <div className="text-xs text-secondary font-mono">{article.slug}</div>
-                                    </td>
-                                    <td className="text-sm font-medium text-emerald-400">{article.keyword || 'N/A'}</td>
-                                    <td>
-                                        <span className={`${styles.statusBadge} ${article.status === 'published' ? styles.statusPublished : styles.statusDraft}`}>
-                                            {article.status || 'Draft'}
-                                        </span>
-                                    </td>
-                                    <td className="text-sm text-secondary">
-                                        {formatDate(article.created_at)}
-                                    </td>
-                                    <td>
-                                        <div className={styles.actions}>
-                                            <Link href={`/dashboard/articles/${article.id}`} className="btn btn-sm btn-outline">
-                                                Sửa
-                                            </Link>
-                                            <button
-                                                className="btn btn-sm btn-outline text-error hover:bg-error hover:text-white"
-                                                onClick={() => handleDelete(article.id)}
-                                            >
-                                                Xóa
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-        </div>
+        <HydrationBoundary state={dehydrate(queryClient)}>
+            <ArticlesClient />
+        </HydrationBoundary>
     )
 }
