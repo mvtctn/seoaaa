@@ -90,17 +90,18 @@
     padding: 0.5rem;
 }
 
+/* Mobile Menu */
 .mobileMenu {
     position: fixed;
     inset: 0;
-    background: #000;
+    background: rgba(10, 10, 10, 0.95);
+    backdrop-filter: blur(20px);
     z-index: 2000;
     padding: 2rem;
     display: flex;
     flex-direction: column;
-    gap: 2rem;
     transform: translateX(100%);
-    transition: transform 0.3s ease-in-out;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .mobileMenu.open {
@@ -111,34 +112,102 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
+    margin-bottom: 2.5rem;
+}
+
+.closeBtn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.closeBtn:hover {
+    background: rgba(255, 255, 255, 0.2);
 }
 
 .mobileLinks {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
-    font-size: 1.25rem;
+    flex: 1;
+    overflow-y: auto;
 }
 
 .mobileLinks a {
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(255, 255, 255, 0.9);
     text-decoration: none;
-    transition: color 0.2s;
+    font-size: 1.125rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    display: block;
 }
 
-.mobileLinks a:hover,
-.mobileLinks a.active {
-    color: #0ea5e9;
+.mobileLinks a:hover {
+    color: #3b82f6;
+    transform: translateX(10px);
 }
 
-.closeBtn {
-    background: none;
+.mobileSeparator {
+    height: 1px;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    margin: 1rem 0;
+    width: 100%;
+}
+
+.mobileDashboardBtn,
+.mobileLoginBtn {
+    display: block;
+    width: 100%;
+    padding: 1rem;
+    background: var(--primary-color, #3b82f6);
+    color: white !important;
+    /* Force white text */
+    text-align: center;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 1rem !important;
     border: none;
-    color: white;
-    font-size: 2rem;
     cursor: pointer;
+    margin-top: auto;
+    /* Push to bottom if needed */
+    transition: transform 0.2s, background 0.2s;
 }
+
+.mobileDashboardBtn:hover,
+.mobileLoginBtn:hover {
+    background: #2563eb;
+    transform: translateY(-2px);
+    color: white !important;
+}
+
+.mobileLogoutBtn {
+    width: 100%;
+    padding: 1rem;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #f87171;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 0.5rem;
+}
+
+.mobileLogoutBtn:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: #ef4444;
+}
+
 
 @media (max-width: 768px) {
     .navLinks {

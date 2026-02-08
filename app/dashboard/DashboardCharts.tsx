@@ -1,7 +1,6 @@
-'use client'
-
 import { useMemo } from 'react'
 import styles from './dashboard-charts.module.css'
+import { motion } from 'framer-motion'
 
 interface DashboardChartsProps {
     articles: any[]
@@ -111,17 +110,19 @@ export default function DashboardCharts({ articles, keywords }: DashboardChartsP
                 {barChartData.sortedData.length > 0 ? (
                     <div className={styles.barChartContainer}>
                         {barChartData.sortedData.map((item, index) => {
-                            const heightPercentage = Math.max((item.value / barChartData.maxValue) * 100, 4) // min height 4%
+                            const heightPercentage = Math.max((item.value / barChartData.maxValue) * 100, 4)
                             return (
                                 <div key={index} className={styles.barColumn} style={{ height: '100%' }}>
-                                    <div
+                                    <motion.div
                                         className={styles.bar}
-                                        style={{ height: `${heightPercentage}%` }}
+                                        initial={{ height: 0 }}
+                                        animate={{ height: `${heightPercentage}%` }}
+                                        transition={{ duration: 0.8, delay: index * 0.1, ease: "easeOut" }}
                                     >
                                         <div className={styles.barTooltip}>
                                             {item.value} bài viết
                                         </div>
-                                    </div>
+                                    </motion.div>
                                     <span className={styles.barLabel}>{item.label}</span>
                                 </div>
                             )
@@ -148,7 +149,7 @@ export default function DashboardCharts({ articles, keywords }: DashboardChartsP
                                     const { dashArray, dashOffset, circumference } = generatePiePath(item.percentage, cumulativePercentage)
                                     cumulativePercentage += item.percentage
                                     return (
-                                        <circle
+                                        <motion.circle
                                             key={index}
                                             cx="60"
                                             cy="60"
@@ -156,12 +157,14 @@ export default function DashboardCharts({ articles, keywords }: DashboardChartsP
                                             fill="transparent"
                                             stroke={item.color}
                                             strokeWidth="20"
-                                            strokeDasharray={`${dashArray} ${circumference}`}
+                                            initial={{ strokeDasharray: `0 ${circumference}` }}
+                                            animate={{ strokeDasharray: `${dashArray} ${circumference}` }}
                                             strokeDashoffset={dashOffset}
-                                            transform="rotate(-90 60 60)" // Start from top
+                                            transform="rotate(-90 60 60)"
+                                            transition={{ duration: 1, delay: 0.5 + index * 0.1, ease: "easeOut" }}
                                         >
                                             <title>{item.label}: {item.value} ({Math.round(item.percentage)}%)</title>
-                                        </circle>
+                                        </motion.circle>
                                     )
                                 })}
                                 {/* Text in center */}

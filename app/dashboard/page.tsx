@@ -3,6 +3,8 @@ import styles from './dashboard-home.module.css'
 import { getAllArticles, getAllKeywords } from '@/lib/db/database'
 import { createClient } from '@/lib/supabase/server'
 import DashboardCharts from './DashboardCharts'
+import AnimateEntrance from '@/components/AnimateEntrance'
+import GlowingCard from '@/components/GlowingCard'
 
 export default async function DashboardPage() {
     const supabase = createClient()
@@ -39,70 +41,86 @@ export default async function DashboardPage() {
             {/* Quick Stats Grid */}
             <div className={styles.statsGrid}>
                 {/* Total Articles */}
-                <div className={styles.card}>
-                    <div className={styles.statIcon} style={{ background: 'rgba(99, 102, 241, 0.1)' }}>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                            <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
-                        </svg>
-                    </div>
-                    <div className={styles.statContent}>
-                        <div className={styles.statLabel}>Tổng Bài Viết</div>
-                        <div className={styles.statValue}>{totalArticles}</div>
-                        <div className={styles.statChange}>
-                            <span className="text-success">↑ {growthRate}%</span> từ tháng trước
+                <AnimateEntrance delay={0.1}>
+                    <GlowingCard className={styles.card}>
+                        <div style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div className={styles.statIcon} style={{ background: 'rgba(99, 102, 241, 0.1)' }}>
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                    <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
+                                </svg>
+                            </div>
+                            <div className={styles.statContent}>
+                                <div className={styles.statLabel}>Tổng Bài Viết</div>
+                                <div className={styles.statValue}>{totalArticles}</div>
+                                <div className={styles.statChange}>
+                                    <span className="text-success">↑ {growthRate}%</span> từ tháng trước
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
+                    </GlowingCard>
+                </AnimateEntrance>
 
                 {/* Total Keywords */}
-                <div className={styles.card}>
-                    <div className={styles.statIcon} style={{ background: 'rgba(6, 182, 212, 0.1)' }}>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" strokeWidth="2">
-                            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-                        </svg>
-                    </div>
-                    <div className={styles.statContent}>
-                        <div className={styles.statLabel}>Từ Khóa Nghiên Cứu</div>
-                        <div className={styles.statValue}>{totalKeywords}</div>
-                        <div className={styles.statChange}>
-                            <span className="text-secondary">Data Active</span>
+                <AnimateEntrance delay={0.2}>
+                    <GlowingCard className={styles.card}>
+                        <div style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div className={styles.statIcon} style={{ background: 'rgba(6, 182, 212, 0.1)' }}>
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" strokeWidth="2">
+                                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                                </svg>
+                            </div>
+                            <div className={styles.statContent}>
+                                <div className={styles.statLabel}>Từ Khóa Nghiên Cứu</div>
+                                <div className={styles.statValue}>{totalKeywords}</div>
+                                <div className={styles.statChange}>
+                                    <span className="text-secondary">Data Active</span>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
+                    </GlowingCard>
+                </AnimateEntrance>
 
                 {/* Completion Rate */}
-                <div className={styles.card}>
-                    <div className={styles.statIcon} style={{ background: 'rgba(16, 185, 129, 0.1)' }}>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2">
-                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-                        </svg>
-                    </div>
-                    <div className={styles.statContent}>
-                        <div className={styles.statLabel}>Bài Đã Hoàn Thành</div>
-                        <div className={styles.statValue}>{completedCount}</div>
-                        <div className={styles.statChange}>
-                            <span className="text-success">Ready to Publish</span>
+                <AnimateEntrance delay={0.3}>
+                    <GlowingCard className={styles.card}>
+                        <div style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div className={styles.statIcon} style={{ background: 'rgba(16, 185, 129, 0.1)' }}>
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2">
+                                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                                </svg>
+                            </div>
+                            <div className={styles.statContent}>
+                                <div className={styles.statLabel}>Bài Đã Hoàn Thành</div>
+                                <div className={styles.statValue}>{completedCount}</div>
+                                <div className={styles.statChange}>
+                                    <span className="text-success">Ready to Publish</span>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
+                    </GlowingCard>
+                </AnimateEntrance>
 
                 {/* Drafts */}
-                <div className={styles.card}>
-                    <div className={styles.statIcon} style={{ background: 'rgba(245, 158, 11, 0.1)' }}>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                        </svg>
-                    </div>
-                    <div className={styles.statContent}>
-                        <div className={styles.statLabel}>Bản Nháp (Draft)</div>
-                        <div className={styles.statValue}>{draftCount}</div>
-                        <div className={styles.statChange}>
-                            Cần chỉnh sửa thêm
+                <AnimateEntrance delay={0.4}>
+                    <GlowingCard className={styles.card}>
+                        <div style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div className={styles.statIcon} style={{ background: 'rgba(245, 158, 11, 0.1)' }}>
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                </svg>
+                            </div>
+                            <div className={styles.statContent}>
+                                <div className={styles.statLabel}>Bản Nháp (Draft)</div>
+                                <div className={styles.statValue}>{draftCount}</div>
+                                <div className={styles.statChange}>
+                                    Cần chỉnh sửa thêm
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
+                    </GlowingCard>
+                </AnimateEntrance>
             </div>
 
             {/* Charts Section */}
@@ -110,50 +128,60 @@ export default async function DashboardPage() {
 
             {/* Quick Actions */}
             <div className={styles.quickActions}>
-                <h2>Hành Động Nhanh</h2>
+                <AnimateEntrance>
+                    <h2>Hành Động Nhanh</h2>
+                </AnimateEntrance>
                 <div className={styles.actionsGrid}>
-                    <Link href="/dashboard/generate" className={styles.actionCard}>
-                        <div className={styles.actionIcon}>
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M12 5v14M5 12h14" />
-                            </svg>
-                        </div>
-                        <h3>Tạo Bài Viết Mới</h3>
-                        <p>Tạo nội dung SEO từ một từ khóa</p>
-                    </Link>
+                    <AnimateEntrance delay={0.1} direction="left">
+                        <Link href="/dashboard/generate" className={styles.actionCard}>
+                            <div className={styles.actionIcon}>
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M12 5v14M5 12h14" />
+                                </svg>
+                            </div>
+                            <h3>Tạo Bài Viết Mới</h3>
+                            <p>Tạo nội dung SEO từ một từ khóa</p>
+                        </Link>
+                    </AnimateEntrance>
 
-                    <Link href="/dashboard/batch" className={styles.actionCard}>
-                        <div className={styles.actionIcon}>
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-                                <rect x="8" y="2" width="8" height="4" rx="1" />
-                            </svg>
-                        </div>
-                        <h3>Xử Lý Hàng Loạt</h3>
-                        <p>Tạo nhiều bài viết cùng lúc</p>
-                    </Link>
+                    <AnimateEntrance delay={0.2} direction="left">
+                        <Link href="/dashboard/batch" className={styles.actionCard}>
+                            <div className={styles.actionIcon}>
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                                    <rect x="8" y="2" width="8" height="4" rx="1" />
+                                </svg>
+                            </div>
+                            <h3>Xử Lý Hàng Loạt</h3>
+                            <p>Tạo nhiều bài viết cùng lúc</p>
+                        </Link>
+                    </AnimateEntrance>
 
-                    <Link href="/dashboard/articles" className={styles.actionCard}>
-                        <div className={styles.actionIcon}>
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-                            </svg>
-                        </div>
-                        <h3>Thư Viện Bài Viết</h3>
-                        <p>Quản lý và chỉnh sửa bài viết</p>
-                    </Link>
+                    <AnimateEntrance delay={0.3} direction="left">
+                        <Link href="/dashboard/articles" className={styles.actionCard}>
+                            <div className={styles.actionIcon}>
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                                </svg>
+                            </div>
+                            <h3>Thư Viện Bài Viết</h3>
+                            <p>Quản lý và chỉnh sửa bài viết</p>
+                        </Link>
+                    </AnimateEntrance>
 
-                    <Link href="/dashboard/brand" className={styles.actionCard}>
-                        <div className={styles.actionIcon}>
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                <circle cx="12" cy="7" r="4" />
-                            </svg>
-                        </div>
-                        <h3>Cài Đặt Thương Hiệu</h3>
-                        <p>Quản lý giọng điệu & mẫu</p>
-                    </Link>
+                    <AnimateEntrance delay={0.4} direction="left">
+                        <Link href="/dashboard/brand" className={styles.actionCard}>
+                            <div className={styles.actionIcon}>
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                    <circle cx="12" cy="7" r="4" />
+                                </svg>
+                            </div>
+                            <h3>Cài Đặt Thương Hiệu</h3>
+                            <p>Quản lý giọng điệu & mẫu</p>
+                        </Link>
+                    </AnimateEntrance>
                 </div>
             </div>
 

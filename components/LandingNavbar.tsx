@@ -101,28 +101,39 @@ export default function LandingNavbar() {
                     <span className="text-xl font-bold text-white">Menu</span>
                     <button className={styles.closeBtn} onClick={() => setIsMenuOpen(false)}>&times;</button>
                 </div>
+
                 <div className={styles.mobileLinks}>
-                    <Link href="/features" onClick={() => setIsMenuOpen(false)}>Tính Năng</Link>
-                    <Link href="/how-it-works" onClick={() => setIsMenuOpen(false)}>Cách Hoạt Động</Link>
-                    <Link href="/pricing" onClick={() => setIsMenuOpen(false)}>Bảng Giá</Link>
-                    <Link href="/blog" onClick={() => setIsMenuOpen(false)}>Blog</Link>
-                    <Link href="/contact" onClick={() => setIsMenuOpen(false)}>Liên Hệ</Link>
-
-                    <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '1rem 0' }}></div>
-
                     {isLoggedIn ? (
                         <>
-                            <Link href="/dashboard" onClick={() => setIsMenuOpen(false)} style={{ color: '#60a5fa' }}>
+                            <Link href="/features" onClick={() => setIsMenuOpen(false)}>Tính Năng</Link>
+                            <Link href="/how-it-works" onClick={() => setIsMenuOpen(false)}>Cách Hoạt Động</Link>
+                            <Link href="/pricing" onClick={() => setIsMenuOpen(false)}>Bảng Giá</Link>
+                            <Link href="/blog" onClick={() => setIsMenuOpen(false)}>Blog</Link>
+                            <Link href="/contact" onClick={() => setIsMenuOpen(false)}>Liên Hệ</Link>
+
+                            <div className={styles.mobileSeparator}></div>
+
+                            <Link href="/dashboard" onClick={() => setIsMenuOpen(false)} className={styles.mobileDashboardBtn}>
                                 Vào Dashboard
                             </Link>
-                            <button onClick={handleLogout} style={{ textAlign: 'left', color: '#f87171', background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer' }}>
+                            <button onClick={handleLogout} className={styles.mobileLogoutBtn}>
                                 Đăng Xuất
                             </button>
                         </>
                     ) : (
-                        <button onClick={() => openAuth('login')} style={{ textAlign: 'left', color: '#60a5fa', background: 'none', border: 'none', fontSize: '1.25rem', fontWeight: 600, cursor: 'pointer' }}>
-                            Đăng Ký / Đăng Nhập
-                        </button>
+                        <>
+                            <Link href="/features" onClick={() => setIsMenuOpen(false)}>Tính Năng</Link>
+                            <Link href="/how-it-works" onClick={() => setIsMenuOpen(false)}>Cách Hoạt Động</Link>
+                            <Link href="/pricing" onClick={() => setIsMenuOpen(false)}>Bảng Giá</Link>
+                            <Link href="/blog" onClick={() => setIsMenuOpen(false)}>Blog</Link>
+                            <Link href="/contact" onClick={() => setIsMenuOpen(false)}>Liên Hệ</Link>
+
+                            <div className={styles.mobileSeparator}></div>
+
+                            <button onClick={() => openAuth('login')} className={styles.mobileLoginBtn}>
+                                Đăng Ký / Đăng Nhập
+                            </button>
+                        </>
                     )}
                 </div>
             </div>

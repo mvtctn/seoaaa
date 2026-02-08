@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import LayoutWrapper from '@/components/LayoutWrapper'
 
 export const metadata: Metadata = {
     title: 'SEO Content Engine - Automated SEO Solution',
@@ -14,7 +15,11 @@ export default function RootLayout({
 }) {
     return (
         <html lang="vi">
-            <body>{children}</body>
+            <body>
+                <LayoutWrapper>
+                    {children}
+                </LayoutWrapper>
+            </body>
         </html>
     )
 }
