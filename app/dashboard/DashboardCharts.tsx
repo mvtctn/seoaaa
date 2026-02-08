@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import styles from './dashboard-charts.module.css'
 import { motion } from 'framer-motion'
 
@@ -98,6 +98,12 @@ export default function DashboardCharts({ articles, keywords }: DashboardChartsP
         return { dashArray, dashOffset, circumference }
     }
 
+    // Client-side only rendering to avoid hydration mismatch
+    const [mounted, setMounted] = useState(false)
+    useEffect(() => {
+        setMounted(true)
+    }, [])
+
     let cumulativePercentage = 0
 
     return (
@@ -142,7 +148,7 @@ export default function DashboardCharts({ articles, keywords }: DashboardChartsP
                     <p className={styles.chartSubtitle}>Phân bổ theo trạng thái hiện tại</p>
                 </div>
 
-                {articles.length > 0 ? (
+                {articles.length > 0 && mounted ? (
                     <>
                         <div className={styles.pieChartContainer}>
                             <svg width="200" height="200" viewBox="0 0 120 120">

@@ -1,5 +1,6 @@
 // DeepSeek AI Integration (OpenAI-compatible API)
 // https://platform.deepseek.com/
+import { logger } from '@/lib/logger'
 
 const apiKey = process.env.DEEPSEEK_API_KEY || ''
 const BASE_URL = 'https://api.deepseek.com/v1'
@@ -17,7 +18,7 @@ export interface CompetitorData {
  */
 async function callDeepSeek(prompt: string, temperature: number = 0.7): Promise<{ content: string, usage: { input_tokens: number, output_tokens: number } }> {
     if (!apiKey) {
-        console.error('[DeepSeek] ERROR: No API key found in process.env.DEEPSEEK_API_KEY')
+        logger.error('[DeepSeek] ERROR: No API key found in process.env.DEEPSEEK_API_KEY')
         throw new Error('Missing DeepSeek API Key')
     }
 
@@ -53,11 +54,11 @@ async function callDeepSeek(prompt: string, temperature: number = 0.7): Promise<
         }
 
         const errorText = await response.text()
-        console.error(`[DeepSeek] API Error:`, errorText.substring(0, 500))
+        logger.error(`[DeepSeek] API Error:`, errorText.substring(0, 500))
         throw new Error(`DeepSeek API Error: ${response.status} - ${errorText}`)
 
     } catch (e) {
-        console.error(`[DeepSeek] Exception:`, e)
+        logger.error(`[DeepSeek] Exception:`, e)
         throw e
     }
 }

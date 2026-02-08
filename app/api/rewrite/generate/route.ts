@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { AIOrchestrator } from '@/lib/ai/orchestrator'
 import { createArticleFromRewrite, getDefaultBrand } from '@/lib/db/database'
 import { createClient } from '@/lib/supabase/server'
+import { logger } from '@/lib/logger'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export async function POST(req: NextRequest) {
     try {
@@ -28,7 +30,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Original content is required' }, { status: 400 })
         }
 
-        console.log('[Rewrite Generate] Starting content rewrite...')
+        logger.info('[Rewrite Generate] Starting content rewrite...')
 
         // 1. Get Brand Context
         const brand = await getDefaultBrand(user.id)
@@ -92,7 +94,7 @@ Bài viết mới phải:
         })
 
         const articleId = Number(newArticle.lastInsertRowid)
-        console.log('[Rewrite Generate] Article created with ID:', articleId)
+        logger.info('[Rewrite Generate] Article created with ID:', articleId)
 
         return NextResponse.json({
             success: true,
@@ -110,11 +112,7 @@ Bài viết mới phải:
         })
 
     } catch (error: any) {
-        console.error('[Rewrite Generate] Error:', error)
-        return NextResponse.json(
-            { error: error.message || 'Failed to rewrite content' },
-            { status: 500 }
-        )
+        return handleApiError(error, 'RewriteGenerate')
     }
 }
 

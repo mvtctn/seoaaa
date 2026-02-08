@@ -1,7 +1,8 @@
-
 import { NextRequest, NextResponse } from 'next/server'
 import { getSetting } from '@/lib/db/database'
 import { sendEmail } from '@/lib/mail'
+import { logger } from '@/lib/logger'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export async function POST(req: NextRequest) {
     try {
@@ -15,7 +16,7 @@ export async function POST(req: NextRequest) {
         const adminEmail = await getSetting('admin_notification_email')
 
         if (!adminEmail) {
-            console.error('[Contact API] Admin email not configured.')
+            logger.warn('[Contact API] Admin email not configured.')
             // We still proceed but might fail sending mail
         }
 
@@ -41,16 +42,12 @@ export async function POST(req: NextRequest) {
                 `
             })
         } catch (mailError) {
-            console.error('[Contact API] Failed to send email:', mailError)
+            logger.error('[Contact API] Failed to send email:', mailError)
             // Still return success to user but log the error
         }
 
         return NextResponse.json({ success: true })
     } catch (error: any) {
-        console.error('[Contact API Error]:', error)
-        return NextResponse.json({
-            error: error.message || 'Đã có lỗi xảy ra. Vui lòng thử lại sau.',
-            details: error.toString()
-        }, { status: 500 })
+        return handleApiError(error, 'ContactAPI')
     }
 }

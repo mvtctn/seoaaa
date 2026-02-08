@@ -1,5 +1,6 @@
 // Groq AI Integration
 // https://console.groq.com/
+import { logger } from '@/lib/logger'
 
 const apiKey = process.env.GROQ_API_KEY || ''
 const BASE_URL = 'https://api.groq.com/openai/v1'
@@ -17,7 +18,7 @@ export interface CompetitorData {
  */
 async function callGroq(prompt: string, temperature: number = 0.7): Promise<{ content: string, usage: { input_tokens: number, output_tokens: number } }> {
     if (!apiKey) {
-        console.error('[Groq] ERROR: No API key found in process.env.GROQ_API_KEY')
+        logger.error('[Groq] ERROR: No API key found in process.env.GROQ_API_KEY')
         throw new Error('Missing Groq API Key')
     }
 
@@ -55,11 +56,11 @@ async function callGroq(prompt: string, temperature: number = 0.7): Promise<{ co
 
         // Error handling
         const errorText = await response.text()
-        console.error(`[Groq] API Error:`, errorText.substring(0, 500))
+        logger.error(`[Groq] API Error:`, errorText.substring(0, 500))
         throw new Error(`Groq API Error: ${response.status} - ${errorText}`)
 
     } catch (e) {
-        console.error(`[Groq] Exception:`, e)
+        logger.error(`[Groq] Exception:`, e)
         throw e
     }
 }
@@ -114,7 +115,7 @@ export async function analyzeCompetitors(
             usage: result.usage
         }
     } catch (error) {
-        console.error('Groq Analysis Error:', error)
+        logger.error('Groq Analysis Error:', error)
         return {
             ...mockAnalysis(),
             usage: { input_tokens: 0, output_tokens: 0 }

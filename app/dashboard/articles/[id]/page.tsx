@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useParams, useRouter } from 'next/navigation'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -1022,7 +1023,13 @@ export default function ArticleDetailPage() {
                             {generatedImage && (
                                 <div className="mt-2 animate-fadeIn">
                                     <div className="relative aspect-video rounded overflow-hidden border border-slate-700 mb-2 group">
-                                        <img src={generatedImage} alt="Generated" className="object-cover w-full h-full" referrerPolicy="no-referrer" />
+                                        <Image
+                                            src={generatedImage}
+                                            alt="Generated"
+                                            fill
+                                            className="object-cover"
+                                            unoptimized // Pollinations AI images are external and dynamic
+                                        />
                                         <a href={generatedImage} target="_blank" className="absolute bottom-1 right-1 bg-black/50 text-white text-xs px-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">Full Size</a>
                                     </div>
                                     <div className="grid grid-cols-2 gap-2">
@@ -1042,11 +1049,15 @@ export default function ArticleDetailPage() {
                     {(article.thumbnail_url || article.image_url) && (
                         <div className={styles.sidebarCard}>
                             <div className={styles.sidebarTitle}>Ảnh Minh Họa</div>
-                            <div
-                                className={styles.imageBox}
-                                style={{ backgroundImage: `url(${article.thumbnail_url || article.image_url})`, cursor: 'pointer' }}
-                                onClick={() => window.open(article.thumbnail_url || article.image_url, '_blank')}
-                            ></div>
+                            <div className="relative aspect-video rounded overflow-hidden border border-slate-700 cursor-pointer" onClick={() => window.open(article.thumbnail_url || article.image_url, '_blank')}>
+                                <Image
+                                    src={article.thumbnail_url || article.image_url}
+                                    alt="Article Thumbnail"
+                                    fill
+                                    className="object-cover"
+                                    unoptimized
+                                />
+                            </div>
                         </div>
                     )}
 

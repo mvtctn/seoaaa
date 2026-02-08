@@ -2,6 +2,7 @@ import * as groq from './groq'
 import * as gemini from './gemini'
 import * as deepseek from './deepseek'
 import { createAIUsageLog, getAISetting } from '@/lib/db/database'
+import { logger } from '@/lib/logger'
 
 export type AIProvider = 'groq' | 'gemini' | 'deepseek'
 
@@ -22,7 +23,7 @@ export class AIOrchestrator {
             const settings = await getAISetting('model_priority')
             return settings || ['groq', 'gemini', 'deepseek']
         } catch (error) {
-            console.error('[AI Orchestrator] Failed to fetch model priority:', error)
+            logger.error('[AI Orchestrator] Failed to fetch model priority:', error)
             return ['groq', 'gemini', 'deepseek']
         }
     }
@@ -39,7 +40,7 @@ export class AIOrchestrator {
         try {
             priority = await this.getModelPriority()
         } catch (e) {
-            console.warn('[AI Orchestrator] Using default priority due to error')
+            logger.warn('[AI Orchestrator] Using default priority due to error')
         }
 
         const errors: any[] = []
@@ -47,7 +48,7 @@ export class AIOrchestrator {
         for (const provider of priority) {
             const start = Date.now()
             try {
-                console.log(`[AI Orchestrator] Attempting ${taskName} with ${provider}...`)
+                logger.info(`[AI Orchestrator] Attempting ${taskName} with ${provider}...`)
                 const result = await executeFunc(provider)
 
                 // Log success (Fail-safe)
@@ -67,12 +68,12 @@ export class AIOrchestrator {
                         user_id: options.userId || ''
                     })
                 } catch (logErr) {
-                    console.error('[AI Orchestrator] Logging failed:', logErr)
+                    logger.error('[AI Orchestrator] Logging failed:', logErr)
                 }
 
                 return result
             } catch (error: any) {
-                console.warn(`[AI Orchestrator] ${provider} failed:`, error.message)
+                logger.warn(`[AI Orchestrator] ${provider} failed:`, error.message)
                 errors.push({ provider, error: error.message })
 
                 // Log failure (Fail-safe)
@@ -92,7 +93,7 @@ export class AIOrchestrator {
                         user_id: options.userId || ''
                     })
                 } catch (logErr) {
-                    console.error('[AI Orchestrator] Error logging failed:', logErr)
+                    logger.error('[AI Orchestrator] Error logging failed:', logErr)
                 }
             }
         }
@@ -142,7 +143,7 @@ export class AIOrchestrator {
                 }
             }
         ).catch(err => {
-            console.error('[Orchestrator] Critical Failure in generateArticle:', err)
+            logger.error('[Orchestrator] Critical Failure in generateArticle:', err)
             return {
                 content: `[ARTICLE]\n# Generation Failed\n\nAI Orchestrator could not complete the request.\n\n[SUMMARY]\nFailed.\n`,
                 usage: { input_tokens: 0, output_tokens: 0 }

@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { logger } from '@/lib/logger'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export async function POST(req: NextRequest) {
     try {
@@ -15,7 +17,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Invalid URL format' }, { status: 400 })
         }
 
-        console.log('[Rewrite Analyze] Fetching content from:', url)
+        logger.info('[Rewrite Analyze] Fetching content from:', url)
 
         // Fetch content from URL
         const response = await fetch(url, {
@@ -58,11 +60,7 @@ export async function POST(req: NextRequest) {
         })
 
     } catch (error: any) {
-        console.error('[Rewrite Analyze] Error:', error)
-        return NextResponse.json(
-            { error: error.message || 'Failed to analyze URL' },
-            { status: 500 }
-        )
+        return handleApiError(error, 'RewriteAnalyze')
     }
 }
 

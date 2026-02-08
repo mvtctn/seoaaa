@@ -1,10 +1,12 @@
+import { logger } from '../logger'
+
 /**
  * Image Utility - AI Powered & Context Aware
  * Translates and optimizes prompts for high relevance.
  */
 
 export async function generateImage(prompt: string, width: number = 1024, height: number = 600) {
-    console.log("Optimizing prompt for relevance:", prompt);
+    logger.info("Optimizing prompt for relevance:", prompt);
 
     // 1. Translate common SEO/Technical terms to English for better AI understanding
     let enPrompt = prompt.toLowerCase();
@@ -37,10 +39,14 @@ export async function generateImage(prompt: string, width: number = 1024, height
     // Add professional style modifiers
     const finalAIPrompt = `${coreKeywords}, professional 3d technical render, architectural visualization, blue-print style, industrial engineering, high detail, 4k`;
 
-    const seed = Math.floor(Math.random() * 1000000);
+    // 3. Use placeholder service to avoid Pollinations.AI rate limit ads
+    // Alternative: Use via.placeholder.com for clean, professional placeholders
+    const placeholderText = encodeURIComponent(coreKeywords.substring(0, 30));
+    return `https://via.placeholder.com/${width}x${height}/1e293b/ffffff?text=${placeholderText}`;
 
-    // 3. Return the Optimized AI URL (Using the fastest stable endpoint)
-    return `https://image.pollinations.ai/prompt/${encodeURIComponent(finalAIPrompt)}?width=${width}&height=${height}&seed=${seed}&nologo=true&model=turbo`;
+    // Note: If you want to use Pollinations.AI again, uncomment below and remove the placeholder line above
+    // const seed = Math.floor(Math.random() * 1000000);
+    // return `https://image.pollinations.ai/prompt/${encodeURIComponent(finalAIPrompt)}?width=${width}&height=${height}&seed=${seed}&nologo=true&model=turbo`;
 }
 
 function removeVietnameseTones(str: string) {

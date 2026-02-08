@@ -3,6 +3,8 @@ import { fetchSERPResults, scrapeURL } from '@/lib/scraper/web-scraper'
 import { AIOrchestrator } from '@/lib/ai/orchestrator'
 import { createResearch, getDefaultBrand, createKeyword } from '@/lib/db/database'
 import { createClient } from '@/lib/supabase/server'
+import { logger } from '@/lib/logger'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export const maxDuration = 300 // 5 minutes timeout for Vercel/Next.js
 
@@ -15,19 +17,19 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        console.log(`--- [API] /api/research/analyze CALLED by ${user.id} ---`)
+        logger.info(`--- [API] /api/research/analyze CALLED by ${user.id} ---`)
         const body = await req.json()
         const { keyword } = body
 
         if (!keyword) {
-            console.error('[API] Missing keyword')
+            logger.error('[API] Missing keyword')
             return NextResponse.json({ error: 'Keyword is required' }, { status: 400 })
         }
 
-        console.log(`[API] 🚀 Starting Research for: "${keyword}"`)
+        logger.info(`[API] 🚀 Starting Research for: "${keyword}"`)
 
         // 1. Get Brand Context
-        console.log('[API] Step 1: Fetching brand context...')
+        logger.debug('[API] Step 1: Fetching brand context...')
         const brand = await getDefaultBrand(user.id)
         console.log(`[API] Brand: ${brand ? brand.name : 'No default brand found'}`)
 
@@ -48,7 +50,7 @@ export async function POST(req: NextRequest) {
         const scrapePromises = serpResults.map(async (result) => {
             try {
                 if (result.url.includes('example.com')) return null
-                console.log(`[API] Scraping: ${result.url}`)
+                logger.info(`[API] Scraping: ${result.url}`)
                 const scraped = await scrapeURL(result.url)
                 if (scraped) {
                     return {
@@ -60,7 +62,7 @@ export async function POST(req: NextRequest) {
                     }
                 }
             } catch (e) {
-                console.error(`[API] Scrape error for ${result.url}:`, e)
+                logger.error(`[API] Scrape error for ${result.url}:`, e)
             }
             return null
         })
@@ -143,14 +145,6 @@ export async function POST(req: NextRequest) {
         })
 
     } catch (error: any) {
-        console.error('❌ [API] CRITICAL ERROR:', error)
-        return NextResponse.json(
-            {
-                success: false,
-                error: error.message || 'Error occurred during research analysis',
-                details: error.stack
-            },
-            { status: 500 }
-        )
+        return handleApiError(error, 'ResearchAnalyze')
     }
 }

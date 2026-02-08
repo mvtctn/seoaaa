@@ -3,6 +3,8 @@ import { AIOrchestrator } from '@/lib/ai/orchestrator'
 import { generateSlug } from '@/lib/seo/utils'
 import { createArticle, getDefaultBrand } from '@/lib/db/database'
 import { createClient } from '@/lib/supabase/server'
+import { logger } from '@/lib/logger'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export const maxDuration = 300 // 5 minutes timeout
 
@@ -15,19 +17,19 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        console.log(`--- [API] /api/generate/article CALLED by ${user.id} ---`)
+        logger.info(`--- [API] /api/generate/article CALLED by ${user.id} ---`)
         const body = await req.json()
         const { keyword, researchBrief, contentStrategy, researchId, keywordId } = body
 
         if (!keyword || !researchBrief || !contentStrategy) {
-            console.error('[API] Missing required parameters')
+            logger.error('[API] Missing required parameters')
             return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
         }
 
         // 1. Get Brand Context
-        console.log('[API] Fetching brand context...')
+        logger.debug('[API] Fetching brand context...')
         const brand = await getDefaultBrand(user.id)
-        console.log(`[API] Using brand: ${brand ? brand.name : 'NONE (Using Generic)'}`)
+        logger.info(`[API] Using brand: ${brand ? brand.name : 'NONE (Using Generic)'}`)
 
         const brandContextForAI = brand ? {
             id: brand.id,
@@ -39,7 +41,7 @@ export async function POST(req: NextRequest) {
         } : undefined
 
         // 2. Generate Article Content (Using Orchestrator)
-        console.log(`[API] ✍️ Generating article for: "${keyword}" using AI Orchestrator...`)
+        logger.info(`[API] ✍️ Generating article for: "${keyword}" using AI Orchestrator...`)
         const generationResult = await AIOrchestrator.generateArticle({
             keyword,
             researchBrief,
@@ -48,7 +50,7 @@ export async function POST(req: NextRequest) {
             userId: user.id
         })
         const rawContent = generationResult.content
-        console.log('[API] ✓ Raw content generated')
+        logger.debug('[API] ✓ Raw content generated')
 
         // --- PARSE AI OUTPUT ---
         const sections = {
@@ -72,7 +74,7 @@ export async function POST(req: NextRequest) {
 
         // Fallback if parsing failed to extract meaningful article content
         if (!sections.article.trim()) {
-            console.warn('[API] Parsing failed to find [ARTICLE] block, using raw content as fallback')
+            logger.warn('[API] Parsing failed to find [ARTICLE] block, using raw content as fallback')
             // Remove meta blocks if possible to clean up
             sections.article = rawContent
                 .replace(/\[SUMMARY\][\s\S]*/i, '')
@@ -142,7 +144,7 @@ export async function POST(req: NextRequest) {
 
         const articleId = dbResult.lastInsertRowid
 
-        console.log(`[API] ✅ Article generation complete (ID: ${articleId})`)
+        logger.info(`[API] ✅ Article generation complete (ID: ${articleId})`)
 
         return NextResponse.json({
             success: true,
@@ -160,13 +162,6 @@ export async function POST(req: NextRequest) {
         })
 
     } catch (error: any) {
-        console.error('❌ [API] Generation API Error:', error)
-        return NextResponse.json(
-            {
-                error: error.message || 'Internal Server Error',
-                details: error.stack
-            },
-            { status: 500 }
-        )
+        return handleApiError(error, 'GenerateArticle')
     }
 }

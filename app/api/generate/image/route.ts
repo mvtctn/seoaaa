@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { generateImage, generateImagePrompt } from '@/lib/ai/image'
 import { updateArticleImage } from '@/lib/db/database'
 import { createClient } from '@/lib/supabase/server'
+import { logger } from '@/lib/logger'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export async function POST(req: NextRequest) {
     try {
@@ -22,7 +24,7 @@ export async function POST(req: NextRequest) {
         }
 
         // 2. Generate Image URL
-        console.log(`Generating image with prompt: ${finalPrompt}`)
+        logger.info(`Generating image with prompt: ${finalPrompt}`)
         const imageUrl = await generateImage(finalPrompt)
 
         // 3. Update Article in DB (optional)
@@ -39,10 +41,6 @@ export async function POST(req: NextRequest) {
         })
 
     } catch (error: any) {
-        console.error('Image Gen Error:', error)
-        return NextResponse.json(
-            { error: error.message || 'Failed to generate image' },
-            { status: 500 }
-        )
+        return handleApiError(error, 'GenerateImage')
     }
 }

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import styles from './LandingFooter.module.css'
 
 export default function LandingFooter() {
@@ -7,7 +8,7 @@ export default function LandingFooter() {
             <div className={styles.footerContent}>
                 <div className={styles.footerBrand}>
                     <div className={styles.logo}>
-                        <img src="/logo.svg" alt="SEOAAA Logo" width="32" height="32" />
+                        <Image src="/logo.svg" alt="SEOAAA Logo" width={32} height={32} />
                         <span>SEOAAA</span>
                     </div>
                     <p>Tự động hóa hoàn toàn quy trình tạo nội dung SEO của bạn.</p>

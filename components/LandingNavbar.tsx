@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import styles from './LandingNavbar.module.css'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import AuthModal from './AuthModal'
 import ThemeToggle from './ThemeToggle'
@@ -52,7 +53,7 @@ export default function LandingNavbar() {
             <nav className={styles.nav}>
                 <div className={styles.navContent}>
                     <Link href="/" className={styles.logo}>
-                        <img src="/logo.svg" alt="SEOAAA Logo" width="32" height="32" />
+                        <Image src="/logo.svg" alt="SEOAAA Logo" width={32} height={32} />
                         <span>SEOAAA</span>
                     </Link>
 

@@ -1,5 +1,6 @@
 // Gemini AI Integration
 // https://aistudio.google.com/
+import { logger } from '@/lib/logger'
 
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
@@ -23,7 +24,7 @@ export interface CompetitorData {
  */
 async function callGemini(prompt: string, temperature: number = 0.7): Promise<{ content: string, usage: { input_tokens: number, output_tokens: number } }> {
     if (!apiKey) {
-        console.error('[Gemini] ERROR: No API key found in process.env.GEMINI_API_KEY')
+        logger.error('[Gemini] ERROR: No API key found in process.env.GEMINI_API_KEY')
         throw new Error('Missing Gemini API Key')
     }
 
@@ -45,7 +46,7 @@ async function callGemini(prompt: string, temperature: number = 0.7): Promise<{ 
             }
         }
     } catch (e: any) {
-        console.error(`[Gemini] Exception:`, e)
+        logger.error(`[Gemini] Exception:`, e)
         throw new Error(`Gemini API Error: ${e.message}`)
     }
 }

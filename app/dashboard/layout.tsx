@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import styles from './dashboard.module.css'
 import { createClient } from '@/lib/supabase/client'
 import ThemeToggle from '@/components/ThemeToggle'
+import Image from 'next/image'
 
 const PAGE_TITLES: { [key: string]: string } = {
     '/dashboard': 'Dashboard',
@@ -91,7 +92,7 @@ export default function DashboardLayout({
             <aside className={`${styles.sidebar} ${isSidebarOpen ? styles.sidebarOpen : ''}`}>
                 <div className={styles.sidebarHeader}>
                     <Link href="/" className="flex items-center gap-3 no-underline">
-                        <img src="/logo.svg" alt="SEOAAA Logo" width="28" height="28" />
+                        <Image src="/logo.svg" alt="SEOAAA Logo" width={28} height={28} />
                         <h2 className={styles.logo} style={{ margin: 0, fontSize: '1.25rem' }}>SEOAAA</h2>
                     </Link>
                     <button

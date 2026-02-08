@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import styles from './dashboard-home.module.css'
 import { getAllArticles, getAllKeywords } from '@/lib/db/database'
 import { createClient } from '@/lib/supabase/server'
@@ -218,7 +219,14 @@ export default async function DashboardPage() {
                                         <td>
                                             <div className="flex items-center gap-3">
                                                 {article.thumbnail_url && (
-                                                    <div className="w-8 h-8 rounded bg-cover bg-center flex-shrink-0" style={{ backgroundImage: `url(${article.thumbnail_url})` }}></div>
+                                                    <div className="w-8 h-8 rounded overflow-hidden flex-shrink-0 relative">
+                                                        <Image
+                                                            src={article.thumbnail_url}
+                                                            alt={article.title}
+                                                            fill
+                                                            className="object-cover"
+                                                        />
+                                                    </div>
                                                 )}
                                                 <Link href={`/dashboard/articles/${article.id}`} className={styles.articleTitle}>
                                                     {article.title}

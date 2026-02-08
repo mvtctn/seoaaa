@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import axios from 'axios'
 import * as cheerio from 'cheerio'
 
@@ -27,7 +28,7 @@ export async function fetchSERPResults(keyword: string, limit: number = 10): Pro
     const apiKey = process.env.SERP_API_KEY
 
     if (!apiKey) {
-        console.warn('SERP_API_KEY not configured, returning mock data')
+        logger.warn('SERP_API_KEY not configured, returning mock data')
         return getMockSERPResults(keyword, limit)
     }
 
@@ -60,7 +61,7 @@ export async function fetchSERPResults(keyword: string, limit: number = 10): Pro
             }
         })
     } catch (error) {
-        console.error('Error fetching SERP results:', error)
+        logger.error('Error fetching SERP results:', error)
         return getMockSERPResults(keyword, limit)
     }
 }
@@ -78,7 +79,7 @@ export async function scrapeURL(url: string): Promise<ScrapedContent | null> {
         // Fallback to basic scraping with cheerio
         return await scrapeWithCheerio(url)
     } catch (error) {
-        console.error(`Error scraping ${url}:`, error)
+        logger.error(`Error scraping ${url}:`, error)
         return null
     }
 }
@@ -130,7 +131,7 @@ async function scrapeWithFirecrawl(url: string): Promise<ScrapedContent | null> 
             images: images.slice(0, 5) // Limit to 5 images
         }
     } catch (error) {
-        console.error('Firecrawl error:', error)
+        logger.error('Firecrawl error:', error)
         return scrapeWithCheerio(url)
     }
 }
@@ -213,7 +214,7 @@ async function scrapeWithCheerio(url: string): Promise<ScrapedContent | null> {
             images: images.slice(0, 5)
         }
     } catch (error) {
-        console.error(`Cheerio scraping error for ${url}:`, error)
+        logger.error(`Cheerio scraping error for ${url}:`, error)
         return null
     }
 }
@@ -250,14 +251,14 @@ function getMockSERPResults(keyword: string, limit: number): SERPResult[] {
  * Analyze competitor URLs and return structured data
  */
 export async function analyzeCompetitors(keyword: string, topN: number = 10) {
-    console.log(`🔍 Fetching SERP results for "${keyword}"...`)
+    logger.info(`🔍 Fetching SERP results for "${keyword}"...`)
     const serpResults = await fetchSERPResults(keyword, topN)
 
-    console.log(`📄 Found ${serpResults.length} results. Scraping content...`)
+    logger.info(`📄 Found ${serpResults.length} results. Scraping content...`)
     const urls = serpResults.map(result => result.url)
     const scrapedContent = await scrapeMultipleURLs(urls)
 
-    console.log(`✅ Successfully scraped ${scrapedContent.length} competitors`)
+    logger.info(`✅ Successfully scraped ${scrapedContent.length} competitors`)
 
     return {
         serpResults,

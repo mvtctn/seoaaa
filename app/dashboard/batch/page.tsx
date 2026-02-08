@@ -102,7 +102,7 @@ export default function BatchProcessingPage() {
                 })
             } catch (e) { console.warn('Image gen failed', e) }
 
-            console.log(`Success processing ${item.keyword}: Article ID ${articleId}`)
+            // console.log(`Success processing ${item.keyword}: Article ID ${articleId}`) // Kept for dev but silenced in batch
 
             updateItemStatus(item.id, {
                 status: 'success',
@@ -111,7 +111,7 @@ export default function BatchProcessingPage() {
             })
 
         } catch (error) {
-            console.error(`Error processing ${item.keyword}:`, error)
+            // console.error(`Error processing ${item.keyword}:`, error)
             updateItemStatus(item.id, {
                 status: 'error',
                 progress: 'Thất bại: ' + (error as Error).message,

@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getArticleById, getBrandById, updateArticle, getDefaultBrand, getKeywordById } from '@/lib/db/database'
 import { publishToWordPress, uploadImageToWordPress } from '@/lib/wordpress/client'
 import { createClient } from '@/lib/supabase/server'
+import { logger } from '@/lib/logger'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export async function POST(req: NextRequest) {
     try {
@@ -27,23 +29,23 @@ export async function POST(req: NextRequest) {
 
         // 2. Get Brand for WP Credentials
         let brandId = article.brand_id
-        console.log(`[WordPress] Initial brand_id from article: ${brandId}`)
+        logger.debug(`[WordPress] Initial brand_id from article: ${brandId}`)
 
         if (!brandId && article.keyword_id) {
             const keyword = await getKeywordById(article.keyword_id, user.id)
             brandId = keyword?.brand_id
-            console.log(`[WordPress] Found brand_id from keyword: ${brandId}`)
+            logger.debug(`[WordPress] Found brand_id from keyword: ${brandId}`)
         }
 
         let brand = brandId ? await getBrandById(Number(brandId), user.id) : null
 
         // Final fallback: use default brand if no brand found or if specific brand lacks WP config
         if (!brand || !brand.wp_url || !brand.wp_username || !brand.wp_password) {
-            console.log('[WordPress] Specific brand missing or lacks WP config, trying default brand...')
+            logger.debug('[WordPress] Specific brand missing or lacks WP config, trying default brand...')
             const defaultBrand = await getDefaultBrand(user.id)
             if (defaultBrand) {
                 brand = defaultBrand
-                console.log(`[WordPress] Using default brand: ${brand.name}`)
+                logger.debug(`[WordPress] Using default brand: ${brand.name}`)
             }
         }
 
@@ -59,7 +61,7 @@ export async function POST(req: NextRequest) {
             applicationPassword: brand.wp_password
         }
 
-        console.log(`[WordPress] Publishing article "${article.title}" to ${wpConfig.url}`)
+        logger.info(`[WordPress] Publishing article "${article.title}" to ${wpConfig.url}`)
 
         // 3. Extract Meta & Schema from content (Replicate frontend parser)
         const rawContent = article.content || ''
@@ -107,7 +109,7 @@ export async function POST(req: NextRequest) {
             try {
                 featuredMediaId = await uploadImageToWordPress(wpConfig, article.thumbnail_url, article.title)
             } catch (imgError) {
-                console.error('[WordPress] Failed to upload featured image:', imgError)
+                logger.error('[WordPress] Failed to upload featured image:', imgError)
             }
         }
 
@@ -148,9 +150,9 @@ export async function POST(req: NextRequest) {
                 status: 'PUBLISHED',
                 wp_post_url: result.link
             })
-            console.log(`[WordPress] Article ${articleId} status updated to PUBLISHED with URL: ${result.link}`)
+            logger.info(`[WordPress] Article ${articleId} status updated to PUBLISHED with URL: ${result.link}`)
         } catch (dbError) {
-            console.error('[WordPress] Failed to update article status:', dbError)
+            logger.error('[WordPress] Failed to update article status:', dbError)
         }
 
         return NextResponse.json({
@@ -160,7 +162,6 @@ export async function POST(req: NextRequest) {
         })
 
     } catch (error: any) {
-        console.error('[WordPress API] Error:', error)
-        return NextResponse.json({ error: error.message || 'Failed to publish' }, { status: 500 })
+        return handleApiError(error, 'WordPressPublish')
     }
 }

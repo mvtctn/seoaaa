@@ -1,4 +1,5 @@
-import { supabase } from './supabase-client'
+import { supabase } from '@/lib/supabase/client'
+import { logger } from '@/lib/logger'
 
 export interface RunResult {
     lastInsertRowid: number | bigint
@@ -146,7 +147,16 @@ export const updateKeywordStatus = async (id: number, status: string): Promise<R
 }
 
 export const getAllKeywords = async (userId: string) => {
-    const { data } = await supabase.from('keywords').select('*').eq('user_id', userId).order('created_at', { ascending: false })
+    const { data, error } = await supabase
+        .from('keywords')
+        .select('id, keyword, status, brand_id, created_at, updated_at')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+
+    if (error) {
+        logger.error('Error fetching keywords:', error)
+        return []
+    }
     return data || []
 }
 
@@ -229,7 +239,16 @@ export const createArticle = async (data: {
 }
 
 export const getArticleById = async (id: number, userId: string) => {
-    const { data } = await supabase.from('articles').select('*').eq('id', id).eq('user_id', userId).maybeSingle()
+    const { data, error } = await supabase
+        .from('articles')
+        .select('*, research(*)')
+        .eq('id', id)
+        .eq('user_id', userId)
+        .maybeSingle()
+
+    if (error) {
+        logger.error(`Error fetching article ${id}:`, error)
+    }
     return data
 }
 
@@ -239,7 +258,16 @@ export const getArticleBySlug = async (slug: string, userId: string) => {
 }
 
 export const getAllArticles = async (userId: string) => {
-    const { data } = await supabase.from('articles').select('*').eq('user_id', userId).order('created_at', { ascending: false })
+    const { data, error } = await supabase
+        .from('articles')
+        .select('id, title, slug, status, created_at, thumbnail_url, wp_post_url')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+
+    if (error) {
+        logger.error('Error fetching articles:', error)
+        return []
+    }
     return data || []
 }
 
