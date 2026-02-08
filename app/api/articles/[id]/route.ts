@@ -15,6 +15,7 @@ export async function GET(
         }
 
         const id = Number(params.id)
+        console.log(`[API] Fetching article ID: ${id} (params.id: ${params.id})`)
         if (isNaN(id)) {
             return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
         }
@@ -53,12 +54,16 @@ export async function GET(
                 research: researchData || null
             }
         })
-    } catch (error) {
-        console.error('Fetch error:', error)
-        return NextResponse.json(
-            { error: 'Internal Server Error' },
-            { status: 500 }
-        )
+    } catch (error: any) {
+        console.error(`[API Articles ${params.id}] Error:`, error)
+        return new Response(JSON.stringify({
+            success: false,
+            error: error.message || 'Internal Server Error',
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        })
     }
 }
 

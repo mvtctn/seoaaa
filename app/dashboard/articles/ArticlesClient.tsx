@@ -4,6 +4,8 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import styles from './articles.module.css'
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, WidthType, BorderStyle } from 'docx'
+import { saveAs } from 'file-saver'
 
 // API Functions
 const getArticles = async () => {
@@ -11,6 +13,18 @@ const getArticles = async () => {
     const data = await res.json()
     if (!data.success) throw new Error(data.error || 'Failed to fetch articles')
     return data.data || []
+}
+
+const getArticleDetails = async (id: number) => {
+    const res = await fetch(`/api/articles/${id}`)
+    const contentType = res.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+        const text = await res.text();
+        throw new Error(`Server returned non-JSON response: ${text.substring(0, 100)}...`);
+    }
+    const data = await res.json()
+    if (!data.success) throw new Error(data.error || 'Failed to fetch article details')
+    return data.data
 }
 
 const deleteArticleApi = async (id: number) => {
@@ -23,6 +37,7 @@ const deleteArticleApi = async (id: number) => {
 
 export default function ArticlesClient() {
     const queryClient = useQueryClient()
+    const [downloadingId, setDownloadingId] = useState<number | null>(null)
 
     // Query for fetching articles
     const { data: articles = [], isLoading: loading, error } = useQuery({
@@ -55,6 +70,125 @@ export default function ArticlesClient() {
     const handleDelete = async (id: number) => {
         if (!confirm('Bạn có chắc chắn muốn xóa bài viết này không? Hành động này không thể hoàn tác.')) return
         deleteMutation.mutate(id)
+    }
+
+    const handleDownload = async (id: number, title: string) => {
+        try {
+            setDownloadingId(id)
+            const article = await getArticleDetails(id)
+
+            // Prepare sections
+            const sections = []
+
+            // Title
+            sections.push(
+                new Paragraph({
+                    text: article.title || 'Untitled Article',
+                    heading: HeadingLevel.HEADING_1,
+                    spacing: { after: 200 }
+                })
+            )
+
+            // Meta Info Table
+            const metaRows = [
+                ['Keyword:', article.keyword || 'N/A'],
+                ['Slug:', article.slug || 'N/A'],
+                ['Status:', article.status?.toUpperCase() || 'DRAFT'],
+                ['Created At:', formatDate(article.created_at)],
+                ['Meta Title:', article.meta_title || 'N/A'],
+                ['Meta Description:', article.meta_description || 'N/A']
+            ]
+
+            const table = new Table({
+                width: { size: 100, type: WidthType.PERCENTAGE },
+                rows: metaRows.map(row =>
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                width: { size: 30, type: WidthType.PERCENTAGE },
+                                children: [new Paragraph({ children: [new TextRun({ text: row[0], bold: true })] })],
+                            }),
+                            new TableCell({
+                                width: { size: 70, type: WidthType.PERCENTAGE },
+                                children: [new Paragraph(row[1])],
+                            }),
+                        ],
+                    })
+                ),
+            })
+            sections.push(table)
+            sections.push(new Paragraph({ text: '', spacing: { after: 200 } }))
+
+            // Research / Analysis
+            if (article.research) {
+                sections.push(new Paragraph({ text: 'Research & Analysis', heading: HeadingLevel.HEADING_2, spacing: { before: 200, after: 100 } }))
+
+                // Try to parse if it's JSON string, or use as object if already parsed
+                let researchData = article.research
+                if (typeof researchData === 'string') {
+                    try { researchData = JSON.parse(researchData) } catch (e) { }
+                }
+
+                // Display structured data if available
+                const analysisPoints = [
+                    { label: 'User Intent', value: researchData.userIntent },
+                    { label: 'Word Count', value: researchData.recommendedWordCount },
+                    { label: 'Entities', value: Array.isArray(researchData.entities) ? researchData.entities.join(', ') : researchData.entities },
+                    { label: 'LSI Keywords', value: Array.isArray(researchData.lsiKeywords) ? researchData.lsiKeywords.join(', ') : researchData.lsiKeywords },
+                    { label: 'Content Gaps', value: Array.isArray(researchData.contentGaps) ? researchData.contentGaps.join(', ') : researchData.contentGaps },
+                ].filter(p => p.value)
+
+                analysisPoints.forEach(p => {
+                    sections.push(new Paragraph({
+                        children: [
+                            new TextRun({ text: `${p.label}: `, bold: true }),
+                            new TextRun(String(p.value))
+                        ],
+                        bullet: { level: 0 }
+                    }))
+                })
+            }
+
+            // Schema (if extracted or just part of content)
+            // Note: Schema is usually inside the content in [SCHEMA] block or similar.
+            // We can try to extract it if we want a separate section, but for now dumping content is safer.
+
+            // Article Content
+            sections.push(new Paragraph({ text: 'Article Content', heading: HeadingLevel.HEADING_2, spacing: { before: 400, after: 200 } }))
+
+            // Simple content dump - preserving line breaks
+            const contentLines = (article.content || '').split('\n')
+
+            contentLines.forEach((line: string) => {
+                // formatting simple headers in markdown
+                if (line.startsWith('# ')) {
+                    sections.push(new Paragraph({ text: line.replace('# ', ''), heading: HeadingLevel.HEADING_1, spacing: { before: 200 } }))
+                } else if (line.startsWith('## ')) {
+                    sections.push(new Paragraph({ text: line.replace('## ', ''), heading: HeadingLevel.HEADING_2, spacing: { before: 150 } }))
+                } else if (line.startsWith('### ')) {
+                    sections.push(new Paragraph({ text: line.replace('### ', ''), heading: HeadingLevel.HEADING_3, spacing: { before: 100 } }))
+                } else {
+                    sections.push(new Paragraph({ text: line }))
+                }
+            })
+
+            // Generate
+            const doc = new Document({
+                sections: [{
+                    properties: {},
+                    children: sections
+                }]
+            })
+
+            const blob = await Packer.toBlob(doc)
+            saveAs(blob, `${title || 'article'}.docx`)
+
+        } catch (error: any) {
+            console.error('Download error fully:', error)
+            alert('Lỗi tải bài viết (Xem console để biết chi tiết): ' + error.message)
+        } finally {
+            setDownloadingId(null)
+        }
     }
 
     if (error) {
@@ -90,11 +224,11 @@ export default function ArticlesClient() {
                     <table className={styles.table}>
                         <thead>
                             <tr>
-                                <th style={{ width: '40%' }}>Bài Viết</th>
+                                <th style={{ width: '35%' }}>Bài Viết</th>
                                 <th style={{ width: '20%' }}>Từ Khóa</th>
-                                <th style={{ width: '15%' }}>Trạng Thái</th>
+                                <th style={{ width: '10%' }}>Trạng Thái</th>
                                 <th style={{ width: '15%' }}>Ngày Tạo</th>
-                                <th style={{ width: '10%' }}>Hành Động</th>
+                                <th style={{ width: '20%' }}>Hành Động</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -117,6 +251,23 @@ export default function ArticlesClient() {
                                     </td>
                                     <td>
                                         <div className={styles.actions}>
+                                            <button
+                                                className="btn btn-sm btn-outline"
+                                                onClick={() => handleDownload(article.id, article.title)}
+                                                disabled={downloadingId === article.id}
+                                                title="Tải về Word"
+                                            >
+                                                {downloadingId === article.id ? (
+                                                    <span className="spinner spinner-xs"></span>
+                                                ) : (
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                                        <polyline points="7 10 12 15 17 10" />
+                                                        <line x1="12" y1="15" x2="12" y2="3" />
+                                                    </svg>
+                                                )}
+                                            </button>
+
                                             <Link href={`/dashboard/articles/${article.id}`} className="btn btn-sm btn-outline">
                                                 Sửa
                                             </Link>
