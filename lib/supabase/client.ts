@@ -1,21 +1,29 @@
 import { createBrowserClient } from '@supabase/ssr'
 
-let client: any = null
+let clientInstance: any = null
 
 export function createClient() {
-    if (client) return client
+    if (typeof window === 'undefined') {
+        return createBrowserClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        )
+    }
 
-    client = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-            auth: {
-                persistSession: true,
-                autoRefreshToken: true,
-                detectSessionInUrl: true,
-                flowType: 'pkce'
+    if (!clientInstance) {
+        clientInstance = createBrowserClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            {
+                auth: {
+                    persistSession: true,
+                    autoRefreshToken: true,
+                    detectSessionInUrl: true,
+                    flowType: 'pkce'
+                }
             }
-        }
-    )
-    return client
+        )
+    }
+
+    return clientInstance
 }
