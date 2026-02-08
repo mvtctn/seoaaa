@@ -48,6 +48,9 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true })
     } catch (error: any) {
         console.error('[Contact API Error]:', error)
-        return NextResponse.json({ error: 'Đã có lỗi xảy ra. Vui lòng thử lại sau.' }, { status: 500 })
+        return NextResponse.json({
+            error: error.message || 'Đã có lỗi xảy ra. Vui lòng thử lại sau.',
+            details: error.toString()
+        }, { status: 500 })
     }
 }

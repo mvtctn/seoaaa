@@ -31,7 +31,8 @@ export default function ContactPage() {
                 setIsSubmitted(true)
                 setFormData({ name: '', email: '', subject: 'Hỗ trợ kỹ thuật', message: '' })
             } else {
-                alert('Có lỗi xảy ra khi gửi tin nhắn. Vui lòng thử lại.')
+                const data = await res.json()
+                alert(data.error || 'Có lỗi xảy ra khi gửi tin nhắn. Vui lòng thử lại.')
             }
         } catch (error) {
             console.error('Error submitting form:', error)
