@@ -20,15 +20,6 @@ export default function GeneratePage() {
     const [progressLog, setProgressLog] = useState('')
     const [articleData, setArticleData] = useState<any>(null)
     const [error, setError] = useState<string | null>(null)
-    const [options, setOptions] = useState({
-        articleType: 'expert_guide', // expert_guide, pillar, news, review, comparison
-        seoMode: 'advanced', // standard, advanced
-        language: 'vi', // vi, en
-        tone: 'professional', // professional, creative, conversational, clinical
-        audience: 'decision_makers', // general, experts, beginners, decision_makers
-        length: '1500', // 800, 1500, 2500
-        focusKeywords: '',
-    })
 
     const copyToClipboard = async (text: string, label: string) => {
         try {
@@ -97,21 +88,14 @@ export default function GeneratePage() {
         setLoading(true)
         setError(null)
         setCurrentStep(2)
-        setProgressLog(options.seoMode === 'advanced' ? '🔍 Đang thực hiện nghiên cứu chuyên sâu (Deep SERP & Semantic Analysis)...' : '🔍 Đang phân tích top 5 đối thủ trên Google...')
+        setProgressLog('🔍 Đang phân tích top 5 đối thủ trên Google...')
 
         try {
             // Step 1: Research
             const resRes = await fetch('/api/research/analyze', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    keyword,
-                    options: {
-                        seoMode: options.seoMode,
-                        language: options.language,
-                        competitorCount: options.seoMode === 'advanced' ? 10 : 3
-                    }
-                })
+                body: JSON.stringify({ keyword })
             })
 
             if (!resRes.ok) {
@@ -122,7 +106,7 @@ export default function GeneratePage() {
 
             // Step 2: Generate Article
             setCurrentStep(3)
-            setProgressLog(`✍️ Đang viết bài ${options.articleType} với Groq AI (Llama 3.3)...`)
+            setProgressLog('✍️ Đang viết bài với Groq AI (Llama 3.3)...')
 
             const artRes = await fetch('/api/generate/article', {
                 method: 'POST',
@@ -132,15 +116,7 @@ export default function GeneratePage() {
                     researchBrief: resData.data.brief,
                     contentStrategy: resData.data.strategy,
                     researchId: resData.data.researchId,
-                    keywordId: resData.data.keywordId,
-                    options: {
-                        articleType: options.articleType,
-                        tone: options.tone,
-                        audience: options.audience,
-                        language: options.language,
-                        length: options.length,
-                        focusKeywords: options.focusKeywords
-                    }
+                    keywordId: resData.data.keywordId
                 })
             })
 
@@ -184,8 +160,8 @@ export default function GeneratePage() {
         <div className={styles.container}>
             <header className={styles.header}>
                 <div className={styles.headerInfo}>
-                    <h2>Tạo Nội Dung SEO Cao Cấp</h2>
-                    <p>Hệ thống AI đa mô hình phân tích đối thủ và viết bài chuẩn SEO vượt trội</p>
+                    <h2>Tạo Nội Nội Dung</h2>
+                    <p>Sử dụng AI tiên tiến để tạo nội dung chuẩn SEO vượt trội đối thủ</p>
                 </div>
             </header>
 
@@ -203,127 +179,28 @@ export default function GeneratePage() {
             </div>
 
             <div className={styles.content}>
-                {/* Step 1: Input & Configuration */}
+                {/* Step 1: Input */}
                 {currentStep === 1 && (
-                    <div className={styles.setupContainer}>
-                        <div className={styles.setupGrid}>
-                            {/* Left Panel: Primary Input */}
-                            <div className={styles.mainPanel}>
-                                <div className={styles.inputSection}>
-                                    <label className={styles.label}>Từ khóa chính cần SEO</label>
-                                    <input
-                                        type="text"
-                                        className={styles.keywordInput}
-                                        placeholder="VD: hệ thống thoát nước siphonic là gì?"
-                                        value={keyword}
-                                        onChange={(e) => setKeyword(e.target.value)}
-                                        onKeyDown={(e) => e.key === 'Enter' && handleStart()}
-                                        autoFocus
-                                    />
-                                    <p className={styles.inputHint}>AI sẽ dựa vào từ khóa này để tìm kiếm đối thủ Top 10 Google.</p>
-                                </div>
-
-                                <div className={styles.inputSection}>
-                                    <label className={styles.label}>Từ khóa phụ / LSI (Tùy chọn)</label>
-                                    <textarea
-                                        className={styles.textArea}
-                                        placeholder="Mỗi từ khóa một dòng..."
-                                        rows={3}
-                                        value={options.focusKeywords}
-                                        onChange={(e) => setOptions({ ...options, focusKeywords: e.target.value })}
-                                    />
-                                </div>
-
-                                <div className={styles.typeGrid}>
-                                    {[
-                                        { id: 'expert_guide', label: 'Hướng dẫn Chuyên gia', desc: 'Bài viết chuyên sâu, giàu kiến thức.' },
-                                        { id: 'pillar', label: 'Bài viết Trụ cột (Pillar)', desc: 'Nội dung bao quát toàn bộ chủ đề nghách.' },
-                                        { id: 'news', label: 'Tin tức / Xu hướng', desc: 'Cập nhật nhanh, mang tính thời sự.' },
-                                        { id: 'review', label: 'Đánh giá / So sánh', desc: 'Phân tích ưu nhược điểm bài bản.' }
-                                    ].map(type => (
-                                        <div
-                                            key={type.id}
-                                            className={`${styles.typeCard} ${options.articleType === type.id ? styles.typeActive : ''}`}
-                                            onClick={() => setOptions({ ...options, articleType: type.id })}
-                                        >
-                                            <strong>{type.label}</strong>
-                                            <span>{type.desc}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Right Panel: Advanced Config */}
-                            <div className={styles.sidePanel}>
-                                <div className={styles.configGroup}>
-                                    <label className={styles.label}>Chế độ SEO</label>
-                                    <div className={styles.toggleGroup}>
-                                        <button
-                                            className={`${styles.toggleItem} ${options.seoMode === 'standard' ? styles.toggleActive : ''}`}
-                                            onClick={() => setOptions({ ...options, seoMode: 'standard' })}
-                                        >Chuẩn</button>
-                                        <button
-                                            className={`${styles.toggleItem} ${options.seoMode === 'advanced' ? styles.toggleActive : ''}`}
-                                            onClick={() => setOptions({ ...options, seoMode: 'advanced' })}
-                                        >Nâng Cao (VIP)</button>
-                                    </div>
-                                </div>
-
-                                <div className={styles.configGroup}>
-                                    <label className={styles.label}>Ngôn ngữ</label>
-                                    <select
-                                        className={styles.select}
-                                        value={options.language}
-                                        onChange={(e) => setOptions({ ...options, language: e.target.value })}
-                                    >
-                                        <option value="vi">Tiếng Việt</option>
-                                        <option value="en">English (US)</option>
-                                    </select>
-                                </div>
-
-                                <div className={styles.configGroup}>
-                                    <label className={styles.label}>Độ dài mong muốn</label>
-                                    <select
-                                        className={styles.select}
-                                        value={options.length}
-                                        onChange={(e) => setOptions({ ...options, length: e.target.value })}
-                                    >
-                                        <option value="800">Ngắn (~800 từ)</option>
-                                        <option value="1500">Trung bình (~1500 từ)</option>
-                                        <option value="2500">Dài (~2500 từ - Pillar)</option>
-                                    </select>
-                                </div>
-
-                                <div className={styles.configGroup}>
-                                    <label className={styles.label}>Giọng điệu (Tone)</label>
-                                    <select
-                                        className={styles.select}
-                                        value={options.tone}
-                                        onChange={(e) => setOptions({ ...options, tone: e.target.value })}
-                                    >
-                                        <option value="professional">Chuyên nghiệp</option>
-                                        <option value="conversational">Trò chuyện, gần gũi</option>
-                                        <option value="creative">Sáng tạo, đột phá</option>
-                                        <option value="clinical">Hàn lâm, kỹ thuật</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
-                        {error && <p className={styles.errorText}>{error}</p>}
-
-                        <div className={styles.actionFooter}>
-                            <button
-                                className={styles.generateButton}
-                                onClick={handleStart}
-                                disabled={!keyword.trim() || loading}
-                            >
-                                {loading ? 'Đang khởi tạo...' : 'Bắt Đầu Nghiên Cứu & Viết Bài'}
-                                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                </svg>
-                            </button>
-                        </div>
+                    <div className={styles.inputStep}>
+                        <h3>Bắt đầu từ khóa mới</h3>
+                        <p style={{ marginBottom: '2rem' }}>Hệ thống sẽ nghiên cứu đối thủ và viết bài tự động cho bạn.</p>
+                        <input
+                            type="text"
+                            className={styles.keywordInput}
+                            placeholder="Nhập từ khóa chính (VD: siphonic drainage system)"
+                            value={keyword}
+                            onChange={(e) => setKeyword(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleStart()}
+                            autoFocus
+                        />
+                        {error && <p className="text-danger mb-4">{error}</p>}
+                        <button
+                            className="btn btn-primary btn-lg w-full"
+                            onClick={handleStart}
+                            disabled={!keyword.trim() || loading}
+                        >
+                            Khởi Tạo Nghiên Cứu
+                        </button>
                     </div>
                 )}
 

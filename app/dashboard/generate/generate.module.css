@@ -392,3 +392,244 @@
 .animate-fadeIn {
     animation: fadeIn 0.4s ease-out forwards;
 }
+
+/* ============================================================
+   SETUP & CONFIGURATION STYLES (New)
+   ============================================================ */
+
+.setupContainer {
+    max-width: 1000px;
+    margin: 1.5rem auto 4rem;
+    animation: fadeIn 0.4s ease-out;
+}
+
+.setupGrid {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 2rem;
+}
+
+.mainPanel {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.sidePanel {
+    background: rgba(26, 35, 50, 0.3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    height: fit-content;
+    position: sticky;
+    top: 1.5rem;
+}
+
+.inputSection {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.keywordInput {
+    width: 100%;
+    font-size: 1.25rem;
+    padding: 1rem 1.5rem !important;
+    background: #0f172a !important;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    color: white;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s;
+    margin-bottom: 0 !important;
+}
+
+.keywordInput:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+    outline: none;
+}
+
+.textArea {
+    width: 100%;
+    padding: 1rem;
+    background: #0f172a;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: white;
+    font-size: 0.9375rem;
+    resize: vertical;
+}
+
+.inputHint {
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+    margin: 0.5rem 0 0 0.5rem;
+}
+
+.typeGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.typeCard {
+    background: rgba(30, 41, 59, 0.5);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.typeCard:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(30, 41, 59, 0.8);
+}
+
+.typeActive {
+    border-color: var(--color-primary);
+    background: rgba(37, 99, 235, 0.1);
+    box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+.typeCard strong {
+    font-size: 0.9375rem;
+    color: white;
+}
+
+.typeCard span {
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+}
+
+.configGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.toggleGroup {
+    display: flex;
+    background: #0f172a;
+    padding: 2px;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+}
+
+.toggleItem {
+    flex: 1;
+    padding: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: transparent;
+    border: none;
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.toggleActive {
+    background: var(--color-primary);
+    color: white;
+}
+
+.select {
+    width: 100%;
+    padding: 0.75rem;
+    background: #0f172a;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: white;
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+
+.actionFooter {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    justify-content: center;
+}
+
+.generateButton {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 2.5rem;
+    background: linear-gradient(135deg, var(--color-primary), #1d4ed8);
+    color: white;
+    border: none;
+    border-radius: var(--radius-xl);
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.4);
+}
+
+.generateButton:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 35px -10px rgba(37, 99, 235, 0.5);
+    filter: brightness(1.1);
+}
+
+.generateButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(0.5);
+}
+
+.errorText {
+    color: #ef4444;
+    font-size: 0.875rem;
+    text-align: center;
+    margin-top: 1.5rem;
+}
+
+.progressLog {
+    font-size: 0.875rem;
+    color: var(--color-primary);
+    font-weight: 500;
+    margin-top: 1.5rem;
+    animation: pulseLogo 2s infinite;
+}
+
+@keyframes pulseLogo {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
+}
+
+@media (max-width: 1024px) {
+    .setupGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .sidePanel {
+        position: relative;
+        top: 0;
+    }
+}

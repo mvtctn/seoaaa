@@ -141,6 +141,7 @@ export class AIOrchestrator {
         brandContext?: any
         articleId?: number
         userId: string
+        options?: any
     }) {
         return this.executeWithFailover(
             'Generate Article',

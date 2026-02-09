@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
 
         logger.info(`--- [API] /api/generate/article CALLED by ${user.id} ---`)
         const body = await req.json()
-        const { keyword, researchBrief, contentStrategy, researchId, keywordId } = body
+        const { keyword, researchBrief, contentStrategy, researchId, keywordId, options } = body
 
         if (!keyword || !researchBrief || !contentStrategy) {
             logger.error('[API] Missing required parameters')
@@ -47,7 +47,8 @@ export async function POST(req: NextRequest) {
             researchBrief,
             contentStrategy,
             brandContext: brandContextForAI,
-            userId: user.id
+            userId: user.id,
+            options
         })
         const rawContent = generationResult.content
         logger.debug('[API] ✓ Raw content generated')

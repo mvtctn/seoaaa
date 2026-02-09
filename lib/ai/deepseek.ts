@@ -157,6 +157,7 @@ export async function generateArticle(params: {
     researchBrief: any
     contentStrategy: string
     brandContext?: any
+    options?: any
 }) {
     const { keyword, researchBrief, contentStrategy, brandContext } = params
 

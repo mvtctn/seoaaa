@@ -19,14 +19,15 @@ export async function POST(req: NextRequest) {
 
         logger.info(`--- [API] /api/research/analyze CALLED by ${user.id} ---`)
         const body = await req.json()
-        const { keyword } = body
+        const { keyword, options } = body
+        const competitorCount = options?.competitorCount || 3
 
         if (!keyword) {
             logger.error('[API] Missing keyword')
             return NextResponse.json({ error: 'Keyword is required' }, { status: 400 })
         }
 
-        logger.info(`[API] 🚀 Starting Research for: "${keyword}"`)
+        logger.info(`[API] 🚀 Starting Research for: "${keyword}" (Competitors: ${competitorCount})`)
 
         // 1. Get Brand Context
         logger.debug('[API] Step 1: Fetching brand context...')
@@ -42,11 +43,11 @@ export async function POST(req: NextRequest) {
 
         // 2. Fetch SERP Results
         console.log('[API] Step 2: Fetching SERP results...')
-        const serpResults = await fetchSERPResults(keyword, 3)
+        const serpResults = await fetchSERPResults(keyword, competitorCount)
         console.log(`[API] ✓ Got ${serpResults.length} SERP results`)
 
         // 3. Scrape Top Competitors
-        console.log(`[API] Step 3: Scraped competitors (limit 3)...`)
+        console.log(`[API] Step 3: Scraped competitors (limit ${competitorCount})...`)
         const scrapePromises = serpResults.map(async (result) => {
             try {
                 if (result.url.includes('example.com')) return null

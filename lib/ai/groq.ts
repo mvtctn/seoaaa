@@ -165,15 +165,31 @@ export async function generateArticle(params: {
     researchBrief: any
     contentStrategy: string
     brandContext?: any
+    options?: any
 }) {
-    const { keyword, researchBrief, contentStrategy, brandContext } = params
+    const { keyword, researchBrief, contentStrategy, brandContext, options } = params
+    const { articleType, tone, audience, language, length, focusKeywords } = options || {}
+
+    const typePrompts: any = {
+        expert_guide: 'Write as a subject matter expert providing deep, technical, yet accessible insights. Focus on being the ultimate search result.',
+        pillar: 'Write a comprehensive pillar page that covers every aspect of the topic in detail, intended for long-term SEO authority.',
+        news: 'Write in a journalistic style, focusing on current trends, timeliness, and fast-paced delivery.',
+        review: 'Write a balanced, analytical review or comparison with clear pros/cons and data-driven evaluations.'
+    }
 
     const prompt = `
   You are an expert SEO Content Writer. Write a comprehensive, high-ranking article for the keyword: "${keyword}".
+  Target Language: ${language === 'en' ? 'English (US)' : 'Vietnamese (Tiếng Việt)'}
+  Target Word Count: ${length || '1500'} words.
+  
+  ## Article Type: ${articleType || 'Standard'}
+  ${typePrompts[articleType] || ''}
 
   ## Context
   - **Brand Name**: ${brandContext?.name || 'N/A'}
-  - **Tone of Voice**: ${brandContext?.toneOfVoice || 'Professional, Authoritative'}
+  - **Tone of Voice**: ${tone || brandContext?.toneOfVoice || 'Professional, Authoritative'}
+  - **Target Audience**: ${audience || 'General'}
+  - **Focus Keywords**: ${focusKeywords || 'N/A'}
   - **Brand Values**: ${brandContext?.coreValues?.join(', ') || 'N/A'}
   - **Article Template**: ${brandContext?.articleTemplate || 'Standard SEO Structure'}
   - **Internal Links to Insert**: ${JSON.stringify(brandContext?.internalLinks || [])}
@@ -181,7 +197,6 @@ export async function generateArticle(params: {
   ## Research & Strategy
   - **User Intent**: ${researchBrief.userIntent}
   - **Content Strategy**: ${contentStrategy}
-  - **Target Word Count**: ${researchBrief.recommendedWordCount}
   - **Semantic Entities to Cover**: ${researchBrief.entities?.join(', ') || 'N/A'}
   - **LSI Keywords to Include**: ${researchBrief.lsiKeywords?.join(', ') || 'N/A'}
 
@@ -190,11 +205,11 @@ export async function generateArticle(params: {
   ${researchBrief.recommendedOutline.headings.map((h: any) => `${'#'.repeat(h.level)} ${h.text}: ${h.desc}`).join('\n')}
 
   ## Writing Instructions
-  1. Write in Vietnamese (Tiếng Việt).
+  1. Write in ${language === 'en' ? 'English (US)' : 'Vietnamese (Tiếng Việt)'}.
   2. Use Markdown formatting (H1, H2, H3, bold, lists).
   3. Make it engaging, easy to read, and comprehensive.
   4. Naturally weave in the provided internal links where appropriate (use [text](url)).
-  5. Optimize for SEO but write for humans first.
+  5. Optimize for SEO (including Focus Keywords) but write for humans first.
   6. Structure your response EXACTLY as follows:
 
   [ARTICLE]
