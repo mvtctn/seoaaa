@@ -93,42 +93,29 @@ async function scrapeWithFirecrawl(url: string): Promise<ScrapedContent | null> 
             'https://api.firecrawl.dev/v0/scrape',
             {
                 url,
-                formats: ['markdown', 'html']
+                formats: ['markdown'] // Limit to markdown for speed
             },
             {
                 headers: {
                     'Authorization': `Bearer ${process.env.FIRECRAWL_API_KEY}`,
                     'Content-Type': 'application/json'
-                }
+                },
+                timeout: 15000 // 15 second timeout for research
             }
         )
 
         const data = response.data.data
-        const $ = cheerio.load(data.html || '')
-
-        const headings: string[] = []
-        $('h1, h2, h3, h4, h5, h6').each((_, el) => {
-            const text = $(el).text().trim()
-            if (text) headings.push(text)
-        })
-
-        const images: string[] = []
-        $('img').each((_, el) => {
-            const src = $(el).attr('src')
-            if (src) images.push(src)
-        })
-
-        const content = data.markdown || data.html || ''
+        const content = data.markdown || ''
 
         return {
             url,
-            title: data.title || $('title').text() || '',
+            title: data.metadata?.title || data.title || '',
             content,
-            headings,
+            headings: [], // Headings will be extracted during AI analysis if needed, or we can parse markdown
             wordCount: content.split(/\s+/).length,
-            metaDescription: data.description || $('meta[name="description"]').attr('content'),
-            metaKeywords: $('meta[name="keywords"]').attr('content'),
-            images: images.slice(0, 5) // Limit to 5 images
+            metaDescription: data.metadata?.description || data.description,
+            metaKeywords: '',
+            images: []
         }
     } catch (error) {
         logger.error('Firecrawl error:', error)

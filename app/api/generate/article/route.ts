@@ -40,9 +40,11 @@ export async function POST(req: NextRequest) {
             internalLinks: Array.isArray(brand.internal_links) ? brand.internal_links : (typeof brand.internal_links === 'string' ? JSON.parse(brand.internal_links) : [])
         } : undefined
 
-        // 2. Generate Article Content (Using Orchestrator)
-        logger.info(`[API] ✍️ Generating article for: "${keyword}" using AI Orchestrator...`)
-        const generationResult = await AIOrchestrator.generateArticle({
+        // 2. Generate Article Content (Using Orchestrator Streaming)
+        logger.info(`[API] ✍️ Generating article for: "${keyword}" using AI Orchestrator (STREAMING)...`)
+
+        const encoder = new TextEncoder()
+        const generator = AIOrchestrator.streamArticle({
             keyword,
             researchBrief,
             contentStrategy,
@@ -50,132 +52,91 @@ export async function POST(req: NextRequest) {
             userId: user.id,
             options
         })
-        const rawContent = generationResult.content
-        logger.debug('[API] ✓ Raw content generated')
 
-        // --- PARSE AI OUTPUT ---
-        const sections = {
-            article: '',
-            summary: '',
-            meta: { title: '', description: '', slug: '' },
-            schema: ''
-        }
+        const stream = new ReadableStream({
+            async start(controller) {
+                let fullContent = ''
+                try {
+                    for await (const chunk of generator) {
+                        fullContent += chunk
+                        controller.enqueue(encoder.encode(chunk))
+                    }
 
-        // Parse Article
-        const articleMatch = rawContent.match(/\[ARTICLE\]\s*([\s\S]*?)(?=\[SUMMARY\]|\[META\]|\[SCHEMA\]|$)/i)
-        if (articleMatch) {
-            sections.article = articleMatch[1].trim()
-        } else {
-            sections.article = rawContent.replace(/\[SUMMARY\][\s\S]*|\[META\][\s\S]*|\[SCHEMA\][\s\S]*/i, '').trim()
-        }
+                    // Post-stream processing: Save to DB
+                    try {
+                        const sections = {
+                            article: '',
+                            summary: '',
+                            meta: { title: '', description: '', slug: '' },
+                            schema: ''
+                        }
 
-        // Parse Summary
-        const summaryMatch = rawContent.match(/\[SUMMARY\]\s*([\s\S]*?)(?=\[META\]|\[SCHEMA\]|$)/i)
-        if (summaryMatch) sections.summary = summaryMatch[1].trim()
+                        const articleMatch = fullContent.match(/\[ARTICLE\]\s*([\s\S]*?)(?=\[SUMMARY\]|\[META\]|\[SCHEMA\]|$)/i)
+                        sections.article = articleMatch ? articleMatch[1].trim() : fullContent.replace(/\[SUMMARY\][\s\S]*|\[META\][\s\S]*|\[SCHEMA\][\s\S]*/i, '').trim()
 
-        // Fallback if parsing failed to extract meaningful article content
-        if (!sections.article.trim()) {
-            logger.warn('[API] Parsing failed to find [ARTICLE] block, using raw content as fallback')
-            // Remove meta blocks if possible to clean up
-            sections.article = rawContent
-                .replace(/\[SUMMARY\][\s\S]*/i, '')
-                .replace(/\[META\][\s\S]*/i, '')
-                .replace(/\[SCHEMA\][\s\S]*/i, '')
-                .trim()
-        }
+                        const summaryMatch = fullContent.match(/\[SUMMARY\]\s*([\s\S]*?)(?=\[META\]|\[SCHEMA\]|$)/i)
+                        if (summaryMatch) sections.summary = summaryMatch[1].trim()
 
-        // Parse Meta
-        const metaMatch = rawContent.match(/\[META\]\s*([\s\S]*?)(?=\[SCHEMA\]|$)/i)
-        if (metaMatch) {
-            const metaText = metaMatch[1]
-            const titleMatch = metaText.match(/Meta Title:\s*(.*)/i)
-            const descMatch = metaText.match(/Meta Description:\s*(.*)/i)
-            const slugMatch = metaText.match(/URL Slug:\s*(.*)/i)
+                        const metaMatch = fullContent.match(/\[META\]\s*([\s\S]*?)(?=\[SCHEMA\]|$)/i)
+                        if (metaMatch) {
+                            const metaText = metaMatch[1]
+                            const titleM = metaText.match(/Meta Title:\s*(.*)/i)
+                            const descM = metaText.match(/Meta Description:\s*(.*)/i)
+                            const slugM = metaText.match(/URL Slug:\s*(.*)/i)
+                            if (titleM) sections.meta.title = titleM[1].trim().replace(/^"|"$/g, '')
+                            if (descM) sections.meta.description = descM[1].trim().replace(/^"|"$/g, '')
+                            if (slugM) sections.meta.slug = slugM[1].trim()
+                        }
 
-            if (titleMatch) sections.meta.title = titleMatch[1].trim().replace(/^"|"$/g, '')
-            if (descMatch) sections.meta.description = descMatch[1].trim().replace(/^"|"$/g, '')
-            if (slugMatch) sections.meta.slug = slugMatch[1].trim()
-        }
+                        const schemaMatch = fullContent.match(/\[SCHEMA\]\s*([\s\S]*)/i)
+                        if (schemaMatch) {
+                            const jsonMatch = schemaMatch[1].match(/```json\s*([\s\S]*?)\s*```/i)
+                            sections.schema = jsonMatch ? jsonMatch[1].trim() : schemaMatch[1].trim()
+                        }
 
-        // Parse Schema
-        const schemaMatch = rawContent.match(/\[SCHEMA\]\s*([\s\S]*)/i)
-        if (schemaMatch) {
-            const jsonMatch = schemaMatch[1].match(/```json\s*([\s\S]*?)\s*```/i)
-            sections.schema = jsonMatch ? jsonMatch[1].trim() : schemaMatch[1].trim()
-        }
+                        // Save Article
+                        const { data: dbArticle, error: articleErr } = await supabase
+                            .from('articles')
+                            .insert({
+                                keyword_id: keywordId,
+                                research_id: researchId,
+                                user_id: user.id,
+                                title: sections.meta.title || keyword,
+                                content: sections.article,
+                                summary: sections.summary,
+                                meta_title: sections.meta.title,
+                                meta_description: sections.meta.description,
+                                slug: sections.meta.slug || generateSlug(sections.meta.title || keyword),
+                                schema_markup: sections.schema,
+                                status: 'draft'
+                            })
+                            .select()
+                            .single()
 
-        const content = sections.article
+                        if (!articleErr) {
+                            await supabase
+                                .from('keywords')
+                                .update({ status: 'completed' })
+                                .eq('id', keywordId)
+                        }
 
-        // 3. Post-processing & SEO
-        let title = sections.meta.title || researchBrief.recommendedOutline.title
-        const h1Match = content.match(/^#\s+(.+)$/m)
-        if (h1Match) {
-            title = h1Match[1]
-        }
+                    } catch (dbErr) {
+                        logger.error('[API] Post-stream DB error:', dbErr)
+                    }
 
-        if (!title) title = keyword
-
-        let slug = sections.meta.slug
-        if (!slug || slug.length < 5) {
-            slug = generateSlug(title)
-        }
-
-        // 4. Finalize Metadata (Using Orchestrator)
-        console.log('[API] Finalizing metadata...')
-
-        const titlePromise = sections.meta.title
-            ? Promise.resolve({ content: sections.meta.title })
-            : AIOrchestrator.generateMetaTitle(title, keyword, brandContextForAI, user.id)
-                .catch(err => {
-                    logger.warn(`[API] Meta Title Avg Failed: ${err.message}`)
-                    return { content: title.substring(0, 60) }
-                })
-
-        const descPromise = sections.meta.description
-            ? Promise.resolve({ content: sections.meta.description })
-            : AIOrchestrator.generateMetaDescription(title, keyword, content, brandContextForAI, user.id)
-                .catch(err => {
-                    logger.warn(`[API] Meta Desc Gen Failed: ${err.message}`)
-                    return { content: (sections.summary || content.substring(0, 150)).substring(0, 160) }
-                })
-
-        const [metaTitleResult, metaDescResult] = await Promise.all([titlePromise, descPromise])
-
-        const metaTitle = metaTitleResult.content
-        const metaDesc = metaDescResult.content
-
-        // 5. Save Artifact
-        console.log('[API] Saving article to DB...')
-        const dbResult = await createArticle({
-            user_id: user.id,
-            keyword_id: keywordId || 0,
-            title,
-            slug,
-            content,
-            meta_title: metaTitle,
-            meta_description: metaDesc,
-            status: 'draft',
-            research_id: researchId || undefined,
-            brand_id: brand?.id
+                    controller.close()
+                } catch (error) {
+                    logger.error('[API] Stream processing error:', error)
+                    controller.error(error)
+                }
+            }
         })
 
-        const articleId = dbResult.lastInsertRowid
-
-        logger.info(`[API] ✅ Article generation complete (ID: ${articleId})`)
-
-        return NextResponse.json({
-            success: true,
-            data: {
-                id: articleId,
-                articleId,
-                title,
-                slug,
-                content,
-                metaTitle,
-                metaDesc,
-                schema: sections.schema,
-                summary: sections.summary
-            }
+        return new NextResponse(stream, {
+            headers: {
+                'Content-Type': 'text/plain; charset=utf-8',
+                'Transfer-Encoding': 'chunked',
+            },
         })
 
     } catch (error: any) {

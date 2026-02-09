@@ -120,7 +120,7 @@ export default function GeneratePage() {
             }
             const resData = await resRes.json()
 
-            // Step 2: Generate Article
+            // Step 2: Generate Article (STREAMING)
             setCurrentStep(3)
             setProgressLog(`✍️ Đang viết bài ${options.articleType} với Groq AI (Llama 3.3)...`)
 
@@ -145,27 +145,31 @@ export default function GeneratePage() {
             })
 
             if (!artRes.ok) throw new Error('Generation failed')
-            const artData = await artRes.json()
 
-            // Step 3: Generate Image
-            setProgressLog('🎨 Đang tạo ảnh minh họa (Pollinations AI)...')
-            try {
-                const imgRes = await fetch('/api/generate/image', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        articleId: artData.data.id,
-                        title: artData.data.title,
-                        keyword: keyword
-                    })
-                })
-                if (imgRes.ok) {
-                    const imgData = await imgRes.json()
-                    artData.data.image_url = imgData.data.imageUrl
+            // Consume stream
+            const reader = artRes.body?.getReader()
+            const decoder = new TextDecoder()
+            let fullStreamedContent = ''
+
+            if (reader) {
+                while (true) {
+                    const { done, value } = await reader.read()
+                    if (done) break
+
+                    const chunk = decoder.decode(value, { stream: true })
+                    fullStreamedContent += chunk
+
+                    // Update state incrementally for the UI to show progress
+                    setArticleData({ content: fullStreamedContent })
                 }
-            } catch (e) { console.warn('Image gen failed', e) }
+            }
 
-            setArticleData(artData.data)
+            // Step 3: Optional Image or Post-processing
+            // Since the backend already saved the article, we just need to transition UI
+            // However, we might need the actual ID if we want to show a 'View Article' link
+            // For now, let's just mark as done and show the parsed content
+            setArticleData({ content: fullStreamedContent })
+
             setCurrentStep(4)
             setProgressLog('✅ Hoàn thành!')
             setLoading(false)

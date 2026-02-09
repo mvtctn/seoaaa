@@ -134,6 +134,59 @@ export class AIOrchestrator {
         )
     }
 
+    static async *streamArticle(params: {
+        keyword: string
+        researchBrief: any
+        contentStrategy: string
+        brandContext?: any
+        articleId?: number
+        userId: string
+        options?: any
+    }) {
+        logger.info(`[AI Orchestrator] Starting streaming article for: ${params.keyword}`)
+
+        // Currently only Groq supports streaming in this implementation
+        const generator = groq.streamArticle(params)
+        const start = Date.now()
+        let usage: any = { input_tokens: 0, output_tokens: 0 }
+
+        for await (const chunk of generator) {
+            if (chunk.startsWith('__USAGE__')) {
+                try {
+                    usage = JSON.parse(chunk.replace('__USAGE__', ''))
+                } catch (e) {
+                    logger.error('[AI Orchestrator] Failed to parse usage from stream:', e)
+                }
+                continue
+            }
+            yield chunk
+        }
+
+        // Log usage after stream completes
+        const seodongCost = Math.ceil((usage.input_tokens + usage.output_tokens) / TOKENS_PER_SEODONG)
+        try {
+            await createAIUsageLog({
+                brand_id: params.brandContext?.id,
+                article_id: params.articleId,
+                model_name: 'llama-3.3-70b-versatile',
+                provider: 'groq',
+                task_type: 'article_generation',
+                input_tokens: usage.input_tokens,
+                output_tokens: usage.output_tokens,
+                cost: seodongCost,
+                status: 'success',
+                duration_ms: Date.now() - start,
+                user_id: params.userId
+            })
+
+            if (params.userId && seodongCost > 0) {
+                await incrementUsage(params.userId, seodongCost)
+            }
+        } catch (err) {
+            logger.error('[AI Orchestrator] Post-stream logging failed:', err)
+        }
+    }
+
     static async generateArticle(params: {
         keyword: string
         researchBrief: any

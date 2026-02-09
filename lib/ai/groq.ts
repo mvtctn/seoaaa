@@ -318,6 +318,137 @@ export async function analyzeReadability(content: string) {
     }
 }
 
+/**
+ * Generate full article content using Groq with Streaming
+ */
+export async function* streamArticle(params: {
+    keyword: string
+    researchBrief: any
+    contentStrategy: string
+    brandContext?: any
+    options?: any
+}) {
+    const { keyword, researchBrief, contentStrategy, brandContext, options } = params
+    const { articleType, tone, audience, language, length, focusKeywords } = options || {}
+
+    const typePrompts: any = {
+        expert_guide: 'Write as a subject matter expert providing deep, technical, yet accessible insights. Focus on being the ultimate search result.',
+        pillar: 'Write a comprehensive pillar page that covers every aspect of the topic in detail, intended for long-term SEO authority.',
+        news: 'Write in a journalistic style, focusing on current trends, timeliness, and fast-paced delivery.',
+        review: 'Write a balanced, analytical review or comparison with clear pros/cons and data-driven evaluations.'
+    }
+
+    const prompt = `
+  You are an expert SEO Content Writer. Write a comprehensive, high-ranking article for the keyword: "${keyword}".
+  Target Language: ${language === 'en' ? 'English (US)' : 'Vietnamese (Tiếng Việt)'}
+  Target Word Count: ${length || '1500'} words.
+  
+  ## Article Type: ${articleType || 'Standard'}
+  ${typePrompts[articleType] || ''}
+
+  ## Context
+  - **Brand Name**: ${brandContext?.name || 'N/A'}
+  - **Tone of Voice**: ${tone || brandContext?.toneOfVoice || 'Professional, Authoritative'}
+  - **Target Audience**: ${audience || 'General'}
+  - **Focus Keywords**: ${focusKeywords || 'N/A'}
+  - **Brand Values**: ${brandContext?.coreValues?.join(', ') || 'N/A'}
+  - **Article Template**: ${brandContext?.articleTemplate || 'Standard SEO Structure'}
+  - **Internal Links to Insert**: ${JSON.stringify(brandContext?.internalLinks || [])}
+
+  ## Research & Strategy
+  - **User Intent**: ${researchBrief.userIntent}
+  - **Content Strategy**: ${contentStrategy}
+  - **Semantic Entities to Cover**: ${researchBrief.entities?.join(', ') || 'N/A'}
+  - **LSI Keywords to Include**: ${researchBrief.lsiKeywords?.join(', ') || 'N/A'}
+
+  ## Outline (Strictly Follow This Structure)
+  Title: ${researchBrief.recommendedOutline.title}
+  ${researchBrief.recommendedOutline.headings.map((h: any) => `${'#'.repeat(h.level)} ${h.text}: ${h.desc}`).join('\n')}
+
+  ## Writing Instructions
+  1. Write in ${language === 'en' ? 'English (US)' : 'Vietnamese (Tiếng Việt)'}.
+  2. Use Markdown formatting (H1, H2, H3, bold, lists).
+  3. Make it engaging, easy to read, and comprehensive.
+  4. Naturally weave in the provided internal links where appropriate (use [text](url)).
+  5. Optimize for SEO (including Focus Keywords) but write for humans first.
+  6. Structure your response EXACTLY as follows:
+
+  [ARTICLE]
+  (Start with H1 Title and full article content here)
+
+  [SUMMARY]
+  (Write a 2-3 sentence summary of the article here)
+
+  [META]
+  Meta Title: (Best SEO Title)
+  Meta Description: (Compelling Meta Description under 160 chars)
+  URL Slug: (SEO friendly slug)
+
+  [SCHEMA]
+  (Insert valid JSON-LD schema wrapped in \`\`\`json ... \`\`\` here)
+
+  Do NOT include any preamble or "Here is your article" text.
+  `
+
+    const response = await fetch(`${BASE_URL}/chat/completions`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey.trim()}`
+        },
+        body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.7,
+            stream: true
+        })
+    })
+
+    if (!response.ok) {
+        throw new Error(`Groq Stream Error: ${response.statusText}`)
+    }
+
+    const reader = response.body?.getReader()
+    const decoder = new TextDecoder()
+    let fullContent = ''
+
+    if (reader) {
+        while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+
+            const chunk = decoder.decode(value, { stream: true })
+            const lines = chunk.split('\n').filter(line => line.trim() !== '')
+
+            for (const line of lines) {
+                if (line.includes('[DONE]')) break
+                if (line.startsWith('data: ')) {
+                    try {
+                        const json = JSON.parse(line.replace('data: ', ''))
+                        const content = json.choices[0]?.delta?.content || ''
+                        if (content) {
+                            fullContent += content
+                            yield content
+                        }
+                    } catch (e) {
+                        // Ignore parse errors for partial chunks
+                    }
+                }
+            }
+        }
+    }
+
+    // After stream ends, yield the final aggregation and metadata (hacky way to pass usage back)
+    // In a real implementation, we'd estimate tokens or use the final chunk if Groq provides it
+    const usage = {
+        input_tokens: Math.ceil(prompt.length / 4), // Rough estimate
+        output_tokens: Math.ceil(fullContent.length / 4) // Rough estimate
+    }
+
+    // We yield a special marker for the orchestrator to catch usage
+    yield `__USAGE__${JSON.stringify(usage)}`
+}
+
 // Helper to clean JSON string from Markdown code blocks
 function cleanJsonString(text: string) {
     // If it contains a code block, extract only the content of the block
