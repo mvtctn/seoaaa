@@ -1,7 +1,7 @@
 import * as groq from './groq'
 import * as gemini from './gemini'
 import * as deepseek from './deepseek'
-import { createAIUsageLog, getAISetting } from '@/lib/db/database'
+import { createAIUsageLog, getAISetting, incrementUsage, checkUserLimit } from '@/lib/db/database'
 import { logger } from '@/lib/logger'
 
 export type AIProvider = 'groq' | 'gemini' | 'deepseek'
@@ -12,6 +12,8 @@ export interface AIRequestOptions {
     article_id?: number
     userId?: string
 }
+
+export const TOKENS_PER_SEODONG = 1000;
 
 /**
  * AI Orchestrator v2.0
@@ -45,13 +47,22 @@ export class AIOrchestrator {
 
         const errors: any[] = []
 
+        // Preliminary check
+        if (options.userId) {
+            const canProceed = await checkUserLimit(options.userId, 0)
+            if (!canProceed) {
+                throw new Error('Hạn mức Seodong đã hết hoặc gói dịch vụ không khả dụng. Vui lòng nâng cấp gói.')
+            }
+        }
+
         for (const provider of priority) {
             const start = Date.now()
             try {
                 logger.info(`[AI Orchestrator] Attempting ${taskName} with ${provider}...`)
                 const result = await executeFunc(provider)
 
-                // Log success (Fail-safe)
+                // Log success
+                const seodongCost = Math.ceil((result.usage.input_tokens + result.usage.output_tokens) / TOKENS_PER_SEODONG)
                 try {
                     await createAIUsageLog({
                         brand_id: options.brand_id,
@@ -62,13 +73,22 @@ export class AIOrchestrator {
                         task_type: options.taskType,
                         input_tokens: result.usage.input_tokens,
                         output_tokens: result.usage.output_tokens,
-                        cost: 0,
+                        cost: seodongCost,
                         status: 'success',
                         duration_ms: Date.now() - start,
                         user_id: options.userId || ''
                     })
                 } catch (logErr) {
                     logger.error('[AI Orchestrator] Logging failed:', logErr)
+                }
+
+                // Deduct from balance
+                if (options.userId && seodongCost > 0) {
+                    try {
+                        await incrementUsage(options.userId, seodongCost)
+                    } catch (incErr) {
+                        logger.error(`[AI Orchestrator] Failed to deduct ${seodongCost} Seodong:`, incErr)
+                    }
                 }
 
                 return result

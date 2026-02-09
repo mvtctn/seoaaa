@@ -24,7 +24,7 @@ export default async function PricingPage() {
             name: 'Free',
             price: 0,
             credits: 5000,
-            features: ["5,000 Credits", "1 bài viết SEO chất lượng cao", "Gợi ý từ khóa cơ bản"],
+            features: ["5,000 Seodong", "1 bài viết SEO chất lượng cao", "Gợi ý từ khóa cơ bản"],
             is_popular: false,
             description: "Khởi đầu hành trình SEO của bạn"
         },
@@ -32,8 +32,8 @@ export default async function PricingPage() {
             id: 'premium',
             name: 'Premium',
             price: 990000,
-            credits: 150000,
-            features: ["150,000 Credits", "~30-50 bài viết SEO hoàn chỉnh", "Tạo hình ảnh AI không giới hạn", "Batch processing tốc độ cao"],
+            credits: 990000,
+            features: ["990,000 Seodong", "~150-200 bài viết SEO hoàn chỉnh", "Tạo hình ảnh AI không giới hạn", "Batch processing tốc độ cao"],
             is_popular: true,
             description: "Cho Professional & Freelancer"
         },
@@ -41,8 +41,8 @@ export default async function PricingPage() {
             id: 'enterprise',
             name: 'Enterprise',
             price: 2990000,
-            credits: 1000000,
-            features: ["1,000,000 Credits", "Hỗ trợ đa thương hiệu (Multi-brand)", "Hệ thống AI Orchestrator nâng cao", "Xuất bản trực tiếp lên CMS"],
+            credits: 2990000,
+            features: ["2,990,000 Seodong", "Hỗ trợ đa thương hiệu (Multi-brand)", "Hệ thống AI Orchestrator nâng cao", "Xuất bản trực tiếp lên CMS"],
             is_popular: false,
             description: "Cho Agencies & Doanh nghiệp"
         }
@@ -73,7 +73,7 @@ export default async function PricingPage() {
                             plan={plan.name}
                             tierKey={plan.tier_key}
                             price={plan.price}
-                            credits={plan.credits}
+                            credits={plan.seodong || plan.credits}
                             features={Array.isArray(plan.features) ? plan.features : JSON.parse(plan.features || '[]')}
                             isPopular={plan.is_popular}
                             description={plan.description || (plan.price === 0 ? "Khởi đầu hành trình SEO của bạn" : undefined)}
@@ -108,7 +108,7 @@ export default async function PricingPage() {
             {/* CTA */}
             <section className={styles.cta}>
                 <h2>Bắt Đầu Miễn Phí Hôm Nay</h2>
-                <p>Không cần thẻ tín dụng. Bắt đầu với 5 bài viết miễn phí.</p>
+                <p>Không cần thẻ tín dụng. Bắt đầu với một bài viết chất lượng miễn phí.</p>
                 <Link href="/contact" className={styles.ctaButton}>
                     Tạo Bài Viết Đầu Tiên
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

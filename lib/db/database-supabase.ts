@@ -502,7 +502,7 @@ export const createUserSubscription = async (userId: string, plan: 'free' | 'pre
         user_id: userId,
         plan_tier: plan,
         status: 'active',
-        credits_limit: limits[plan] || 10000
+        seodong_limit: limits[plan] || 10000
     }]).select().single()
 
     if (error) {
@@ -512,28 +512,32 @@ export const createUserSubscription = async (userId: string, plan: 'free' | 'pre
     return data
 }
 
-export const checkUserLimit = async (userId: string, cost: number = 0): Promise<boolean> => {
+export const checkUserLimit = async (userId: string, seodongCost: number = 0): Promise<boolean> => {
     const sub = await getUserSubscription(userId)
     if (!sub) return false
 
     if (sub.status !== 'active') return false
 
-    // Check credits
-    if (sub.credits_used + cost > sub.credits_limit) {
+    // Check balance with fallback to old column names if migration hasn't run yet
+    const used = (sub.seodong_used ?? sub.credits_used ?? 0)
+    const limit = (sub.seodong_limit ?? sub.credits_limit ?? 0)
+
+    if (used + seodongCost > limit) {
         return false
     }
     return true
 }
 
-export const incrementUsage = async (userId: string, credits: number) => {
-    // Using RPC is better for atomic updates, but for now simple update
-    const { error } = await supabase.rpc('increment_usage', { x: credits, user_uuid: userId })
-    // If RPC not exists, fallback to fetch-update
+export const incrementUsage = async (userId: string, seodongCount: number) => {
+    // Attempt RPC update for atomic increment if exists (we might need to update RPC name too if we want)
+    const { error } = await supabase.rpc('increment_seodong_usage', { x: seodongCount, user_uuid: userId })
+
+    // If RPC failed or doesn't exist, fallback to fetch-update
     if (error) {
         const sub = await getUserSubscription(userId)
         if (sub) {
             await supabase.from('user_subscriptions').update({
-                credits_used: sub.credits_used + credits,
+                seodong_used: (sub.seodong_used || 0) + seodongCount,
                 updated_at: new Date().toISOString()
             }).eq('user_id', userId)
         }

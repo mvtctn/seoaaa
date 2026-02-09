@@ -11,7 +11,8 @@ interface Plan {
     tier_key: string
     price: number
     currency: string
-    credits: number
+    seodong: number
+    credits?: number // For transition safety
     features: string[]
     title?: string // For UI display if needed different from name
     description?: string
@@ -70,7 +71,7 @@ export default function AdminPlansPage() {
                 .from('subscription_plans')
                 .update({
                     price: editForm.price,
-                    credits: editForm.credits,
+                    seodong: editForm.seodong,
                     features: editForm.features, // JSON array
                     is_active: editForm.is_active,
                     is_popular: editForm.is_popular,
@@ -155,13 +156,18 @@ export default function AdminPlansPage() {
                                             />
                                         </div>
                                         <div className={styles.field}>
-                                            <label>Credits</label>
-                                            <input
-                                                type="number"
-                                                value={editForm.credits}
-                                                onChange={(e) => handleChange('credits', Number(e.target.value))}
-                                                className={styles.input}
-                                            />
+                                            <label>Hạn mức Seodong</label>
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="number"
+                                                    value={editForm.seodong || editForm.credits || 0}
+                                                    onChange={(e) => handleChange('seodong', Number(e.target.value))}
+                                                    className={styles.input}
+                                                />
+                                                <div className="text-xs text-secondary self-center">
+                                                    ≈ {(Number(editForm.seodong || editForm.credits || 0) * 1000).toLocaleString()} Tokens
+                                                </div>
+                                            </div>
                                         </div>
                                         <div className={styles.field}>
                                             <label>Features</label>
@@ -200,7 +206,10 @@ export default function AdminPlansPage() {
                                             {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(plan.price)}
                                         </div>
                                         <div className={styles.credits}>
-                                            {plan.credits.toLocaleString()} Credits
+                                            <strong>{((plan as any).seodong ?? (plan as any).credits ?? 0).toLocaleString()} Seodong</strong>
+                                            <div className="text-[10px] text-tertiary">
+                                                ≈ {(((plan as any).seodong ?? (plan as any).credits ?? 0) * 1000).toLocaleString()} Tokens AI
+                                            </div>
                                         </div>
                                         <ul className={styles.features}>
                                             {plan.features.map((feat, idx) => (

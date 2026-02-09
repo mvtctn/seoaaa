@@ -36,6 +36,11 @@ export default function PricingCard({ plan, tierKey, price, credits, features, i
 
             const data = await res.json().catch(() => null)
 
+            if (res.status === 401) {
+                window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`
+                return
+            }
+
             if (!res.ok) {
                 throw new Error(data?.error || `Payment failed with status ${res.status}`)
             }

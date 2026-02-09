@@ -46,7 +46,7 @@ export default function Home() {
                     <AnimateEntrance delay={0.8} distance={20}>
                         <div className={styles.heroActions}>
                             <Link href="/contact" className={styles.primaryButton}>
-                                Bắt Đầu Miễn Phí (5,000 Credits)
+                                Bắt Đầu Miễn Phí (5,000 Seodong)
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <path d="M5 12h14M12 5l7 7-7 7" />
                                 </svg>
@@ -65,8 +65,8 @@ export default function Home() {
                             </div>
                             <div className={styles.statDivider}></div>
                             <div className={styles.stat}>
-                                <div className={styles.statValue}>150K+</div>
-                                <div className={styles.statLabel}>Credits gói Premium</div>
+                                <div className={styles.statValue}>990K+</div>
+                                <div className={styles.statLabel}>Seodong gói Premium</div>
                             </div>
                             <div className={styles.statDivider}></div>
                             <div className={styles.stat}>

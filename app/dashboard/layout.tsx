@@ -205,12 +205,12 @@ export default function DashboardLayout({
                                 <Link href="/pricing" className={styles.upgradeLink}>Nâng cấp</Link>
                             </div>
                             <div className={styles.usageRow}>
-                                <span>Credits: {subscription.credits_used.toLocaleString()} / {subscription.credits_limit.toLocaleString()}</span>
+                                <span>Seodong: {(subscription.seodong_used || 0).toLocaleString()} / {(subscription.seodong_limit || 0).toLocaleString()}</span>
                             </div>
                             <div className={styles.progressBar}>
                                 <div
                                     className={styles.progressFill}
-                                    style={{ width: `${Math.min(100, (subscription.credits_used / subscription.credits_limit) * 100)}%` }}
+                                    style={{ width: `${Math.min(100, ((subscription.seodong_used || 0) / (subscription.seodong_limit || 1)) * 100)}%` }}
                                 ></div>
                             </div>
                         </div>

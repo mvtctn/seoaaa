@@ -41,3 +41,8 @@ next-env.d.ts
 # generated content
 /public/generated/*
 !/public/generated/.gitkeep
+
+# build logs
+build*.log
+build_output.txt
+.env.local.backup

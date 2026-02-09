@@ -40,8 +40,8 @@ VALUES
     'Premium', 
     'premium', 
     990000, 
-    150000, 
-    '["150,000 Credits", "Truy cập tất cả tính năng AI", "Nghiên cứu từ khóa chuyên sâu", "Hỗ trợ ưu tiên", "Phân tích đối thủ", "3 Users"]', 
+    990000, 
+    '["990,000 Seodong", "Truy cập tất cả tính năng AI", "Nghiên cứu từ khóa chuyên sâu", "Hỗ trợ ưu tiên", "Phân tích đối thủ", "3 Users"]', 
     'Professional & Freelancer',
     true
 ),
@@ -49,8 +49,8 @@ VALUES
     'Enterprise', 
     'enterprise', 
     2990000, 
-    1000000, 
-    '["1,000,000 Credits", "API Access", "Custom AI Models", "Account Manager riêng", "Đào tạo 1-1", "Không giới hạn Users"]', 
+    2990000, 
+    '["2,990,000 Seodong", "API Access", "Custom AI Models", "Account Manager riêng", "Đào tạo 1-1", "Không giới hạn Users"]', 
     'Agencies & Doanh nghiệp',
     false
 )

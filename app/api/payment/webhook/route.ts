@@ -57,26 +57,23 @@ export async function POST(req: NextRequest) {
             // Calculate credits based on plan amount or logic
             // Update user subscription
             // Calculate credits based on plan amount or logic
-            let newCredits = 5000
+            let newSeodong = 5000
             let planTier = transaction.plan_tier
 
-            // Fetch dynamic credits from subscription_plans
+            // Fetch dynamic limits from subscription_plans
             const { data: planData } = await supabase
                 .from('subscription_plans')
-                .select('credits')
+                .select('seodong')
                 .eq('tier_key', planTier)
                 .maybeSingle()
 
             if (planData) {
-                newCredits = planData.credits
+                newSeodong = planData.seodong
             } else {
                 // Fallback for legacy hardcoded tiers if DB lookup fails
-                if (planTier === 'premium') newCredits = 150000
-                if (planTier === 'enterprise') newCredits = 1000000
+                if (planTier === 'premium') newSeodong = 990000
+                if (planTier === 'enterprise') newSeodong = 2990000
             }
-
-            // Option 1: Top up credits (Add to existing)
-            // Option 2: Set plan (Reset limits) -> Let's do Set Plan + Reset Limits for simplicity for now
 
             // We need to fetch userId from transaction
             const userId = transaction.user_id
@@ -88,8 +85,8 @@ export async function POST(req: NextRequest) {
                     user_id: userId,
                     plan_tier: planTier,
                     status: 'active',
-                    credits_limit: newCredits,
-                    credits_used: 0, // Reset usage on new plan? Or keep usage? Let's reset for monthly cycle concept
+                    seodong_limit: newSeodong,
+                    seodong_used: 0, // Reset usage on new plan
                     updated_at: new Date().toISOString()
                 }, { onConflict: 'user_id' })
 
