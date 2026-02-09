@@ -260,7 +260,7 @@ export const getArticleBySlug = async (slug: string, userId: string) => {
 export const getAllArticles = async (userId: string) => {
     const { data, error } = await supabase
         .from('articles')
-        .select('id, title, slug, status, created_at, thumbnail_url, wp_post_url')
+        .select('id, title, slug, status, created_at, thumbnail_url, wp_post_url, keyword_id')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
 
@@ -447,6 +447,36 @@ export const getAIUsageLogs = async (userId: string, limit: number = 100) => {
     } catch (e) {
         console.warn('[Supabase] Exception fetching usage logs:', e)
         return []
+    }
+}
+
+export const getAITotalUsage = async (userId: string) => {
+    try {
+        // Fetch all logs for aggregation (optimize with RPC in production)
+        const { data, error } = await supabase
+            .from('ai_usage_logs')
+            .select('provider, input_tokens, output_tokens, cost')
+            .eq('user_id', userId)
+
+        if (error) {
+            console.warn('[Supabase] Failed to fetch usage for aggregation:', error.message)
+            return {}
+        }
+
+        const stats: Record<string, { input: number, output: number, cost: number }> = {}
+
+        data?.forEach((log: any) => {
+            const provider = log.provider?.toLowerCase() || 'unknown'
+            if (!stats[provider]) stats[provider] = { input: 0, output: 0, cost: 0 }
+            stats[provider].input += (log.input_tokens || 0)
+            stats[provider].output += (log.output_tokens || 0)
+            stats[provider].cost += (log.cost || 0)
+        })
+
+        return stats
+    } catch (e) {
+        console.warn('[Supabase] Exception aggregating usage:', e)
+        return {}
     }
 }
 

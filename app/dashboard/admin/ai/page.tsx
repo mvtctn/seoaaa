@@ -30,6 +30,8 @@ const Icons = {
 export default function AIManagementPage() {
     const [logs, setLogs] = useState<AILog[]>([])
     const [priority, setPriority] = useState<string[]>([])
+    const [usage, setUsage] = useState<Record<string, { input: number, output: number, cost: number }>>({})
+    const [quotas, setQuotas] = useState<Record<string, number>>({})
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
 
@@ -44,6 +46,8 @@ export default function AIManagementPage() {
             if (data.success) {
                 setLogs(data.data.logs)
                 setPriority(data.data.priority)
+                setUsage(data.data.usage)
+                setQuotas(data.data.quotas)
             }
         } catch (error) {
             console.error('Failed to fetch AI settings', error)
@@ -119,6 +123,46 @@ export default function AIManagementPage() {
                         {logs.length > 0 ? (logs.reduce((s, l) => s + (l.duration_ms || 0), 0) / logs.length).toFixed(0) : 0}ms
                     </div>
                     <Icons.Activity />
+                </div>
+            </div>
+
+            <div className={styles.section}>
+                <h2 className={styles.sectionTitle}><Icons.BarChart /> Hạn mức Token & Sử dụng (Theo Provider)</h2>
+                <div className={styles.quotaGrid}>
+                    {priority.map((provider) => {
+                        const providerUsage = usage[provider] || { input: 0, output: 0, cost: 0 };
+                        const providerQuota = quotas[provider] || 1000000;
+                        const totalUsed = providerUsage.input + providerUsage.output;
+                        const percentage = Math.min(100, (totalUsed / providerQuota) * 100);
+
+                        return (
+                            <div key={provider} className={styles.quotaCard}>
+                                <div className={styles.quotaHeader}>
+                                    <span className={`${styles.modelBadge} ${styles['provider_' + provider]}`}>
+                                        {provider.toUpperCase()}
+                                    </span>
+                                    <span className={styles.smallLabel}>AI Model Quota</span>
+                                </div>
+                                <div className={styles.quotaInfo}>
+                                    <span>Đã dùng: <span className={styles.quotaValue}>{totalUsed.toLocaleString()}</span></span>
+                                    <span>Hạn mức: <span className={styles.quotaValue}>{providerQuota.toLocaleString()}</span></span>
+                                </div>
+                                <div className={styles.progressBar}>
+                                    <div
+                                        className={styles.progressFill}
+                                        style={{
+                                            width: `${percentage}%`,
+                                            background: percentage > 90 ? '#ef4444' : percentage > 70 ? '#f59e0b' : 'var(--color-primary)'
+                                        }}
+                                    />
+                                </div>
+                                <div className={styles.quotaInfo}>
+                                    <span style={{ fontSize: '0.7rem' }}>I: {providerUsage.input.toLocaleString()} / O: {providerUsage.output.toLocaleString()}</span>
+                                    <span style={{ fontWeight: 600, color: percentage > 90 ? '#ef4444' : 'inherit' }}>{percentage.toFixed(1)}%</span>
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fetchSERPResults, scrapeURL } from '@/lib/scraper/web-scraper'
 import { AIOrchestrator } from '@/lib/ai/orchestrator'
-import { createResearch, getDefaultBrand, createKeyword } from '@/lib/db/database'
+import { createResearch, getDefaultBrand, createKeyword, getAllKeywords, updateKeywordStatus } from '@/lib/db/database'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/logger'
 import { handleApiError } from '@/lib/api-error-handler'
@@ -97,21 +97,15 @@ export async function POST(req: NextRequest) {
         // 6. Save to Database
         console.log('[API] Step 6: Saving research results to DB...')
 
-        // Check for existing keyword for THIS user using RLS-enabled client
-        const { data: existingKeyword } = await supabase
-            .from('keywords')
-            .select('id')
-            .eq('keyword', keyword)
-            .maybeSingle()
+        // Check for existing keyword for THIS user
+        const allKeywords = await getAllKeywords(user.id)
+        const existingKeyword = allKeywords.find((k: any) => k.keyword === keyword)
 
         let keywordId: number
 
         if (existingKeyword) {
             keywordId = existingKeyword.id
-            await supabase
-                .from('keywords')
-                .update({ status: 'researching', updated_at: new Date().toISOString() })
-                .eq('id', keywordId)
+            await updateKeywordStatus(keywordId, 'researching')
         } else {
             const keywordResult = await createKeyword({
                 keyword: keyword,

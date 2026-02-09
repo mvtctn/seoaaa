@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { AIOrchestrator } from '@/lib/ai/orchestrator'
 import { generateSlug } from '@/lib/seo/utils'
-import { createArticle, getDefaultBrand } from '@/lib/db/database'
+import { createArticle, getDefaultBrand, updateKeywordStatus } from '@/lib/db/database'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/logger'
 import { handleApiError } from '@/lib/api-error-handler'
@@ -95,29 +95,27 @@ export async function POST(req: NextRequest) {
                         }
 
                         // Save Article
-                        const { data: dbArticle, error: articleErr } = await supabase
-                            .from('articles')
-                            .insert({
-                                keyword_id: keywordId,
-                                research_id: researchId,
-                                user_id: user.id,
-                                title: sections.meta.title || keyword,
-                                content: sections.article,
-                                summary: sections.summary,
-                                meta_title: sections.meta.title,
-                                meta_description: sections.meta.description,
-                                slug: sections.meta.slug || generateSlug(sections.meta.title || keyword),
-                                schema_markup: sections.schema,
-                                status: 'draft'
-                            })
-                            .select()
-                            .single()
+                        const result = await createArticle({
+                            keyword_id: keywordId ? Number(keywordId) : null,
+                            research_id: researchId ? Number(researchId) : undefined,
+                            user_id: user.id,
+                            title: sections.meta.title || keyword,
+                            content: sections.article,
+                            meta_title: sections.meta.title,
+                            meta_description: sections.meta.description,
+                            slug: sections.meta.slug || generateSlug(sections.meta.title || keyword),
+                            status: 'draft'
+                        })
 
-                        if (!articleErr) {
-                            await supabase
-                                .from('keywords')
-                                .update({ status: 'completed' })
-                                .eq('id', keywordId)
+                        if (result.changes > 0) {
+                            logger.info(`[API] Article saved successfully! ID: ${result.lastInsertRowid}`)
+
+                            // Update keyword status
+                            if (keywordId) {
+                                await updateKeywordStatus(Number(keywordId), 'completed')
+                            }
+                        } else {
+                            logger.error('[API] Article failed to save (no changes)')
                         }
 
                     } catch (dbErr) {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAIUsageLogs, getAISetting, updateAISetting } from '@/lib/db/database'
+import { getAIUsageLogs, getAISetting, updateAISetting, getAITotalUsage } from '@/lib/db/database'
 import { createClient } from '@/lib/supabase/server'
 
 export async function GET(req: NextRequest) {
@@ -13,12 +13,20 @@ export async function GET(req: NextRequest) {
 
         const logs = await getAIUsageLogs(100, user.id)
         const priority = await getAISetting('model_priority', user.id)
+        const usage = await getAITotalUsage(user.id)
+        const quotas = await getAISetting('model_quotas', user.id)
 
         return NextResponse.json({
             success: true,
             data: {
-                logs: logs.slice(0, 100), // Last 100 logs
-                priority: priority || ['groq', 'gemini', 'deepseek']
+                logs: logs.slice(0, 100),
+                priority: priority || ['groq', 'gemini', 'deepseek'],
+                usage: usage || {},
+                quotas: quotas || {
+                    groq: 2000000,    // ~Daily budget for Groq (Llama 3 70B)
+                    gemini: 10000000, // High limit for Gemini Flash (Free Tier)
+                    deepseek: 1000000
+                }
             }
         })
     } catch (error: any) {

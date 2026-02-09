@@ -38,12 +38,14 @@ const deleteArticleApi = async (id: number) => {
 export default function ArticlesClient() {
     const queryClient = useQueryClient()
     const [downloadingId, setDownloadingId] = useState<number | null>(null)
+    const [searchTerm, setSearchTerm] = useState('')
+    const [statusFilter, setStatusFilter] = useState('all')
 
     // Query for fetching articles
     const { data: articles = [], isLoading: loading, error } = useQuery({
         queryKey: ['articles'],
         queryFn: getArticles,
-        staleTime: 60 * 1000, // 1 minute stale time to prevent immediate refetch on hydration
+        staleTime: 0,
     })
 
     // Mutation for deleting articles
@@ -202,22 +204,37 @@ export default function ArticlesClient() {
                     <h2>Thư Viện Bài Viết</h2>
                     <p className="text-secondary">Quản lý tất cả nội dung đã được tạo.</p>
                 </div>
-                <Link href="/dashboard/generate" className="btn btn-primary">
-                    + Tạo Mới
-                </Link>
+                <div className={styles.headerActions}>
+                    <div className={styles.searchBox}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
+                        </svg>
+                        <input
+                            type="text"
+                            placeholder="Tìm kiếm tiêu đề, từ khóa..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                    <select
+                        className={styles.filterSelect}
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                    >
+                        <option value="all">Tất cả trạng thái</option>
+                        <option value="published">Đã đăng</option>
+                        <option value="draft">Bản nháp</option>
+                    </select>
+                    <Link href="/dashboard/generate" className="btn btn-primary">
+                        + Tạo Mới
+                    </Link>
+                </div>
             </header>
 
             {loading ? (
                 <div className="text-center py-8 text-secondary">
                     <div className="spinner spinner-lg mx-auto mb-2"></div>
                     Đang tải danh sách...
-                </div>
-            ) : articles.length === 0 ? (
-                <div className={styles.emptyState}>
-                    <p>Chưa có bài viết nào.</p>
-                    <Link href="/dashboard/generate" className="text-primary hover:underline mt-2 inline-block">
-                        Bắt đầu tạo bài viết đầu tiên ngay!
-                    </Link>
                 </div>
             ) : (
                 <div className={styles.tableContainer}>
@@ -232,56 +249,82 @@ export default function ArticlesClient() {
                             </tr>
                         </thead>
                         <tbody>
-                            {articles.map((article: any) => (
-                                <tr key={article.id}>
-                                    <td>
-                                        <Link href={`/dashboard/articles/${article.id}`} className={styles.articleTitle}>
-                                            {article.title || 'Untitled Article'}
-                                        </Link>
-                                        <div className="text-xs text-secondary font-mono">{article.slug}</div>
-                                    </td>
-                                    <td className="text-sm font-medium text-emerald-400">{article.keyword || 'N/A'}</td>
-                                    <td>
-                                        <span className={`${styles.statusBadge} ${article.status === 'published' ? styles.statusPublished : styles.statusDraft}`}>
-                                            {article.status || 'Draft'}
-                                        </span>
-                                    </td>
-                                    <td className="text-sm text-secondary">
-                                        {formatDate(article.created_at)}
-                                    </td>
-                                    <td>
-                                        <div className={styles.actions}>
-                                            <button
-                                                className="btn btn-sm btn-outline"
-                                                onClick={() => handleDownload(article.id, article.title)}
-                                                disabled={downloadingId === article.id}
-                                                title="Tải về Word"
-                                            >
-                                                {downloadingId === article.id ? (
-                                                    <span className="spinner spinner-xs"></span>
-                                                ) : (
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                                        <polyline points="7 10 12 15 17 10" />
-                                                        <line x1="12" y1="15" x2="12" y2="3" />
-                                                    </svg>
-                                                )}
-                                            </button>
+                            {(() => {
+                                const filtered = articles.filter((article: any) => {
+                                    const matchesSearch =
+                                        (article.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                        (article.keyword || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                        (article.slug || '').toLowerCase().includes(searchTerm.toLowerCase());
+                                    const matchesStatus = statusFilter === 'all' || article.status === statusFilter;
+                                    return matchesSearch && matchesStatus;
+                                });
 
-                                            <Link href={`/dashboard/articles/${article.id}`} className="btn btn-sm btn-outline">
-                                                Sửa
+                                if (filtered.length === 0) {
+                                    return (
+                                        <tr>
+                                            <td colSpan={5} className="text-center py-12 text-secondary">
+                                                {articles.length === 0 ? 'Bạn chưa có bài viết nào.' : 'Không tìm thấy bài viết phù hợp.'}
+                                                <div className="mt-2">
+                                                    <Link href="/dashboard/generate" className="text-primary hover:underline">
+                                                        Tạo bài viết mới ngay →
+                                                    </Link>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                }
+
+                                return filtered.map((article: any) => (
+                                    <tr key={article.id}>
+                                        <td>
+                                            <Link href={`/dashboard/articles/${article.id}`} className={styles.articleTitle}>
+                                                {article.title || 'Untitled Article'}
                                             </Link>
-                                            <button
-                                                className="btn btn-sm btn-outline text-error hover:bg-error hover:text-white"
-                                                onClick={() => handleDelete(article.id)}
-                                                disabled={deleteMutation.isPending}
-                                            >
-                                                {deleteMutation.isPending ? '...' : 'Xóa'}
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
+                                            <div className="text-xs text-secondary font-mono">{article.slug}</div>
+                                        </td>
+                                        <td className="text-sm font-medium text-emerald-400">{article.keyword || 'N/A'}</td>
+                                        <td>
+                                            <span className={`${styles.statusBadge} ${article.status === 'published' ? styles.statusPublished : styles.statusDraft}`}>
+                                                {article.status || 'Draft'}
+                                            </span>
+                                        </td>
+                                        <td className="text-sm text-secondary">
+                                            {formatDate(article.created_at)}
+                                        </td>
+                                        <td>
+                                            <div className={styles.actions}>
+                                                <button
+                                                    className="btn btn-sm btn-outline"
+                                                    onClick={() => handleDownload(article.id, article.title)}
+                                                    disabled={downloadingId === article.id}
+                                                    title="Tải về Word"
+                                                >
+                                                    {downloadingId === article.id ? (
+                                                        <span className="spinner spinner-xs"></span>
+                                                    ) : (
+                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                                            <polyline points="7 10 12 15 17 10" />
+                                                            <line x1="12" y1="15" x2="12" y2="3" />
+                                                        </svg>
+                                                    )}
+                                                </button>
+
+                                                <Link href={`/dashboard/articles/${article.id}`} className="btn btn-sm btn-outline">
+                                                    Sửa
+                                                </Link>
+                                                <button
+                                                    className="btn btn-sm btn-outline text-error hover:bg-error hover:text-white"
+                                                    onClick={() => handleDelete(article.id)}
+                                                    disabled={deleteMutation.isPending}
+                                                >
+                                                    {deleteMutation.isPending ? '...' : 'Xóa'}
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            })()}
                         </tbody>
                     </table>
                 </div>

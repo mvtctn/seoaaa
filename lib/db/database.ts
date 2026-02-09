@@ -525,6 +525,25 @@ export const getAIUsageLogs = async (limit: number = 100, userId?: string) => {
   return (db.ai_usage_logs || []).slice(-limit).reverse()
 }
 
+export const getAITotalUsage = async (userId?: string) => {
+  if (USE_SUPABASE) return supabaseFunctions.getAITotalUsage(userId!)
+  // If supabase, we'd do a grouped query, but for local:
+  const db = readDB()
+  const logs = db.ai_usage_logs || []
+  const filtered = userId ? logs.filter(l => l.user_id === userId) : logs
+
+  const stats: Record<string, { input: number, output: number, cost: number }> = {}
+
+  filtered.forEach(log => {
+    if (!stats[log.provider]) stats[log.provider] = { input: 0, output: 0, cost: 0 }
+    stats[log.provider].input += log.input_tokens
+    stats[log.provider].output += log.output_tokens
+    stats[log.provider].cost += log.cost
+  })
+
+  return stats
+}
+
 export const getAISetting = async (key: string, userId?: string) => {
   if (USE_SUPABASE) return supabaseFunctions.getAISetting(key, userId!)
   const db = readDB()
