@@ -5,20 +5,18 @@ import LandingNavbar from '@/components/LandingNavbar'
 import LandingFooter from '@/components/LandingFooter'
 import AnimateEntrance from '@/components/AnimateEntrance'
 import GlowingCard from '@/components/GlowingCard'
-import SparkleBackground from '@/components/SparkleBackground'
+import DotLinkBackground from '@/components/DotLinkBackground'
 import ShinyText from '@/components/ShinyText'
 
 export default function Home() {
     return (
         <div className={styles.landingContainer}>
             <LandingNavbar />
+            <DotLinkBackground />
 
             {/* Hero Section */}
             <section className={styles.hero}>
-                <SparkleBackground />
                 <div className={styles.heroBackground}>
-                    <div className={styles.gradientOrb1}></div>
-                    <div className={styles.gradientOrb2}></div>
                 </div>
 
                 <div className={styles.heroContent}>

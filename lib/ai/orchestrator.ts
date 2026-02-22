@@ -168,7 +168,7 @@ export class AIOrchestrator {
             await createAIUsageLog({
                 brand_id: params.brandContext?.id,
                 article_id: params.articleId,
-                model_name: 'llama-3.3-70b-versatile',
+                model_name: params.options?.model || 'llama-3.3-70b-versatile',
                 provider: 'groq',
                 task_type: 'article_generation',
                 input_tokens: usage.input_tokens,

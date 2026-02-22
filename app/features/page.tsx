@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import styles from './features.module.css'
 import LandingNavbar from '@/components/LandingNavbar'
 import LandingFooter from '@/components/LandingFooter'
+import DotLinkBackground from '@/components/DotLinkBackground'
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -29,6 +30,7 @@ export default function FeaturesPage() {
     return (
         <div className={styles.container}>
             <LandingNavbar />
+            <DotLinkBackground />
 
             {/* Hero */}
             <section className={styles.hero}>

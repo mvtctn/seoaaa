@@ -15,7 +15,7 @@ export default function GeneratePage() {
     const [showSettings, setShowSettings] = useState(false)
     const [articleData, setArticleData] = useState<any>(null)
     const [error, setError] = useState<string | null>(null)
-    const [selectedModel, setSelectedModel] = useState('llama-3.3-70b-versatile')
+    const [selectedModel, setSelectedModel] = useState('meta-llama/llama-4-scout-17b-16e-instruct')
     const [showModelDropdown, setShowModelDropdown] = useState(false)
     const textareaRef = useRef<HTMLTextAreaElement>(null)
     const dropdownRef = useRef<HTMLDivElement>(null)
@@ -95,7 +95,7 @@ export default function GeneratePage() {
                     contentStrategy: resData.data?.strategy || {},
                     researchId: resData.data?.researchId,
                     keywordId: resData.data?.keywordId,
-                    options
+                    options: { ...options, model: selectedModel }
                 })
             })
 
@@ -186,7 +186,13 @@ export default function GeneratePage() {
                                 onClick={() => setShowModelDropdown(!showModelDropdown)}
                             >
                                 <Sparkles size={14} />
-                                <span>{selectedModel.includes('llama') ? 'Llama 3.3' : selectedModel.includes('gemini') ? 'Gemini 1.5' : 'DeepSeek'}</span>
+                                <span>
+                                    {selectedModel.includes('scout') ? 'Llama 4 Scout (30K)' :
+                                        selectedModel.includes('3.3-70b') ? 'Llama 3.3 (12K)' :
+                                            selectedModel.includes('kimi') ? 'Kimi K2 (10K)' :
+                                                selectedModel.includes('gpt-oss') ? 'GPT-OSS (8K)' :
+                                                    selectedModel.includes('maverick') ? 'Llama 4 Mv (6K)' : 'AI Model'}
+                                </span>
                                 <ChevronDown size={14} />
                             </button>
 
@@ -199,22 +205,37 @@ export default function GeneratePage() {
                                         exit={{ opacity: 0, y: 10 }}
                                     >
                                         <button
+                                            className={`${styles.modelOption} ${selectedModel === 'meta-llama/llama-4-scout-17b-16e-instruct' ? styles.active : ''}`}
+                                            onClick={() => { setSelectedModel('meta-llama/llama-4-scout-17b-16e-instruct'); setShowModelDropdown(false) }}
+                                        >
+                                            <div className="flex flex-col">
+                                                <span className="font-semibold text-xs text-cyan-400">BEST QUOTA</span>
+                                                <span>Llama 4 Scout (30K TPM)</span>
+                                            </div>
+                                        </button>
+                                        <button
                                             className={`${styles.modelOption} ${selectedModel === 'llama-3.3-70b-versatile' ? styles.active : ''}`}
                                             onClick={() => { setSelectedModel('llama-3.3-70b-versatile'); setShowModelDropdown(false) }}
                                         >
-                                            Llama 3.3 70B
+                                            Llama 3.3 70B (12K TPM)
                                         </button>
                                         <button
-                                            className={`${styles.modelOption} ${selectedModel === 'gemini-1.5-flash' ? styles.active : ''}`}
-                                            onClick={() => { setSelectedModel('gemini-1.5-flash'); setShowModelDropdown(false) }}
+                                            className={`${styles.modelOption} ${selectedModel === 'moonshotai/kimi-k2-instruct' ? styles.active : ''}`}
+                                            onClick={() => { setSelectedModel('moonshotai/kimi-k2-instruct'); setShowModelDropdown(false) }}
                                         >
-                                            Gemini 1.5 Flash
+                                            Moonshot Kimi K2 (10K TPM)
                                         </button>
                                         <button
-                                            className={`${styles.modelOption} ${selectedModel === 'deepseek-chat' ? styles.active : ''}`}
-                                            onClick={() => { setSelectedModel('deepseek-chat'); setShowModelDropdown(false) }}
+                                            className={`${styles.modelOption} ${selectedModel === 'openai/gpt-oss-120b' ? styles.active : ''}`}
+                                            onClick={() => { setSelectedModel('openai/gpt-oss-120b'); setShowModelDropdown(false) }}
                                         >
-                                            DeepSeek Chat
+                                            GPT OSS 120B (8K TPM)
+                                        </button>
+                                        <button
+                                            className={`${styles.modelOption} ${selectedModel === 'meta-llama/llama-4-maverick-17b-128e-instruct' ? styles.active : ''}`}
+                                            onClick={() => { setSelectedModel('meta-llama/llama-4-maverick-17b-128e-instruct'); setShowModelDropdown(false) }}
+                                        >
+                                            Llama 4 Maverick (6K TPM)
                                         </button>
                                     </motion.div>
                                 )}

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import styles from './contact.module.css'
 import LandingNavbar from '@/components/LandingNavbar'
 import LandingFooter from '@/components/LandingFooter'
+import DotLinkBackground from '@/components/DotLinkBackground'
 
 export default function ContactPage() {
     const [isSubmitted, setIsSubmitted] = useState(false)
@@ -47,6 +48,7 @@ export default function ContactPage() {
             <LandingNavbar />
 
             <section className={styles.hero}>
+                <DotLinkBackground />
                 <h1>Liên Hệ Với <span className={styles.gradient}>Chúng Tôi</span></h1>
                 <p>Đội ngũ BizLite Soft luôn sẵn sàng lắng nghe và hỗ trợ bạn. Hãy để lại thông tin, chuyên gia của chúng tôi sẽ phản hồi trong thời gian sớm nhất.</p>
             </section>

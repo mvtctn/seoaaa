@@ -2,6 +2,7 @@ import Link from 'next/link'
 import styles from './pricing.module.css'
 import LandingNavbar from '@/components/LandingNavbar'
 import LandingFooter from '@/components/LandingFooter'
+import DotLinkBackground from '@/components/DotLinkBackground'
 import PricingCard from '@/components/PricingCard'
 import { createClient } from '@/lib/supabase/server'
 
@@ -51,6 +52,7 @@ export default async function PricingPage() {
     return (
         <div className={styles.container}>
             <LandingNavbar />
+            <DotLinkBackground />
 
             {/* Hero */}
             <section className={styles.hero}>

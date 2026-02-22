@@ -8,11 +8,13 @@ const apiKey = process.env.GROQ_API_KEY || ''
 const BASE_URL = 'https://api.groq.com/openai/v1'
 
 const SEO_MODELS = [
-    'llama-3.3-70b-versatile',
-    'qwen/qwen3-32b',
-    'openai/gpt-oss-120b',
-    'moonshotai/kimi-k2-instruct',
-    'llama-3.1-8b-instant'
+    'meta-llama/llama-4-scout-17b-16e-instruct',   // 30K TPM (High Throughput)
+    'llama-3.3-70b-versatile',                     // 12K TPM
+    'moonshotai/kimi-k2-instruct',                 // 10K TPM
+    'openai/gpt-oss-120b',                         // 8K TPM
+    'meta-llama/llama-4-maverick-17b-128e-instruct', // 6K TPM
+    'qwen/qwen3-32b',                              // 6K TPM
+    'llama-3.1-8b-instant'                         // 6K TPM (14.4K RPD)
 ]
 
 interface ModelLimits {
@@ -143,7 +145,7 @@ export interface CompetitorData {
 /**
  * Call Groq API (OpenAI-compatible)
  */
-async function callGroq(prompt: string, temperature: number = 0.7): Promise<{ content: string, usage: { input_tokens: number, output_tokens: number } }> {
+async function callGroq(prompt: string, temperature: number = 0.7, modelOverride?: string): Promise<{ content: string, usage: { input_tokens: number, output_tokens: number } }> {
     if (!apiKey) {
         logger.error('[Groq] ERROR: No API key found in process.env.GROQ_API_KEY')
         throw new Error('Missing Groq API Key')
@@ -151,7 +153,7 @@ async function callGroq(prompt: string, temperature: number = 0.7): Promise<{ co
 
     try {
         const url = `${BASE_URL}/chat/completions`
-        const model = await getBestGroqModel()
+        const model = modelOverride || await getBestGroqModel()
 
         const response = await fetch(url, {
             method: 'POST',
@@ -258,7 +260,8 @@ export async function analyzeCompetitors(
 export async function generateContentStrategy(
     keyword: string,
     researchData: any,
-    brandContext?: any
+    brandContext?: any,
+    modelOverride?: string
 ) {
     const prompt = `
   Create a content strategy for "${keyword}" based on this research:
@@ -278,7 +281,7 @@ export async function generateContentStrategy(
   `
 
     try {
-        const result = await callGroq(prompt, 0.7)
+        const result = await callGroq(prompt, 0.6, modelOverride)
         return result.content
     } catch (error) {
         console.error('Strategy Error:', error)
@@ -297,7 +300,7 @@ export async function generateArticle(params: {
     options?: any
 }) {
     const { keyword, researchBrief, contentStrategy, brandContext, options } = params
-    const { articleType, tone, audience, language, length, focusKeywords } = options || {}
+    const { articleType, tone, audience, language, length, focusKeywords, model: modelOverride } = options || {}
 
     const typePrompts: any = {
         expert_guide: 'Write as a subject matter expert providing deep, technical, yet accessible insights. Focus on being the ultimate search result.',
@@ -467,7 +470,7 @@ export async function* streamArticle(params: {
     options?: any
 }) {
     const { keyword, researchBrief, contentStrategy, brandContext, options } = params
-    const { articleType, tone, audience, language, length, focusKeywords } = options || {}
+    const { articleType, tone, audience, focusKeywords, language, length, model: modelOverride } = options || {}
 
     const typePrompts: any = {
         expert_guide: 'Write as a subject matter expert providing deep, technical, yet accessible insights. Focus on being the ultimate search result.',
@@ -537,7 +540,7 @@ export async function* streamArticle(params: {
   Do NOT include any preamble or "Here is your article" text.
   `
 
-    const model = await getBestGroqModel()
+    const model = modelOverride || await getBestGroqModel()
     const response = await fetch(`${BASE_URL}/chat/completions`, {
         method: 'POST',
         headers: {

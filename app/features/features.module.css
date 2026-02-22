@@ -9,7 +9,7 @@
 .hero {
     padding: 10rem 2rem 6rem;
     text-align: center;
-    background: radial-gradient(circle at 50% 0%, var(--color-primary-light) 0%, transparent 70%);
+    background: transparent;
 }
 
 .heroContent {
@@ -71,10 +71,22 @@
 }
 
 .gradient {
-    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #d946ef 100%);
+    background: linear-gradient(90deg,
+            #3b82f6,
+            #8b5cf6,
+            #d946ef,
+            #3b82f6);
+    background-size: 300% auto;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    animation: shine 5s linear infinite;
+}
+
+@keyframes shine {
+    to {
+        background-position: 300% center;
+    }
 }
 
 .hero p {

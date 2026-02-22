@@ -87,29 +87,7 @@
 
 .gradientOrb1,
 .gradientOrb2 {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(100px);
-    opacity: 0.3;
-    animation: float 20s ease-in-out infinite;
-}
-
-.gradientOrb1 {
-    width: 600px;
-    height: 600px;
-    background: radial-gradient(circle, #0ea5e9 0%, transparent 70%);
-    top: -200px;
-    left: -200px;
-    animation-delay: 0s;
-}
-
-.gradientOrb2 {
-    width: 500px;
-    height: 500px;
-    background: radial-gradient(circle, #2563eb 0%, transparent 70%);
-    bottom: -150px;
-    right: -150px;
-    animation-delay: 10s;
+    display: none;
 }
 
 @keyframes float {
@@ -194,10 +172,22 @@
 }
 
 .gradientText {
-    background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+    background: linear-gradient(90deg,
+            #0ea5e9,
+            #2563eb,
+            #8b5cf6,
+            #0ea5e9);
+    background-size: 300% auto;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    animation: shine 5s linear infinite;
+}
+
+@keyframes shine {
+    to {
+        background-position: 300% center;
+    }
 }
 
 .heroSubtitle {

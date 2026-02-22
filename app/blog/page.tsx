@@ -4,6 +4,7 @@ import Link from 'next/link'
 import styles from './blog.module.css'
 import LandingNavbar from '@/components/LandingNavbar'
 import LandingFooter from '@/components/LandingFooter'
+import DotLinkBackground from '@/components/DotLinkBackground'
 import { posts } from '@/lib/blog-posts'
 
 export default function BlogPage() {
@@ -13,6 +14,7 @@ export default function BlogPage() {
 
             {/* Hero Section */}
             <section className={styles.hero}>
+                <DotLinkBackground />
                 <div className={styles.badge}>
                     <span className={styles.badgePulse}></span>
                     Blog & Tài Nguyên
