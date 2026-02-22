@@ -516,9 +516,10 @@ export async function* streamArticle(params: {
   1. Write in ${language === 'en' ? 'English (US)' : 'Vietnamese (Tiếng Việt)'}.
   2. Use Markdown formatting (H1, H2, H3, bold, lists).
   3. IMPORTANT: Ensure every Markdown header (H1, H2, H3) is on its own NEW LINE and separated from the previous paragraph by TWO newlines.
-  4. Make it engaging, easy to read, and comprehensive.
-  5. Naturally weave in the provided internal links where appropriate (use [text](url)).
-  6. Optimize for SEO (including Focus Keywords) but write for humans first.
+  4. NO EXTRA SPACES: Never add multiple spaces between a list marker (1., •, etc.) and its content. For list labels (e.g., 1. **Label**: ...), do NOT add spaces before the colon.
+  5. Make it engaging, easy to read, and comprehensive.
+  6. Naturally weave in the provided internal links where appropriate (use [text](url)).
+  7. Optimize for SEO (including Focus Keywords) but write for humans first.
   7. Structure your response EXACTLY as follows:
 
   [ARTICLE]

@@ -320,7 +320,7 @@ export default function GeneratePage() {
                         color: 'var(--color-text-primary)'
                     }}
                 >
-                    <div className="prose prose-invert max-w-none" style={{ color: 'inherit' }}>
+                    <div className="prose max-w-none">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{articleData.content}</ReactMarkdown>
                     </div>
                 </motion.div>

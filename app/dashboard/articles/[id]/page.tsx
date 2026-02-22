@@ -604,7 +604,7 @@ export default function ArticleDetailPage() {
                                             />
                                         </div>
                                     ) : (
-                                        <div className={styles.articlePreview}>
+                                        <div className="prose max-w-none">
                                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                                 {parsed.article}
                                             </ReactMarkdown>
@@ -654,7 +654,7 @@ export default function ArticleDetailPage() {
                                         </div>
                                     </div>
                                     <div className={styles.cardBody}>
-                                        <div className="prose prose-invert max-w-none prose-sm">
+                                        <div className="prose max-w-none prose-sm">
                                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                                 {article.research.strategic_positioning}
                                             </ReactMarkdown>
