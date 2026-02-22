@@ -292,9 +292,14 @@ export default function GeneratePage() {
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="w-full max-w-4xl mt-8 p-6 bg-slate-900 rounded-xl border border-slate-800 text-slate-200"
+                    className="w-full max-w-4xl mt-8 p-8 rounded-xl border transition-colors"
+                    style={{
+                        backgroundColor: 'var(--color-surface)',
+                        borderColor: 'var(--color-border)',
+                        color: 'var(--color-text-primary)'
+                    }}
                 >
-                    <div className="prose prose-invert max-w-none">
+                    <div className="prose prose-invert max-w-none" style={{ color: 'inherit' }}>
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{articleData.content}</ReactMarkdown>
                     </div>
                 </motion.div>

@@ -333,16 +333,25 @@ export async function generateArticle(params: {
   Title: ${researchBrief.recommendedOutline.title}
   ${researchBrief.recommendedOutline.headings.map((h: any) => `${'#'.repeat(h.level)} ${h.text}: ${h.desc}`).join('\n')}
 
+  ## Vietnamese Writing Quality Standards:
+  - ALWAYS use correct Vietnamese spelling, grammar, and diacritics.
+  - NEVER combine words (e.g., write "Phần mềm" NOT "Phầnềm").
+  - Ensure a SPACE exists between every Vietnamese word.
+  - Pay extreme attention to the character "ngh" vs "n" (e.g., "Doanh nghiệp" NOT "Doanh nệp").
+  
   ## Writing Instructions
   1. Write in ${language === 'en' ? 'English (US)' : 'Vietnamese (Tiếng Việt)'}.
   2. Use Markdown formatting (H1, H2, H3, bold, lists).
-  3. Make it engaging, easy to read, and comprehensive.
-  4. Naturally weave in the provided internal links where appropriate (use [text](url)).
-  5. Optimize for SEO (including Focus Keywords) but write for humans first.
-  6. Structure your response EXACTLY as follows:
+  3. IMPORTANT: Ensure every Markdown header (H1, H2, H3) is on its own NEW LINE and separated from the previous paragraph by TWO newlines.
+  4. Make it engaging, easy to read, and comprehensive.
+  5. Naturally weave in the provided internal links where appropriate (use [text](url)).
+  6. Optimize for SEO (including Focus Keywords) but write for humans first.
+  7. Structure your response EXACTLY as follows:
 
   [ARTICLE]
-  (Start with H1 Title and full article content here)
+  # (Article Title)
+
+  (Full article content here, with double newlines between paragraphs and headers)
 
   [SUMMARY]
   (Write a 2-3 sentence summary of the article here)
@@ -359,7 +368,7 @@ export async function generateArticle(params: {
   `
 
     try {
-        const result = await callGroq(prompt, 0.7)
+        const result = await callGroq(prompt, 0.6)
         return {
             content: result.content,
             usage: result.usage
@@ -494,16 +503,25 @@ export async function* streamArticle(params: {
   Title: ${researchBrief.recommendedOutline.title}
   ${researchBrief.recommendedOutline.headings.map((h: any) => `${'#'.repeat(h.level)} ${h.text}: ${h.desc}`).join('\n')}
 
+  ## Vietnamese Writing Quality Standards:
+  - ALWAYS use correct Vietnamese spelling, grammar, and diacritics.
+  - NEVER combine words (e.g., write "Phần mềm" NOT "Phầnềm").
+  - Ensure a SPACE exists between every Vietnamese word.
+  - Pay extreme attention to the character "ngh" vs "n" (e.g., "Doanh nghiệp" NOT "Doanh nệp").
+
   ## Writing Instructions
   1. Write in ${language === 'en' ? 'English (US)' : 'Vietnamese (Tiếng Việt)'}.
   2. Use Markdown formatting (H1, H2, H3, bold, lists).
-  3. Make it engaging, easy to read, and comprehensive.
-  4. Naturally weave in the provided internal links where appropriate (use [text](url)).
-  5. Optimize for SEO (including Focus Keywords) but write for humans first.
-  6. Structure your response EXACTLY as follows:
+  3. IMPORTANT: Ensure every Markdown header (H1, H2, H3) is on its own NEW LINE and separated from the previous paragraph by TWO newlines.
+  4. Make it engaging, easy to read, and comprehensive.
+  5. Naturally weave in the provided internal links where appropriate (use [text](url)).
+  6. Optimize for SEO (including Focus Keywords) but write for humans first.
+  7. Structure your response EXACTLY as follows:
 
   [ARTICLE]
-  (Start with H1 Title and full article content here)
+  # (Article Title)
+
+  (Full article content here, with double newlines between paragraphs and headers)
 
   [SUMMARY]
   (Write a 2-3 sentence summary of the article here)
@@ -529,7 +547,7 @@ export async function* streamArticle(params: {
         body: JSON.stringify({
             model: model,
             messages: [{ role: 'user', content: prompt }],
-            temperature: 0.7,
+            temperature: 0.6,
             stream: true
         })
     })
