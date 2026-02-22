@@ -32,7 +32,14 @@ export const publishToCustomWebhook = async (
             throw new Error(`Custom Webhook failed (${response.status}): ${errorText.substring(0, 200)}`);
         }
 
-        const result = await response.json();
+        let result;
+        try {
+            result = await response.json();
+        } catch (e) {
+            console.error('[Custom Webhook] Invalid JSON response');
+            throw new Error(`Custom Webhook returned invalid JSON (${response.status})`);
+        }
+
         return {
             success: true,
             link: result.url || result.link || null

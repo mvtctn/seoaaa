@@ -35,11 +35,18 @@ export async function publishToWordPress(config: WordPressConfig, post: WordPres
         body: JSON.stringify(post),
     });
 
-    const data = await response.json();
+    let data;
+    try {
+        data = await response.json();
+    } catch (e) {
+        const text = await response.text();
+        console.error('[WordPress Client] Non-JSON Response:', text);
+        throw new Error(`WordPress API returned invalid JSON (${response.status}). Check URL and Auth.`);
+    }
 
     if (!response.ok) {
         console.error('[WordPress Client] Error:', data);
-        throw new Error(data.message || 'Failed to publish to WordPress');
+        throw new Error(data.message || `Failed to publish to WordPress (${response.status})`);
     }
 
     return data;
@@ -69,7 +76,13 @@ export async function uploadImageToWordPress(config: WordPressConfig, imageUrl: 
         body: blob,
     });
 
-    const data = await response.json();
+    let data;
+    try {
+        data = await response.json();
+    } catch (e) {
+        console.error('[WordPress Client] Media Upload Non-JSON Response');
+        return null;
+    }
 
     if (!response.ok) {
         console.error('[WordPress Client] Media Upload Error:', data);

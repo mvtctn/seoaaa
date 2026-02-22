@@ -5,6 +5,7 @@ import { publishToCustomWebhook } from '@/lib/custom-integration/client'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/logger'
 import { handleApiError } from '@/lib/api-error-handler'
+import MarkdownIt from 'markdown-it'
 
 export async function POST(req: NextRequest) {
     try {
@@ -83,8 +84,8 @@ export async function POST(req: NextRequest) {
             })
         }
 
-        // Convert MD to HTML only if needed (WP does it client side usually, but API needs HTML content usually)
-        const MarkdownIt = require('markdown-it')
+        // Render Markdown to HTML
+        logger.info(`[PublishService] Rendering markdown for article: ${article.title}`)
         const md = new MarkdownIt({ html: true })
         let htmlBody = md.render(contentToWP)
 
@@ -150,16 +151,29 @@ export async function POST(req: NextRequest) {
                 rank_math_title: postData.title
             }
 
-            const result = await publishToWordPress(wpConfig, postData)
-            resultLink = result.link
+            try {
+                const result = await publishToWordPress(wpConfig, postData)
+                resultLink = result.link
+            } catch (wpError: any) {
+                logger.error('[PublishService] WordPress API error:', wpError)
+                throw new Error(`Lỗi WordPress API: ${wpError.message || 'Unknown error'}`)
+            }
         }
+
+        logger.info(`[PublishService] Successfully published. Result link: ${resultLink}`)
 
         // 8. Update article status
         if (resultLink) {
-            await updateArticle(Number(articleId), user.id, {
-                status: 'PUBLISHED',
-                wp_post_url: resultLink
-            })
+            try {
+                logger.info(`[PublishService] Updating article status in DB: ${articleId}`)
+                await updateArticle(Number(articleId), user.id, {
+                    status: 'PUBLISHED',
+                    wp_post_url: resultLink
+                } as any)
+            } catch (dbError) {
+                logger.error('[PublishService] Failed to update article in DB after successful publish:', dbError)
+                // We don't throw here because the article WAS published successfully
+            }
         }
 
         return NextResponse.json({
