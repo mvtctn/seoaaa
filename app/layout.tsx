@@ -27,6 +27,9 @@ export default async function RootLayout({
     return (
         <html lang="vi" data-theme="dark">
             <head>
+                {/* Preconnect to Google Fonts for faster loading */}
+                <link rel="preconnect" href="https://fonts.googleapis.com" />
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
                 {scId && <meta name="google-site-verification" content={scId} />}
                 {gaId && (
                     <>

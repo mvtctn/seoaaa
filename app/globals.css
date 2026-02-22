@@ -1,3 +1,6 @@
+/* Google Fonts - must be first to avoid render-blocking */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
 /* ================================
    SEO Content Engine - Global Styles
    Navy Blue Theme (SEO Dashboard Style)
@@ -142,8 +145,7 @@ body {
   overflow-x: hidden;
 }
 
-/* Import Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
 
 /* ================================
    Typography
