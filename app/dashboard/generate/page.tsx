@@ -17,6 +17,9 @@ export default function GeneratePage() {
     const [error, setError] = useState<string | null>(null)
     const [selectedModel, setSelectedModel] = useState('meta-llama/llama-4-scout-17b-16e-instruct')
     const [showModelDropdown, setShowModelDropdown] = useState(false)
+    const [currentStep, setCurrentStep] = useState(0)
+    const [progress, setProgress] = useState(0)
+    const [statusText, setStatusText] = useState('Sẵn sàng sáng tạo')
     const textareaRef = useRef<HTMLTextAreaElement>(null)
     const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -63,12 +66,15 @@ export default function GeneratePage() {
         setLoading(true)
         setError(null)
         setArticleData(null)
+        setCurrentStep(1)
+        setProgress(10)
+        setStatusText('Khởi tạo quy trình nghiên cứu...')
 
         try {
-            // Simulate research delay for UI demo (replace with actual API call)
-            // await new Promise(r => setTimeout(r, 1500)) 
+            // Step 1: Research
+            setStatusText('Đang phân tích từ khóa và đối thủ...')
+            setProgress(25)
 
-            // Call API (using existing logic)
             const resRes = await fetch('/api/research/analyze', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -84,6 +90,17 @@ export default function GeneratePage() {
 
             if (!resRes.ok) throw new Error('Research failed')
             const resData = await resRes.json()
+
+            // Step 2: Strategy
+            setCurrentStep(2)
+            setStatusText('Xây dựng chiến lược nội dung SEO...')
+            setProgress(45)
+            await new Promise(r => setTimeout(r, 800)) // Visual pause
+
+            // Step 3: Writing
+            setCurrentStep(3)
+            setStatusText('Đang sáng tạo nội dung chi tiết...')
+            setProgress(60)
 
             // Call Generate API
             const artRes = await fetch('/api/generate/article', {
@@ -111,11 +128,19 @@ export default function GeneratePage() {
                     if (done) break
                     const chunk = decoder.decode(value, { stream: true })
                     fullStreamedContent += chunk
+
+                    // Simple progress simulation during stream
+                    const currentProgress = Math.min(60 + (fullStreamedContent.length / 500), 95)
+                    setProgress(currentProgress)
+
                     setArticleData({ content: fullStreamedContent })
                 }
             }
 
+            setProgress(100)
+            setStatusText('Đã hoàn thành bài viết!')
             setLoading(false)
+            setCurrentStep(4)
 
         } catch (err: any) {
             console.error(err)
@@ -147,8 +172,48 @@ export default function GeneratePage() {
             {/* Prompt Box */}
             <div className={styles.promptBoxContainer}>
                 <div className={styles.loadingLabel}>
-                    {loading ? 'AI đang suy nghĩ...' : 'Sẵn sàng sáng tạo'}
+                    <div className="flex items-center gap-2">
+                        {loading && (
+                            <motion.div
+                                animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+                                transition={{ repeat: Infinity, duration: 2 }}
+                                className={styles.pulseOrb}
+                            />
+                        )}
+                        <span>{loading ? statusText : 'Sẵn sàng sáng tạo'}</span>
+                    </div>
+                    {loading && <span className="font-mono">{Math.round(progress)}%</span>}
                 </div>
+
+                {loading && (
+                    <div className={styles.progressSection}>
+                        <div className={styles.progressBar}>
+                            <motion.div
+                                className={styles.progressFill}
+                                initial={{ width: 0 }}
+                                animate={{ width: `${progress}%` }}
+                            />
+                        </div>
+                        <div className={styles.stepsList}>
+                            <div className={`${styles.step} ${currentStep >= 1 ? styles.stepActive : ''}`}>
+                                <div className={styles.stepDot} />
+                                <span>Nghiên cứu</span>
+                            </div>
+                            <div className={`${styles.step} ${currentStep >= 2 ? styles.stepActive : ''}`}>
+                                <div className={styles.stepDot} />
+                                <span>Chiến lược</span>
+                            </div>
+                            <div className={`${styles.step} ${currentStep >= 3 ? styles.stepActive : ''}`}>
+                                <div className={styles.stepDot} />
+                                <span>Sáng tạo</span>
+                            </div>
+                            <div className={`${styles.step} ${currentStep >= 4 ? styles.stepActive : ''}`}>
+                                <div className={styles.stepDot} />
+                                <span>Hoàn tất</span>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 <textarea
                     ref={textareaRef}
