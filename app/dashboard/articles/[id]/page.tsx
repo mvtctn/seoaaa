@@ -148,9 +148,9 @@ export default function ArticleDetailPage() {
         }
     }
 
-    const handlePublishToWP = async () => {
+    const handlePublishToWeb = async () => {
         if (!article) return
-        if (!confirm('Bạn có chắc muốn đăng bài viết này lên WordPress?')) return
+        if (!confirm('Bạn có chắc muốn đăng bài viết này lên website?')) return
 
         setIsPublishing(true)
 
@@ -174,7 +174,7 @@ export default function ArticleDetailPage() {
                     window.open(data.url, '_blank')
                 }
             } else {
-                alert(`❌ Lỗi đăng bài: ${data.error || 'Vui lòng kiểm tra lại cấu hình WordPress của Brand.'}`)
+                alert(`❌ Lỗi đăng bài: ${data.error || 'Vui lòng kiểm tra lại cấu hình đăng bài của Brand.'}`)
             }
         } catch (error) {
             console.error('Publish failed', error)
@@ -518,11 +518,11 @@ export default function ArticleDetailPage() {
                         <div className="flex gap-2">
                             <button
                                 className="btn btn-secondary btn-sm flex items-center gap-2"
-                                onClick={handlePublishToWP}
+                                onClick={handlePublishToWeb}
                                 disabled={isPublishing}
                             >
                                 <span style={{ fontSize: '1.2rem' }}>🌐</span>
-                                {isPublishing ? 'Đang đăng...' : 'Đăng WordPress'}
+                                {isPublishing ? 'Đang đăng...' : 'Đăng bài lên web'}
                             </button>
                             <button className="btn btn-primary btn-sm" onClick={() => setIsEditing(true)}>
                                 Chỉnh Sửa
