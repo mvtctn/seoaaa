@@ -183,6 +183,10 @@ export async function POST(req: NextRequest) {
         })
 
     } catch (error: any) {
-        return handleApiError(error, 'PublishService')
+        logger.error(`[PublishService] Critical Error:`, error)
+        return NextResponse.json(
+            { error: error.message || 'Internal server error' },
+            { status: 500 }
+        )
     }
 }
