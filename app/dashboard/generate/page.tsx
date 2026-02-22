@@ -15,7 +15,21 @@ export default function GeneratePage() {
     const [showSettings, setShowSettings] = useState(false)
     const [articleData, setArticleData] = useState<any>(null)
     const [error, setError] = useState<string | null>(null)
+    const [selectedModel, setSelectedModel] = useState('llama-3.3-70b-versatile')
+    const [showModelDropdown, setShowModelDropdown] = useState(false)
     const textareaRef = useRef<HTMLTextAreaElement>(null)
+    const dropdownRef = useRef<HTMLDivElement>(null)
+
+    // Handle clicks outside dropdown to close it
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setShowModelDropdown(false)
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [])
 
     // Options state
     const [options, setOptions] = useState({
@@ -166,10 +180,45 @@ export default function GeneratePage() {
                     </div>
 
                     <div className={styles.actionRight}>
-                        <div className={styles.modelSelect}>
-                            <Sparkles size={14} />
-                            <span>Llama 3.3</span>
-                            <ChevronDown size={14} />
+                        <div className={styles.modelSelector} ref={dropdownRef}>
+                            <button
+                                className={styles.modelSelectBtn}
+                                onClick={() => setShowModelDropdown(!showModelDropdown)}
+                            >
+                                <Sparkles size={14} />
+                                <span>{selectedModel.includes('llama') ? 'Llama 3.3' : selectedModel.includes('gemini') ? 'Gemini 1.5' : 'DeepSeek'}</span>
+                                <ChevronDown size={14} />
+                            </button>
+
+                            <AnimatePresence>
+                                {showModelDropdown && (
+                                    <motion.div
+                                        className={styles.modelDropdown}
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: 10 }}
+                                    >
+                                        <button
+                                            className={`${styles.modelOption} ${selectedModel === 'llama-3.3-70b-versatile' ? styles.active : ''}`}
+                                            onClick={() => { setSelectedModel('llama-3.3-70b-versatile'); setShowModelDropdown(false) }}
+                                        >
+                                            Llama 3.3 70B
+                                        </button>
+                                        <button
+                                            className={`${styles.modelOption} ${selectedModel === 'gemini-1.5-flash' ? styles.active : ''}`}
+                                            onClick={() => { setSelectedModel('gemini-1.5-flash'); setShowModelDropdown(false) }}
+                                        >
+                                            Gemini 1.5 Flash
+                                        </button>
+                                        <button
+                                            className={`${styles.modelOption} ${selectedModel === 'deepseek-chat' ? styles.active : ''}`}
+                                            onClick={() => { setSelectedModel('deepseek-chat'); setShowModelDropdown(false) }}
+                                        >
+                                            DeepSeek Chat
+                                        </button>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
                         <button
                             className={styles.submitBtn}

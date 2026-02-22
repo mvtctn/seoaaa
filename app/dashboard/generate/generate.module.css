@@ -10,7 +10,6 @@
     padding: 2rem;
     position: relative;
     background: var(--color-background);
-    /* Ensure dark background */
 }
 
 /* Feature Badge */
@@ -19,8 +18,8 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 1rem;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--color-surface-hover);
+    border: 1px solid var(--color-border);
     border-radius: 99px;
     font-size: 0.8125rem;
     color: var(--color-text-secondary);
@@ -30,8 +29,8 @@
 }
 
 .featureBadge:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: var(--color-surface);
+    border-color: var(--color-primary);
 }
 
 .newTag {
@@ -50,7 +49,7 @@
     font-weight: 800;
     text-align: center;
     margin-bottom: 3rem;
-    background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+    background: linear-gradient(135deg, var(--color-text-primary) 0%, var(--color-primary) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -58,16 +57,21 @@
     line-height: 1.1;
 }
 
+[data-theme='light'] .mainHeading {
+    background: linear-gradient(135deg, var(--color-text-primary) 0%, var(--color-primary-dark) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+}
+
 /* Prompt Box Container */
 .promptBoxContainer {
     width: 100%;
     max-width: 800px;
-    background: rgba(30, 41, 59, 0.4);
-    /* Dark translucent bg */
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
     border-radius: 1.5rem;
     padding: 1.5rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    box-shadow: var(--shadow-lg);
     backdrop-filter: blur(12px);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     margin-bottom: 3rem;
@@ -76,9 +80,15 @@
 }
 
 .promptBoxContainer:focus-within {
-    background: rgba(30, 41, 59, 0.6);
-    border-color: rgba(var(--color-primary-rgb), 0.3);
-    box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.1), 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+    background: var(--color-surface-hover);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.1), var(--shadow-xl);
+}
+
+[data-theme='light'] .promptBoxContainer {
+    background: #ffffff;
+    border: 1px solid var(--color-border);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
 }
 
 .loadingLabel {
@@ -104,8 +114,7 @@
     width: 100%;
     background: transparent;
     border: none;
-    color: #fff;
-    /* Force white text in dark mode */
+    color: var(--color-text-primary);
     font-size: 1.125rem;
     line-height: 1.6;
     resize: none;
@@ -115,7 +124,8 @@
 }
 
 .promptInput::placeholder {
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--color-text-tertiary);
+    opacity: 0.5;
 }
 
 /* Action Bar inside Prompt Box */
@@ -125,7 +135,7 @@
     align-items: center;
     margin-top: 1rem;
     padding-top: 1rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-top: 1px solid var(--color-border);
 }
 
 .actionLeft {
@@ -137,8 +147,8 @@
     width: 36px;
     height: 36px;
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.05);
-    border: none;
+    background: var(--color-background);
+    border: 1px solid var(--color-border);
     color: var(--color-text-tertiary);
     cursor: pointer;
     display: flex;
@@ -163,7 +173,8 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 1rem;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--color-background);
+    border: 1px solid var(--color-border);
     border-radius: 99px;
     font-size: 0.875rem;
     color: var(--color-text-secondary);
@@ -172,8 +183,76 @@
 }
 
 .modelSelect:hover {
-    background: rgba(0, 0, 0, 0.4);
+    background: var(--color-background);
     color: var(--color-text-primary);
+}
+
+.modelSelector {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.modelSelectBtn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--color-background);
+    border: 1px solid var(--color-border);
+    border-radius: 99px;
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.modelSelectBtn:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text-primary);
+    border-color: var(--color-primary);
+}
+
+.modelDropdown {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    right: 0;
+    width: 220px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 1rem;
+    padding: 0.5rem;
+    box-shadow: var(--shadow-xl);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.modelOption {
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+    background: none;
+    border: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modelOption:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text-primary);
+}
+
+.modelOption.active {
+    background: rgba(var(--color-primary-rgb), 0.1);
+    color: var(--color-primary);
+    font-weight: 600;
 }
 
 .submitBtn {
@@ -215,8 +294,8 @@
 
 .chip {
     padding: 0.75rem 1.25rem;
-    background: rgba(30, 41, 59, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
     border-radius: 99px;
     color: var(--color-text-secondary);
     font-size: 0.875rem;
@@ -228,10 +307,15 @@
 }
 
 .chip:hover {
-    background: rgba(30, 41, 59, 0.8);
-    border-color: rgba(255, 255, 255, 0.1);
+    background: var(--color-surface-hover);
+    border-color: var(--color-primary);
     color: var(--color-text-primary);
     transform: translateY(-2px);
+}
+
+[data-theme='light'] .chip {
+    background: #ffffff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
 .chipIcon {
@@ -244,9 +328,9 @@
     max-width: 800px;
     margin-top: 1rem;
     padding: 1rem;
-    background: rgba(30, 41, 59, 0.3);
+    background: var(--color-surface);
     border-radius: 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--color-border);
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1rem;
@@ -270,8 +354,8 @@
 .settingSelect {
     width: 100%;
     padding: 0.5rem;
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--color-background);
+    border: 1px solid var(--color-border);
     border-radius: 0.5rem;
     color: var(--color-text-secondary);
     font-size: 0.875rem;
