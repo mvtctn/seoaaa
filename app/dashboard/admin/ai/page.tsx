@@ -16,6 +16,14 @@ interface AILog {
     created_at: string
 }
 
+interface AdminNotification {
+    id: number;
+    title: string;
+    message: string;
+    read: boolean;
+    date: string;
+}
+
 const Icons = {
     Cpu: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="4" y="4" width="16" height="16" rx="2" /><rect x="9" y="9" width="6" height="6" /><path d="M15 2v2M9 2v2M20 15h2M20 9h2M9 20v2M15 20v2M2 9h2M2 15h2" /></svg>,
     Zap: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>,
@@ -32,6 +40,7 @@ export default function AIManagementPage() {
     const [priority, setPriority] = useState<string[]>([])
     const [usage, setUsage] = useState<Record<string, { input: number, output: number, cost: number }>>({})
     const [quotas, setQuotas] = useState<Record<string, number>>({})
+    const [notifications, setNotifications] = useState<AdminNotification[]>([])
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
 
@@ -48,6 +57,9 @@ export default function AIManagementPage() {
                 setPriority(data.data.priority)
                 setUsage(data.data.usage)
                 setQuotas(data.data.quotas)
+                if (data.data.notifications) {
+                    setNotifications(data.data.notifications)
+                }
             }
         } catch (error) {
             console.error('Failed to fetch AI settings', error)
@@ -99,6 +111,19 @@ export default function AIManagementPage() {
 
     return (
         <div className={styles.container}>
+            {notifications.length > 0 && notifications.some(n => !n.read) && (
+                <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', padding: '1rem', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                    <div style={{ color: '#ef4444', marginTop: '0.25rem' }}><Icons.Alert /></div>
+                    <div style={{ flex: 1 }}>
+                        <h4 style={{ margin: '0 0 0.5rem 0', color: '#991b1b', fontSize: '1rem' }}>Cảnh Báo Hệ Thống</h4>
+                        {notifications.filter(n => !n.read).map(n => (
+                            <div key={n.id} style={{ marginBottom: '0.5rem', color: '#7f1d1d', fontSize: '0.9rem' }}>
+                                <strong>{new Date(n.date).toLocaleDateString('vi-VN')} - {n.title}:</strong> {n.message}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
             <div className={styles.statsGrid}>
                 <div className={styles.statCard}>
                     <div className={styles.statLabel}>Tổng Input Tokens</div>

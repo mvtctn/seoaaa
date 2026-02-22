@@ -6,7 +6,7 @@ import Image from 'next/image'
 import { useParams, useRouter } from 'next/navigation'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import styles from '../../generate/generate.module.css'
+import styles from '../article.module.css'
 import dynamic from 'next/dynamic'
 
 // Dynamically import Markdown Editor to avoid SSR issues
@@ -1006,18 +1006,27 @@ export default function ArticleDetailPage() {
                         <div className={styles.sidebarTitle}>Tạo Ảnh AI</div>
                         <div className="flex flex-col gap-3">
                             <textarea
-                                className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm text-white resize-none focus:outline-none focus:border-indigo-500"
+                                className={styles.imageGenInput}
                                 rows={3}
                                 placeholder="Mô tả ảnh muốn tạo..."
                                 value={imageGenPrompt}
                                 onChange={(e) => setImageGenPrompt(e.target.value)}
                             />
                             <button
-                                className="btn btn-primary btn-sm w-full"
+                                className={styles.imageGenButton}
                                 onClick={handleGenerateImage}
                                 disabled={isGeneratingImage || !imageGenPrompt.trim()}
                             >
-                                {isGeneratingImage ? 'Đang tạo...' : 'Tạo Ảnh Mới'}
+                                {isGeneratingImage ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        Đang tạo...
+                                    </>
+                                ) : (
+                                    <>
+                                        <span>🎨</span> Tạo Ảnh Mới
+                                    </>
+                                )}
                             </button>
 
                             {generatedImage && (

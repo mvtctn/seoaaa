@@ -1,9 +1,136 @@
 // Groq AI Integration
 // https://console.groq.com/
 import { logger } from '@/lib/logger'
+import { sendEmail } from '@/lib/mail'
+import { updateSetting, getSetting } from '@/lib/db/database'
 
 const apiKey = process.env.GROQ_API_KEY || ''
 const BASE_URL = 'https://api.groq.com/openai/v1'
+
+const SEO_MODELS = [
+    'llama-3.3-70b-versatile',
+    'qwen/qwen3-32b',
+    'openai/gpt-oss-120b',
+    'moonshotai/kimi-k2-instruct',
+    'llama-3.1-8b-instant'
+]
+
+interface ModelLimits {
+    limitRequests: number;
+    limitTokens: number;
+    remainingRequests: number;
+    remainingTokens: number;
+    resetRequests: number; // ms timestamp
+    resetTokens: number; // ms timestamp
+}
+
+const modelLimitsCache: Record<string, ModelLimits> = {};
+let lastAdminAlertTime = 0;
+
+function parseResetTime(resetStr: string | null): number {
+    if (!resetStr) return Date.now() + 60000;
+    const sec = parseFloat(resetStr.replace('s', ''));
+    if (!isNaN(sec)) {
+        return Date.now() + sec * 1000;
+    }
+    return Date.now() + 60000;
+}
+
+function updateLimitsFromHeaders(model: string, headers: Headers) {
+    const limitReqsStr = headers.get('x-ratelimit-limit-requests');
+    const limitToksStr = headers.get('x-ratelimit-limit-tokens');
+    const remReqsStr = headers.get('x-ratelimit-remaining-requests');
+    const remToksStr = headers.get('x-ratelimit-remaining-tokens');
+    const resetReqStr = headers.get('x-ratelimit-reset-requests');
+    const resetToksStr = headers.get('x-ratelimit-reset-tokens');
+
+    if (limitReqsStr && limitToksStr) {
+        modelLimitsCache[model] = {
+            limitRequests: parseInt(limitReqsStr, 10),
+            limitTokens: parseInt(limitToksStr, 10),
+            remainingRequests: parseInt(remReqsStr || '0', 10),
+            remainingTokens: parseInt(remToksStr || '0', 10),
+            resetRequests: parseResetTime(resetReqStr),
+            resetTokens: parseResetTime(resetToksStr),
+        };
+    }
+}
+
+async function notifyAdminIfResourcesLow() {
+    const now = Date.now();
+    if (now - lastAdminAlertTime < 3600000) return; // Only alert once an hour
+
+    let allDepleted = true;
+    for (const model of SEO_MODELS) {
+        const stats = modelLimitsCache[model];
+        if (!stats) {
+            allDepleted = false;
+            break;
+        }
+        const pctTokens = stats.remainingTokens / stats.limitTokens;
+        if (pctTokens > 0.3) {
+            allDepleted = false;
+            break;
+        }
+    }
+
+    if (allDepleted) {
+        lastAdminAlertTime = now;
+        logger.warn('[Groq Admin Alert] All models below 30% capacity');
+        try {
+            await sendEmail({
+                to: 'admin@seoaaa.com',
+                subject: 'Cảnh Báo: Quota API Groq Đã Cạn Kiệt Dưới 30%',
+                text: 'Hệ thống SEOAAA báo cáo tất cả các mô hình Groq SEO hiện tại đã đạt ngưỡng quota dưới 30% (tính trên limit 1 phút hoặc 1 ngày). Vui lòng kiểm tra và cân nhắc bổ sung/chuyển đổi API key hoặc mô hình nếu cần.'
+            });
+            const existingNotifs = await getSetting('admin_notifications') || [];
+            const notif = {
+                id: Date.now(),
+                title: 'Cảnh Báo Giới Hạn Quota Groq',
+                message: 'Tất cả các mô hình Groq ưu tiên cho SEO đã tụt xuống dưới mức 30% hạn mức giới hạn rate-limit hiện tại. Hệ thống vẫn tiếp tục dùng mô hình còn lại tốt nhất.',
+                read: false,
+                date: new Date().toISOString()
+            };
+            const updatedNotifs = [notif, ...existingNotifs].slice(0, 50); // Keep last 50
+            await updateSetting('admin_notifications', updatedNotifs);
+        } catch (e) {
+            logger.error('[Groq Admin Alert] Failed to send alert', e);
+        }
+    }
+}
+
+async function getBestGroqModel(): Promise<string> {
+    for (const model of SEO_MODELS) {
+        const stats = modelLimitsCache[model];
+        if (!stats) return model;
+
+        if (Date.now() > stats.resetTokens) {
+            delete modelLimitsCache[model];
+            return model;
+        }
+
+        const pctTokens = stats.remainingTokens / stats.limitTokens;
+        const pctRequests = stats.remainingRequests / stats.limitRequests;
+
+        // Switch to other model if token limits drop below 40%
+        if (pctTokens > 0.4 && pctRequests > 0.4) {
+            return model;
+        }
+    }
+
+    await notifyAdminIfResourcesLow();
+
+    let bestModel = SEO_MODELS[0];
+    let maxRem = -1;
+    for (const model of SEO_MODELS) {
+        const stats = modelLimitsCache[model];
+        if (stats && stats.remainingTokens > maxRem) {
+            maxRem = stats.remainingTokens;
+            bestModel = model;
+        }
+    }
+    return bestModel;
+}
 
 export interface CompetitorData {
     url: string
@@ -24,7 +151,7 @@ async function callGroq(prompt: string, temperature: number = 0.7): Promise<{ co
 
     try {
         const url = `${BASE_URL}/chat/completions`
-        const model = 'llama-3.3-70b-versatile'
+        const model = await getBestGroqModel()
 
         const response = await fetch(url, {
             method: 'POST',
@@ -42,6 +169,8 @@ async function callGroq(prompt: string, temperature: number = 0.7): Promise<{ co
                 max_tokens: 8000
             })
         })
+
+        updateLimitsFromHeaders(model, response.headers);
 
         if (response.ok) {
             const data = await response.json()
@@ -390,6 +519,7 @@ export async function* streamArticle(params: {
   Do NOT include any preamble or "Here is your article" text.
   `
 
+    const model = await getBestGroqModel()
     const response = await fetch(`${BASE_URL}/chat/completions`, {
         method: 'POST',
         headers: {
@@ -397,12 +527,14 @@ export async function* streamArticle(params: {
             'Authorization': `Bearer ${apiKey.trim()}`
         },
         body: JSON.stringify({
-            model: 'llama-3.3-70b-versatile',
+            model: model,
             messages: [{ role: 'user', content: prompt }],
             temperature: 0.7,
             stream: true
         })
     })
+
+    updateLimitsFromHeaders(model, response.headers);
 
     if (!response.ok) {
         throw new Error(`Groq Stream Error: ${response.statusText}`)

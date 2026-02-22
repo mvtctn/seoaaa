@@ -1,7 +1,7 @@
-
 import { NextRequest, NextResponse } from 'next/server'
 import { getArticleById, getBrandById, updateArticle, getDefaultBrand, getKeywordById } from '@/lib/db/database'
 import { publishToWordPress, uploadImageToWordPress } from '@/lib/wordpress/client'
+import { publishToCustomWebhook } from '@/lib/custom-integration/client'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/logger'
 import { handleApiError } from '@/lib/api-error-handler'
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        const { articleId, status = 'draft' } = await req.json()
+        const { articleId, status = 'publish' } = await req.json()
 
         if (!articleId) {
             return NextResponse.json({ error: 'Article ID is required' }, { status: 400 })
@@ -27,43 +27,30 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Article not found' }, { status: 404 })
         }
 
-        // 2. Get Brand for WP Credentials
+        // 2. Get Brand for Credentials
         let brandId = article.brand_id
-        logger.debug(`[WordPress] Initial brand_id from article: ${brandId}`)
-
         if (!brandId && article.keyword_id) {
             const keyword = await getKeywordById(article.keyword_id, user.id)
             brandId = keyword?.brand_id
-            logger.debug(`[WordPress] Found brand_id from keyword: ${brandId}`)
         }
 
         let brand = brandId ? await getBrandById(Number(brandId), user.id) : null
 
-        // Final fallback: use default brand if no brand found or if specific brand lacks WP config
-        if (!brand || !brand.wp_url || !brand.wp_username || !brand.wp_password) {
-            logger.debug('[WordPress] Specific brand missing or lacks WP config, trying default brand...')
+        // Final fallback: use default brand
+        if (!brand || !brand.wp_url || !brand.wp_password) {
             const defaultBrand = await getDefaultBrand(user.id)
             if (defaultBrand) {
                 brand = defaultBrand
-                logger.debug(`[WordPress] Using default brand: ${brand.name}`)
             }
         }
 
-        if (!brand || !brand.wp_url || !brand.wp_username || !brand.wp_password) {
+        if (!brand || !brand.wp_url || !brand.wp_password) {
             return NextResponse.json({
-                error: 'Cấu hình WordPress bị thiếu. Vui lòng vào Quản Lý Thương Hiệu để thiết lập URL, Username và App Password cho thương hiệu này (hoặc thương hiệu mặc định).'
+                error: 'Cấu hình đăng bài bị thiếu (URL, API Code). Vui lòng kiểm tra Quản Lý Thương Hiệu.'
             }, { status: 400 })
         }
 
-        const wpConfig = {
-            url: brand.wp_url,
-            username: brand.wp_username,
-            applicationPassword: brand.wp_password
-        }
-
-        logger.info(`[WordPress] Publishing article "${article.title}" to ${wpConfig.url}`)
-
-        // 3. Extract Meta & Schema from content (Replicate frontend parser)
+        // 3. Extract Meta & Schema from content (Frontend parser logic)
         const rawContent = article.content || ''
         let schema = ''
         let meta: any = {}
@@ -89,7 +76,6 @@ export async function POST(req: NextRequest) {
             const parts = contentToWP.split('[META]')
             const metaText = parts[1].trim()
             contentToWP = parts[0].trim()
-
             const metaLines = metaText.split('\n')
             metaLines.forEach((line: string) => {
                 if (line.toLowerCase().includes('title:')) meta.title = line.split(':')[1]?.trim()
@@ -97,71 +83,92 @@ export async function POST(req: NextRequest) {
             })
         }
 
-        // Clean Summary markers
-        if (contentToWP.includes('[SUMMARY]')) {
-            contentToWP = contentToWP.split('[SUMMARY]')[0].trim()
-        }
-        contentToWP = contentToWP.replace('[ARTICLE]', '').trim()
-
-        // 4. Handle Featured Image
-        let featuredMediaId: number | undefined = undefined
-        if (article.thumbnail_url) {
-            try {
-                featuredMediaId = await uploadImageToWordPress(wpConfig, article.thumbnail_url, article.title)
-            } catch (imgError) {
-                logger.error('[WordPress] Failed to upload featured image:', imgError)
-            }
-        }
-
-        // 5. Convert Markdown to HTML
+        // Convert MD to HTML only if needed (WP does it client side usually, but API needs HTML content usually)
         const MarkdownIt = require('markdown-it')
         const md = new MarkdownIt({ html: true })
         let htmlBody = md.render(contentToWP)
 
-        // Append Schema if found
-        if (schema) {
-            htmlBody += `\n\n<script type="application/ld+json">\n${schema}\n</script>`
+        let resultLink = null
+
+        // --- BRANCHING LOGIC ---
+        if (brand.wp_username === 'custom_webhook') {
+            // CUSTOM INTEGRATION
+            logger.info(`[Publishing] Custom Webhook to ${brand.wp_url}`)
+
+            const payload = {
+                title: meta.title || article.meta_title || article.title,
+                content: htmlBody, // Sending rendered HTML
+                slug: article.slug,
+                excerpt: meta.description || article.meta_description,
+                thumbnail_url: article.thumbnail_url,
+                meta_title: meta.title || article.meta_title,
+                meta_description: meta.description || article.meta_description,
+                schema: schema ? JSON.parse(schema) : undefined,
+                status: status || 'publish'
+            }
+
+            const result = await publishToCustomWebhook(brand.wp_url, brand.wp_password, payload as any)
+            resultLink = result.link
+
+        } else {
+            // WORDPRESS INTEGRATION
+            const wpConfig = {
+                url: brand.wp_url,
+                username: brand.wp_username, // Required for WP application password auth
+                applicationPassword: brand.wp_password
+            }
+
+            logger.info(`[Publishing] WordPress Post to ${wpConfig.url}`)
+
+            // Handle Image Upload
+            let featuredMediaId: number | undefined = undefined
+            if (article.thumbnail_url) {
+                try {
+                    featuredMediaId = await uploadImageToWordPress(wpConfig, article.thumbnail_url, article.title)
+                } catch (imgError) {
+                    logger.error('[WordPress] Failed to upload featured image:', imgError)
+                }
+            }
+
+            if (schema) {
+                htmlBody += `\n\n<script type="application/ld+json">\n${schema}\n</script>`
+            }
+
+            const postData: any = {
+                title: meta.title || article.meta_title || article.title,
+                content: htmlBody,
+                status: status as any,
+                slug: article.slug,
+                featured_media: featuredMediaId,
+                excerpt: meta.description || article.meta_description || ''
+            }
+
+            postData.meta = {
+                _yoast_wpseo_metadesc: postData.excerpt,
+                rank_math_description: postData.excerpt,
+                _yoast_wpseo_title: postData.title,
+                rank_math_title: postData.title
+            }
+
+            const result = await publishToWordPress(wpConfig, postData)
+            resultLink = result.link
         }
 
-        // 6. Construct Post Data
-        const postData: any = {
-            title: meta.title || article.meta_title || article.title,
-            content: htmlBody,
-            status: status as any,
-            slug: article.slug,
-            featured_media: featuredMediaId,
-            excerpt: meta.description || article.meta_description || ''
-        }
-
-        // Add RankMath/Yoast meta if possible (as generic meta)
-        postData.meta = {
-            _yoast_wpseo_metadesc: postData.excerpt,
-            rank_math_description: postData.excerpt,
-            _yoast_wpseo_title: postData.title,
-            rank_math_title: postData.title
-        }
-
-        // 7. Publish
-        const result = await publishToWordPress(wpConfig, postData)
-
-        // 8. Update article status in our DB
-        try {
+        // 8. Update article status
+        if (resultLink) {
             await updateArticle(Number(articleId), user.id, {
                 status: 'PUBLISHED',
-                wp_post_url: result.link
+                wp_post_url: resultLink
             })
-            logger.info(`[WordPress] Article ${articleId} status updated to PUBLISHED with URL: ${result.link}`)
-        } catch (dbError) {
-            logger.error('[WordPress] Failed to update article status:', dbError)
         }
 
         return NextResponse.json({
             success: true,
             message: 'Published successfully!',
-            url: result.link
+            url: resultLink
         })
 
     } catch (error: any) {
-        return handleApiError(error, 'WordPressPublish')
+        return handleApiError(error, 'PublishService')
     }
 }

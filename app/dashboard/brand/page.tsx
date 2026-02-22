@@ -420,45 +420,129 @@ export default function BrandManagementPage() {
                                 />
                             </div>
 
-                            {/* WordPress Integration */}
+                            {/* Integration Settings */}
                             <div className={styles.brandFormSection}>
-                                <div className={styles.sectionTitle}>🌐 WordPress Integration (Cấu hình đăng bài)</div>
-                                <p className="text-xs text-tertiary mb-3">Thông tin để tự động đăng bài lên website WordPress của bạn.</p>
-                                <div className="form-group mb-3">
-                                    <label className="form-label">WordPress Site URL</label>
-                                    <input
-                                        type="url"
-                                        className="form-input"
-                                        value={selectedBrand.wp_url || ''}
-                                        onChange={e => updateSelected({ wp_url: e.target.value })}
-                                        placeholder="https://yourwebsite.com"
-                                    />
-                                </div>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="form-group">
-                                        <label className="form-label">Username</label>
-                                        <input
-                                            type="text"
-                                            className="form-input"
-                                            value={selectedBrand.wp_username || ''}
-                                            onChange={e => updateSelected({ wp_username: e.target.value })}
-                                            placeholder="admin"
-                                        />
+                                <div className={styles.sectionTitle}>🌐 Cấu Hình Đăng Bài (Integration)</div>
+                                <div className="form-group mb-4">
+                                    <label className="form-label">Chọn Nền Tảng</label>
+                                    <div className="flex gap-4">
+                                        <label className={`flex items-center gap-2 px-3 py-2 border rounded-md cursor-pointer ${selectedBrand.wp_username !== 'custom_webhook' ? 'bg-primary/10 border-primary' : 'border-border'}`}>
+                                            <input
+                                                type="radio"
+                                                name="platform"
+                                                checked={selectedBrand.wp_username !== 'custom_webhook'}
+                                                onChange={() => updateSelected({ wp_username: '' })}
+                                                className="hidden"
+                                            />
+                                            <span className="text-xl">W</span>
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-bold">WordPress</span>
+                                                <span className="text-[10px] text-tertiary">Site WordPress chuẩn</span>
+                                            </div>
+                                        </label>
+                                        <label className={`flex items-center gap-2 px-3 py-2 border rounded-md cursor-pointer ${selectedBrand.wp_username === 'custom_webhook' ? 'bg-primary/10 border-primary' : 'border-border'}`}>
+                                            <input
+                                                type="radio"
+                                                name="platform"
+                                                checked={selectedBrand.wp_username === 'custom_webhook'}
+                                                onChange={() => updateSelected({ wp_username: 'custom_webhook' })}
+                                                className="hidden"
+                                            />
+                                            <span className="text-xl">⚡</span>
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-bold">Custom Website</span>
+                                                <span className="text-[10px] text-tertiary">Next.js, Node, Laravel...</span>
+                                            </div>
+                                        </label>
                                     </div>
-                                    <div className="form-group">
-                                        <label className="form-label">App Password</label>
-                                        <input
-                                            type="password"
-                                            className="form-input"
-                                            value={selectedBrand.wp_password || ''}
-                                            onChange={e => updateSelected({ wp_password: e.target.value })}
-                                            placeholder="xxxx xxxx xxxx xxxx"
-                                        />
-                                    </div>
                                 </div>
-                                <p className="text-[10px] text-tertiary mt-2 italic">
-                                    * Sử dụng <strong>Application Password</strong> (trong WP Admin &gt; Users &gt; Profile), không dùng mật khẩu chính.
-                                </p>
+
+                                {selectedBrand.wp_username !== 'custom_webhook' ? (
+                                    <>
+                                        <p className="text-xs text-tertiary mb-3">Thông tin để tự động đăng bài lên website WordPress của bạn.</p>
+                                        <div className="form-group mb-3">
+                                            <label className="form-label">WordPress Site URL</label>
+                                            <input
+                                                type="url"
+                                                className="form-input"
+                                                value={selectedBrand.wp_url || ''}
+                                                onChange={e => updateSelected({ wp_url: e.target.value })}
+                                                placeholder="https://yourwebsite.com"
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="form-group">
+                                                <label className="form-label">Username</label>
+                                                <input
+                                                    type="text"
+                                                    className="form-input"
+                                                    value={selectedBrand.wp_username || ''}
+                                                    onChange={e => updateSelected({ wp_username: e.target.value })}
+                                                    placeholder="admin"
+                                                />
+                                            </div>
+                                            <div className="form-group">
+                                                <label className="form-label">App Password</label>
+                                                <input
+                                                    type="password"
+                                                    className="form-input"
+                                                    value={selectedBrand.wp_password || ''}
+                                                    onChange={e => updateSelected({ wp_password: e.target.value })}
+                                                    placeholder="xxxx xxxx xxxx xxxx"
+                                                />
+                                            </div>
+                                        </div>
+                                        <p className="text-[10px] text-tertiary mt-2 italic">
+                                            * Sử dụng <strong>Application Password</strong> (trong WP Admin &gt; Users &gt; Profile), không dùng mật khẩu chính.
+                                        </p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="text-xs text-tertiary mb-3">Sử dụng Webhook để đăng bài lên bất kỳ website nào (Next.js, React, Node.js...). <a href="#" className="underline text-primary">Xem hướng dẫn code</a></p>
+                                        <div className="form-group mb-3">
+                                            <label className="form-label">Webhook URL (API Endpoint)</label>
+                                            <input
+                                                type="url"
+                                                className="form-input"
+                                                value={selectedBrand.wp_url || ''}
+                                                onChange={e => updateSelected({ wp_url: e.target.value })}
+                                                placeholder="https://yourwebsite.com/api/receive-article"
+                                            />
+                                        </div>
+                                        <div className="form-group mb-3">
+                                            <label className="form-label">Secret Key (Authorization)</label>
+                                            <input
+                                                type="password"
+                                                className="form-input"
+                                                value={selectedBrand.wp_password || ''}
+                                                onChange={e => updateSelected({ wp_password: e.target.value })}
+                                                placeholder="Tự tạo một chuỗi bí mật (ví dụ: my-secret-key-123)"
+                                            />
+                                        </div>
+
+                                        <div className="bg-[#1e1e1e] p-3 rounded-md border border-[#333] mt-3">
+                                            <div className="text-[10px] text-gray-400 mb-2 uppercase font-mono">Example: Next.js App Router (app/api/receive/route.ts)</div>
+                                            <pre className="text-[10px] font-mono text-gray-300 overflow-x-auto whitespace-pre-wrap">
+                                                {`import { NextRequest, NextResponse } from 'next/server';
+
+export async function POST(req: NextRequest) {
+  const secret = req.headers.get('Authorization')?.replace('Bearer ', '');
+  if (secret !== '${selectedBrand.wp_password || 'YOUR_SECRET_KEY'}') {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const article = await req.json();
+  // article contains: title, content, slug, meta_title, etc.
+  
+  // Save to your database...
+  console.log('Received article:', article.title);
+
+  return NextResponse.json({ success: true, link: \`https://your-site.com/\${article.slug}\` });
+}`}
+                                            </pre>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </div>
 

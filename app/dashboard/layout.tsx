@@ -8,6 +8,24 @@ import Logo from '@/components/Logo'
 import { createClient } from '@/lib/supabase/client'
 import ThemeToggle from '@/components/ThemeToggle'
 import Image from 'next/image'
+import {
+    LayoutDashboard,
+    PenTool,
+    Layers,
+    FileText,
+    RefreshCw,
+    Briefcase,
+    User,
+    Users,
+    Cpu,
+    Settings,
+    LogOut,
+    ChevronLeft,
+    ChevronRight,
+    Menu, // Import Menu icon for mobile
+    CreditCard,
+    Package
+} from 'lucide-react'
 
 const PAGE_TITLES: { [key: string]: string } = {
     '/dashboard': 'Dashboard',
@@ -30,12 +48,19 @@ export default function DashboardLayout({
     const pathname = usePathname()
     const router = useRouter()
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+    const [isCollapsed, setIsCollapsed] = useState(false)
     const [pageTitle, setPageTitle] = useState('Dashboard')
     const [user, setUser] = useState<any>(null)
     const [subscription, setSubscription] = useState<any>(null)
     const supabase = createClient()
 
     useEffect(() => {
+        // Restore collapsed state from local storage
+        const savedCollapsed = localStorage.getItem('sidebarCollapsed')
+        if (savedCollapsed === 'true') {
+            setIsCollapsed(true)
+        }
+
         const fetchUserData = async () => {
             const { data: { user } } = await supabase.auth.getUser()
             setUser(user)
@@ -79,6 +104,42 @@ export default function DashboardLayout({
 
     const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen)
 
+    const toggleCollapse = () => {
+        const newState = !isCollapsed
+        setIsCollapsed(newState)
+        localStorage.setItem('sidebarCollapsed', String(newState))
+    }
+
+    const handleSignOut = async () => {
+        await supabase.auth.signOut()
+        router.push('/login')
+    }
+
+    const NavItem = ({ href, icon: Icon, label, disabled = false }: { href: string, icon: any, label: string, disabled?: boolean }) => {
+        const isActive = pathname === href || pathname?.startsWith(href + '/')
+
+        if (disabled) {
+            return (
+                <div className={`${styles.navLink} ${styles.disabled} ${isCollapsed ? styles.collapsedLink : ''}`} title={isCollapsed ? label : ''}>
+                    <Icon size={20} />
+                    {!isCollapsed && <span>{label}</span>}
+                    {!isCollapsed && <span className={styles.comingSoonBadge}>Soon</span>}
+                </div>
+            )
+        }
+
+        return (
+            <Link
+                href={href}
+                className={`${styles.navLink} ${isActive ? styles.active : ''} ${isCollapsed ? styles.collapsedLink : ''}`}
+                title={isCollapsed ? label : ''}
+            >
+                <Icon size={20} />
+                {!isCollapsed && <span>{label}</span>}
+            </Link>
+        )
+    }
+
     return (
         <div className={styles.dashboardContainer}>
             {/* Mobile Overlay */}
@@ -90,194 +151,123 @@ export default function DashboardLayout({
             )}
 
             {/* Sidebar */}
-            <aside className={`${styles.sidebar} ${isSidebarOpen ? styles.sidebarOpen : ''}`}>
+            <aside className={`${styles.sidebar} ${isSidebarOpen ? styles.sidebarOpen : ''} ${isCollapsed ? styles.collapsed : ''}`}>
                 <div className={styles.sidebarHeader}>
-                    <Link href="/" className="no-underline">
-                        <Logo width={32} height={32} showText={true} />
-                    </Link>
+                    <div className={styles.logoContainer}>
+                        {isCollapsed ? (
+                            <div className="flex justify-center w-full">
+                                <Logo width={32} height={32} showText={false} />
+                            </div>
+                        ) : (
+                            <Link href="/" className="no-underline">
+                                <Logo width={32} height={32} showText={true} />
+                            </Link>
+                        )}
+                    </div>
+
+                    {/* Desktop Collapse Toggle */}
+                    <button
+                        className={styles.collapseBtn}
+                        onClick={toggleCollapse}
+                        title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+                    >
+                        {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+                    </button>
+
+                    {/* Mobile Close Button */}
                     <button
                         className={styles.closeSidebar}
                         onClick={() => setIsSidebarOpen(false)}
-                        aria-label="Close menu"
                     >
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M18 6L6 18M6 6l12 12" />
-                        </svg>
+                        <ChevronLeft size={24} />
                     </button>
                 </div>
 
-                <nav className={styles.nav}>
-                    <Link href="/dashboard" className={styles.navLink}>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <rect x="3" y="3" width="7" height="7" />
-                            <rect x="14" y="3" width="7" height="7" />
-                            <rect x="14" y="14" width="7" height="7" />
-                            <rect x="3" y="14" width="7" height="7" />
-                        </svg>
-                        <span>Dashboard</span>
-                    </Link>
+                <div className={styles.nav}>
+                    <div className={styles.navGroup}>
+                        {!isCollapsed && <div className={styles.navSeparator}>CONTENT</div>}
+                        <NavItem href="/dashboard" icon={LayoutDashboard} label="Dashboard" />
+                        <NavItem href="/dashboard/generate" icon={PenTool} label="Tạo Bài Viết" />
+                        <NavItem href="/dashboard/batch" icon={Layers} label="Tạo Hàng Loạt" />
+                        <NavItem href="/dashboard/rewrite" icon={RefreshCw} label="Viết Lại (Rewrite)" />
+                        <NavItem href="/dashboard/articles" icon={FileText} label="Thư Viện Bài Viết" />
+                    </div>
 
-                    <Link href="/dashboard/generate" className={styles.navLink}>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M12 5v14M5 12h14" />
-                        </svg>
-                        <span>Tạo Nội Dung</span>
-                    </Link>
+                    <div className={styles.navGroup}>
+                        {!isCollapsed && <div className={styles.navSeparator}>SYSTEM</div>}
+                        <NavItem href="/dashboard/brand" icon={Briefcase} label="Thương Hiệu (Brand)" />
+                        <NavItem href="/dashboard/profile" icon={User} label="Cài Đặt Cá Nhân" />
 
-                    <Link href="/dashboard/batch" className={styles.navLink}>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-                            <rect x="8" y="2" width="8" height="4" rx="1" />
-                        </svg>
-                        <span>Xử Lý Hàng Loạt</span>
-                    </Link>
-
-                    <Link href="/dashboard/articles" className={styles.navLink}>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                            <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
-                        </svg>
-                        <span>Thư Viện Nội Dung</span>
-                    </Link>
-
-                    <Link href="/dashboard/rewrite" className={styles.navLink}>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7" />
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                        </svg>
-                        <span>Viết Lại Nội Dung</span>
-                    </Link>
-
-                    <Link href="/dashboard/brand" className={styles.navLink}>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                            <circle cx="12" cy="7" r="4" />
-                        </svg>
-                        <span>Cài Đặt Thương Hiệu</span>
-                    </Link>
-
-                    {user?.user_metadata?.role === 'admin' && (
-                        <div className={styles.adminNav}>
-                            <div className={styles.navSeparator}>Quản Trị Hệ Thống</div>
-                            <Link href="/dashboard/admin/users" className={styles.navLink}>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                                    <circle cx="9" cy="7" r="4" />
-                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-                                </svg>
-                                <span>Quản Lý Thành Viên</span>
-                            </Link>
-                            <Link href="/dashboard/admin/ai" className={styles.navLink}>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
-                                    <path d="M2 12h5m10 0h5M12 2v5m0 10v5M4.93 4.93l3.54 3.54m7.08 7.08l3.54 3.54M19.07 4.93l-3.54 3.54M8.46 15.54l-3.54 3.54" />
-                                </svg>
-                                <span>AI Orchestrator</span>
-                            </Link>
-                            <Link href="/dashboard/settings" className={styles.navLink}>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
-                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                                </svg>
-                                <span>Cài Đặt Hệ Thống</span>
-                            </Link>
-                            <Link href="/dashboard/admin/billing" className={styles.navLink}>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                                </svg>
-                                <span>Quản Lý Tài Chính</span>
-                            </Link>
-                            <Link href="/dashboard/admin/plans" className={styles.navLink}>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z" />
-                                </svg>
-                                <span>Quản Lý Gói Cước</span>
-                            </Link>
-                        </div>
-                    )}
-                </nav>
+                        {/* Admin Links */}
+                        {(user?.email === 'admin@seoaaa.com' || user?.user_metadata?.role === 'admin') && (
+                            <>
+                                {!isCollapsed && <div className={styles.navSeparator}>ADMIN</div>}
+                                <NavItem href="/dashboard/admin/users" icon={Users} label="Quản Lý Users" />
+                                <NavItem href="/dashboard/admin/ai" icon={Cpu} label="AI Orchestrator" />
+                                <NavItem href="/dashboard/settings" icon={Settings} label="Cài Đặt Hệ Thống" />
+                                <NavItem href="/dashboard/admin/billing" icon={CreditCard} label="Quản Lý Tài Chính" />
+                                <NavItem href="/dashboard/admin/plans" icon={Package} label="Quản Lý Gói Cước" />
+                            </>
+                        )}
+                    </div>
+                </div>
 
                 <div className={styles.sidebarFooter}>
-                    {subscription && (
-                        <div className={styles.subscriptionCard}>
-                            <div className={styles.subHeader}>
-                                <span className={styles.planBadge}>{subscription.plan_tier?.toUpperCase()}</span>
-                                <Link href="/pricing" className={styles.upgradeLink}>Nâng cấp</Link>
-                            </div>
-                            <div className={styles.usageRow}>
-                                <span>Seodong: {(subscription.seodong_used || 0).toLocaleString()} / {(subscription.seodong_limit || 0).toLocaleString()}</span>
-                            </div>
-                            <div className={styles.progressBar}>
-                                <div
-                                    className={styles.progressFill}
-                                    style={{ width: `${Math.min(100, ((subscription.seodong_used || 0) / (subscription.seodong_limit || 1)) * 100)}%` }}
-                                ></div>
-                            </div>
-                        </div>
-                    )}
-
-                    <div className={styles.userProfileRow}>
-                        <Link href="/dashboard/profile" className={styles.userInfoLink} title="Cài đặt tài khoản">
-                            <div className={styles.userAvatar}>
-                                {user?.user_metadata?.display_name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'A'}
-                            </div>
-                            <div className={styles.userDetails}>
-                                <div className={styles.userName}>
-                                    {user?.user_metadata?.display_name || user?.user_metadata?.full_name || 'Người dùng'}
-                                </div>
-                                <div className={styles.userRole}>
-                                    {subscription?.plan_tier === 'enterprise' ? 'Enterprise' :
-                                        subscription?.plan_tier === 'premium' ? 'Premium' : 'Free Plan'}
-                                </div>
-                            </div>
-                        </Link>
-                        <button
-                            onClick={async () => {
-                                await supabase.auth.signOut()
-                                router.push('/')
-                            }}
-                            className={styles.compactLogoutBtn}
-                            title="Đăng xuất"
-                        >
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                                <polyline points="16 17 21 12 16 7" />
-                                <line x1="21" y1="12" x2="9" y2="12" />
-                            </svg>
-                        </button>
-                    </div>
+                    {/* Items moved to header */}
                 </div>
             </aside>
 
             {/* Main Content */}
-            <main className={styles.mainContent}>
-                <header className={styles.header}>
+            <main className={`${styles.mainContent} ${isCollapsed ? styles.mainContentCollapsed : ''}`}>
+                <header className={styles.topHeader}>
                     <div className={styles.headerLeft}>
                         <button
-                            className={styles.menuBurger}
+                            className={styles.menuBtn}
                             onClick={toggleSidebar}
-                            aria-label="Toggle menu"
                         >
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M3 12h18M3 6h18M3 18h18" />
-                            </svg>
+                            <Menu size={24} />
                         </button>
                         <h1 className={styles.pageTitle}>{pageTitle}</h1>
                     </div>
 
                     <div className={styles.headerRight}>
-                        <button className="btn btn-icon btn-ghost">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                            </svg>
-                        </button>
-
+                        {subscription && (
+                            <div className={styles.headerPlanInfo}>
+                                <span className={styles.planBadge}>{subscription.plan_tier === 'pro' ? 'PRO' : 'FREE'}</span>
+                                <div className={styles.creditBalance} title="Số dư Credits">
+                                    <div className={styles.coinIcon}>🪙</div>
+                                    <span>{subscription.credits_balance?.toLocaleString()}</span>
+                                </div>
+                            </div>
+                        )}
                         <ThemeToggle />
+                        <Link href="/dashboard/profile" className={styles.userInfo}>
+                            {user?.user_metadata?.avatar_url ? (
+                                <Image
+                                    src={user.user_metadata.avatar_url}
+                                    alt="User Avatar"
+                                    width={32}
+                                    height={32}
+                                    className={styles.avatar}
+                                />
+                            ) : (
+                                <div className={styles.avatarPlaceholder}>
+                                    {user?.email?.[0]?.toUpperCase() || 'U'}
+                                </div>
+                            )}
+                            <span className={styles.userEmail}>{user?.email}</span>
+                        </Link>
+                        <button
+                            onClick={handleSignOut}
+                            className={styles.headerSignOutBtn}
+                            title="Đăng Xuất"
+                        >
+                            <LogOut size={20} />
+                        </button>
                     </div>
                 </header>
 
-                <div className={styles.content}>
+                <div className={styles.contentScrollable}>
                     {children}
                 </div>
             </main>

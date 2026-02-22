@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAIUsageLogs, getAISetting, updateAISetting, getAITotalUsage } from '@/lib/db/database'
+import { getAIUsageLogs, getAISetting, updateAISetting, getAITotalUsage, getSetting } from '@/lib/db/database'
 import { createClient } from '@/lib/supabase/server'
 
 export async function GET(req: NextRequest) {
@@ -15,11 +15,13 @@ export async function GET(req: NextRequest) {
         const priority = await getAISetting('model_priority', user.id)
         const usage = await getAITotalUsage(user.id)
         const quotas = await getAISetting('model_quotas', user.id)
+        const adminNotifications = await getSetting('admin_notifications')
 
         return NextResponse.json({
             success: true,
             data: {
                 logs: logs.slice(0, 100),
+                notifications: adminNotifications || [],
                 priority: priority || ['groq', 'gemini', 'deepseek'],
                 usage: usage || {},
                 quotas: quotas || {
